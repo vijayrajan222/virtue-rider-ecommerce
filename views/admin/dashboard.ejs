@@ -302,8 +302,7 @@
       }
 
       // Initialize chart with current data
-      const initialChartData = <%- chartData %>;
-      const ctx = document.getElementById('salesChart').getContext('2d');
+         const ctx = document.getElementById('salesChart').getContext('2d');
       salesChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -543,6 +542,3 @@
     </script>
   </body>
 </html>
-
-
-

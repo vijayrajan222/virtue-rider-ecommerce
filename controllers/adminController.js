@@ -1,15 +1,76 @@
-// const Admin = require('../model/adminModel');  
-// const bcrypt = require('bcrypt');
+import { Console } from 'console';
+import { config } from 'dotenv';
+
+
+config()
+
 
 export const getloginPage = (req, res)=> {
-    res.render('admin/login')
+   
+    res.render('admin/login',{message:null})
 }
 
 
 
 
+//.........afterlogining in way to dashboard....................//
 
-// exports.postLogin = async (req, res) => {
+export const login =async(req,res)=>{
+    try {
+        const {email ,password} = req.body;
+        console.log(req.body)
+        if (!email||!password) {
+                     return res.render('admin/login', { error: 'field are required for login' });
+        }
+
+        if (email === process.env.ADMIN_EMAIL&& password === process.env.ADMIN_PASSWORD) {
+            console.log(process.env.ADMIN_EMAIL,process.env.ADMIN_PASSWORD)
+            console.log(req.session)
+            req.session.admin=true;
+            console.log(req.session)
+             res.json({message:"heloo",success:true})
+     return  res.render('admin/dashboard'); 
+        }else{
+            return res.render('admin/login', { error: 'Incorrect credentials' });
+        }
+
+
+    } catch (error) {
+        
+        // return res.render('admin/login', { error: 'Error occured during login' });
+}
+}
+
+
+
+export const getdashboard = async (req,res)=>{
+    if(req.session.admin){
+        try {
+            res.render("dashboard")
+        } catch (error) {
+            res.redirect("pageerror")
+        }
+    }
+}
+
+export const getlogoutPage = (req, res) => {
+        req.session.destroy(() => {
+            res.redirect('/admin/login');
+            
+        });
+    };
+
+
+
+
+
+
+
+
+
+
+
+// export const postLogin = async (req, res) => {
 //     const { email, password } = req.body;
 //     const admin = await Admin.findOne({ email });
 
@@ -26,8 +87,4 @@ export const getloginPage = (req, res)=> {
 //     res.redirect('/admin/dashboard');
 // };
 
-// exports.logout = (req, res) => {
-//     req.session.destroy(() => {
-//         res.redirect('/admin/login');
-//     });
-// };
+// 

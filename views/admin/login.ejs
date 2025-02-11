@@ -91,7 +91,7 @@
 
     <!-- Footer -->
     <footer class="mt-8 text-sm text-gray-400">
-      © 2024 Onyx. All Rights Reserved.
+      © 2025 Virtue. All Rights Reserved.
     </footer>
 
     <script>
@@ -208,16 +208,21 @@
             });
 
             const data = await response.json();
-
+          // console
             if (data.success) {
+              console.log(data);
+              
               showToast('Login successful!', 'success');
-              window.location.href = '/admin/dashboard';
+              // window.location.href = '/admin/dashboard';
             } else {
               showToast(data.message || 'Invalid credentials', 'error');
             }
           } catch (error) {
+            console.log(error)
             showToast('An error occurred. Please try again.', 'error');
-          } finally {
+          } 
+          
+          finally {
             isSubmitting = false;
             buttonText.textContent = 'Sign In';
             loadingSpinner.classList.add('hidden');

@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 import expressEjsLayouts from 'express-ejs-layouts';
 import userRouter from './routes/userRouter.js'
 import adminRouter from './routes/adminRouter.js'
+import session from "express-session";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); 
@@ -13,6 +15,12 @@ const __dirname = path.dirname(__filename);
 dotenv.config()
 
 const app = express()
+app.use(session({
+  secret: "helo this is screct",
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false, httpOnly: true }  // Set secure: true in production with HTTPS
+}));
 const PORT =process.env.PORT || 3000;
 
 app.use(express.json())
