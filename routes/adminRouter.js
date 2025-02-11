@@ -8,8 +8,7 @@ const adminRouter = express.Router();
 adminRouter.get('/login', getloginPage)
 adminRouter.post('/login', login);
 adminRouter.get("/logout", getloginPage)
-adminRouter.get("/dashboard",
-    (req,res)=>{
+adminRouter.get("/dashboard",(req,res)=>{
         return res.render('admin/dashboard')
         }
 )
