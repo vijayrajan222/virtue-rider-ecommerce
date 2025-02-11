@@ -5,6 +5,7 @@ import { connectDB } from './db/connectDB.js'
 import { fileURLToPath } from 'url';
 import expressEjsLayouts from 'express-ejs-layouts';
 import userRouter from './routes/userRouter.js'
+import adminRouter from './routes/adminRouter.js'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); 
@@ -23,14 +24,9 @@ app.set(express.static(path.join(__dirname,"public")))
 
 app.use(express.static('public'));
 
-// app.get('/users/home', (req, res)=>{
-//     res.render('user/home')
-// })
-// app.get('/users/about', (req, res)=>{
-//     res.render('user/about')
-// })
 
 app.use('/user', userRouter)
+app.use('/admin', adminRouter)
 
 app.listen(PORT,()=>{
     connectDB()
