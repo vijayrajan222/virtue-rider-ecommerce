@@ -25,11 +25,11 @@ export const login =async(req,res)=>{
 
         if (email === process.env.ADMIN_EMAIL&& password === process.env.ADMIN_PASSWORD) {
             console.log(process.env.ADMIN_EMAIL,process.env.ADMIN_PASSWORD)
-            console.log(req.session)
+            // console.log(req.session)
             req.session.admin=true;
-            console.log(req.session)
+            // console.log(req.session)
              res.json({message:"heloo",success:true})
-     return  res.render('admin/dashboard'); 
+     return  res.render('admin/dashboard',{message:null}); 
         }else{
             return res.render('admin/login', { error: 'Incorrect credentials' });
         }
@@ -62,7 +62,14 @@ export const getlogoutPage = (req, res) => {
 
 
 
-
+    export const getproductPage =(req,res)=>{
+        // if(req.session.admin){
+            
+                res.render("product")}
+            // }else{
+            //     res.render("error.ejs")
+        //     }
+        
 
 
 
