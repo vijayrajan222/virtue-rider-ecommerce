@@ -29,7 +29,7 @@
         <div class="p-8">
           <h1 class="text-2xl font-bold text-center mb-6 text-white">Admin Login</h1>
 
-          <form id="adminLoginForm" action="/admin/login" method="POST" class="space-y-6" novalidate>
+          <form id="adminLoginForm"  class="space-y-6" novalidate>
             <!-- Email Input -->
             <div class="space-y-2">
               <label for="email" class="block text-sm font-medium text-gray-200">Email</label>
@@ -168,6 +168,7 @@
         // Form submission
         form.addEventListener('submit', async function(e) {
           e.preventDefault();
+          console.log('i am running')
           if (isSubmitting) return;
 
           // Reset validation messages
@@ -208,12 +209,12 @@
             });
 
             const data = await response.json();
-          // console
+            console.log("Login Response:", data); 
+
             if (data.success) {
-              console.log(data);
-              
               showToast('Login successful!', 'success');
-              // window.location.href = '/admin/dashboard';
+              console.log(data);
+              setTimeout(() => { window.location.href = data.redirectUrl;},1000);            
             } else {
               showToast(data.message || 'Invalid credentials', 'error');
             }

@@ -15,32 +15,60 @@ export const getloginPage = (req, res)=> {
 
 //.........afterlogining in way to dashboard....................//
 
-export const login =async(req,res)=>{
+// export const login =async(req,res)=>{
+//     try {
+//         const {email ,password} = req.body;
+//         // console.log(req.body)
+//         if (!email||!password) {
+//                      return res.render('admin/login', { error: 'field are required for login' });
+//         }
+
+//         if (email === process.env.ADMIN_EMAIL&& password === process.env.ADMIN_PASSWORD) {
+//             console.log(process.env.ADMIN_EMAIL,process.env.ADMIN_PASSWORD)
+//             req.session.admin=true;
+//             return res.redirect('/admin/dashboard', { success: true, redirectUrl: "/admin/dashboard" });
+//             // res.json({message:"heloo",success:true})
+//             // res.redirect('/admin/dashboard'); 
+//             // return res.redirect('/admin/dashboard');
+
+//         }else{
+//             return res.json({ success: false, error: 'Incorrect credentials' });        }
+
+
+//     } catch (error) {
+        
+//         console.error("Login Error:", error);
+//         return res.json({ success: false, error: "An error occurred during login" });
+// }
+
+// }
+export const login = async (req, res) => {
     try {
-        const {email ,password} = req.body;
-        console.log(req.body)
-        if (!email||!password) {
-                     return res.render('admin/login', { error: 'field are required for login' });
+        const { email, password } = req.body;
+        console.log("Login Attempt:", email, password);
+
+        if (!email || !password) {
+            return res.status(400).json({ success: false, message: "Fields are required for login" });
         }
 
-        if (email === process.env.ADMIN_EMAIL&& password === process.env.ADMIN_PASSWORD) {
-            console.log(process.env.ADMIN_EMAIL,process.env.ADMIN_PASSWORD)
-            // console.log(req.session)
-            req.session.admin=true;
-            // console.log(req.session)
-             res.json({message:"heloo",success:true})
-     return  res.render('admin/dashboard',{message:null}); 
-        }else{
-            return res.render('admin/login', { error: 'Incorrect credentials' });
-        }
+        if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+            console.log("Admin login successful:", email);
+            req.session.admin = true;
 
+            // ✅ Correctly return JSON response
+            return res.json({ success: true, redirectUrl: "/admin/dashboard" });
+        } else {
+            console.log("Invalid credentials:", email, password);
+            return res.status(401).json({ success: false, message: "Incorrect credentials" });
+        }
 
     } catch (error) {
-        
-        // return res.render('admin/login', { error: 'Error occured during login' });
-}
-}
+        console.error("Login Error:", error);
 
+        // ✅ Return a proper JSON error response
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+};
 
 
 export const getdashboard = async (req,res)=>{
@@ -78,22 +106,3 @@ export const getlogoutPage = (req, res) => {
 
 
 
-
-// export const postLogin = async (req, res) => {
-//     const { email, password } = req.body;
-//     const admin = await Admin.findOne({ email });
-
-//     if (!admin) {
-//         return res.render('admin/login', { error: 'Admin not found' });
-//     }
-
-//     const match = await bcrypt.compare(password, admin.password);
-//     if (!match) {
-//         return res.render('admin/login', { error: 'Incorrect password' });
-//     }
-
-//     req.session.admin = admin;
-//     res.redirect('/admin/dashboard');
-// };
-
-// 
