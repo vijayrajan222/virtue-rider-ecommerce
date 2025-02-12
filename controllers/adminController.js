@@ -1,47 +1,15 @@
-import { Console } from 'console';
 import { config } from 'dotenv';
 
 
 config()
 
 
-export const getloginPage = (req, res)=> {
-   
-    res.render('admin/login',{message:null})
+export const getloginPage = (req, res) => {
+
+    res.render('admin/login', { message: null })
 }
 
 
-
-
-//.........afterlogining in way to dashboard....................//
-
-// export const login =async(req,res)=>{
-//     try {
-//         const {email ,password} = req.body;
-//         // console.log(req.body)
-//         if (!email||!password) {
-//                      return res.render('admin/login', { error: 'field are required for login' });
-//         }
-
-//         if (email === process.env.ADMIN_EMAIL&& password === process.env.ADMIN_PASSWORD) {
-//             console.log(process.env.ADMIN_EMAIL,process.env.ADMIN_PASSWORD)
-//             req.session.admin=true;
-//             return res.redirect('/admin/dashboard', { success: true, redirectUrl: "/admin/dashboard" });
-//             // res.json({message:"heloo",success:true})
-//             // res.redirect('/admin/dashboard'); 
-//             // return res.redirect('/admin/dashboard');
-
-//         }else{
-//             return res.json({ success: false, error: 'Incorrect credentials' });        }
-
-
-//     } catch (error) {
-        
-//         console.error("Login Error:", error);
-//         return res.json({ success: false, error: "An error occurred during login" });
-// }
-
-// }
 export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -55,7 +23,7 @@ export const login = async (req, res) => {
             console.log("Admin login successful:", email);
             req.session.admin = true;
 
-            // ✅ Correctly return JSON response
+            //  Correctly return JSON response
             return res.json({ success: true, redirectUrl: "/admin/dashboard" });
         } else {
             console.log("Invalid credentials:", email, password);
@@ -65,14 +33,14 @@ export const login = async (req, res) => {
     } catch (error) {
         console.error("Login Error:", error);
 
-        // ✅ Return a proper JSON error response
+        //  Return a proper JSON error response
         return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 };
 
 
-export const getdashboard = async (req,res)=>{
-    if(req.session.admin){
+export const getdashboard = async (req, res) => {
+    if (req.session.admin) {
         try {
             res.render("dashboard")
         } catch (error) {
@@ -82,27 +50,39 @@ export const getdashboard = async (req,res)=>{
 }
 
 export const getlogoutPage = (req, res) => {
-        req.session.destroy(() => {
-            res.redirect('/admin/login');
-            
-        });
-    };
+    req.session.destroy(() => {
+        res.redirect('/admin/login');
+
+    });
+};
 
 
-
-    export const getproductPage =(req,res)=>{
-        // if(req.session.admin){
-            
-                res.render("admin/product")}
-            // }else{
-            //     res.render("error.ejs")
-        //     }
-        
+export const getproductPage = (req, res) => {
+    res.render("admin/product")
+}
 
 
-        export const getcategoryPage =(req,res)=>{
-            res.render("admin/category")
-        }
+export const getuserPage = (req, res) => {
+    res.render("admin/userList")
+}
 
+export const getcategoryPage = (req, res) => {
+    res.render("admin/category")
+}
 
+export const getorderPage = (req, res) => {
+    res.render("admin/order")
+}
+
+export const getsalesReport = (req, res) => {
+    res.render("admin/sales-report")
+}
+
+export const getcouponPage = (req, res) => {
+    res.render("admin/coupon")
+}
+
+export const getofferPage = (req, res) => {
+    res.render("admin/offers")
+}
 

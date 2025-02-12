@@ -42,81 +42,13 @@
       </header>
 
       <!-- Customer Table -->
-      <main class="p-4 lg:p-8">
-        <div class="bg-zinc-800 rounded-lg p-6 overflow-x-auto">
-          <table class="min-w-full text-left text-gray-400 table-auto">
-            <thead>
-              <tr class="border-b border-gray-700">
-                <th class="py-3 px-4">S.No</th>
-                <th class="py-3 px-4">Name</th>
-                <th class="py-3 px-4">Email</th>
-                <th class="py-3 px-4">Status</th>
-                <th class="py-3 px-4">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% if (userList.length > 0) { %>
-                <% userList.forEach((user, index) => { %>
-                  <tr class="border-b border-gray-700 hover:bg-zinc-700 transition-colors">
-                    <td class="py-3 px-4"><%= index + 1 %></td>
-                    <td class="py-3 px-4"><%= user.firstName %> <%= user.lastName %></td>
-                    <td class="py-3 px-4"><%= user.email %></td>
-                    <td class="py-3 px-4">
-                      <span class="px-2 py-1 rounded-full text-sm <%= user.isVerified ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500' %>">
-                        <%= user.isVerified ? 'Verified' : 'Not Verified' %>
-                      </span>
-                    </td>
-                    <td class="py-3 px-4">
-                      <button 
-                        onclick="toggleUserBlock('<%= user._id %>', <%= user.blocked %>)"
-                        class="text-white py-1 px-3 rounded transition-colors
-                        <%= user.blocked ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-500 hover:bg-green-600' %>">
-                        <%= user.blocked ? 'Unblock' : 'Block' %>
-                      </button>
-                    </td>
-                  </tr>
-                <% }); %>
-              <% } else { %>
-                <tr>
-                  <td colspan="6" class="py-8 text-center text-gray-400">
-                    <div class="flex flex-col items-center">
-                      <i class="fas fa-users text-4xl mb-2"></i>
-                      <p>No users found</p>
-                    </div>
-                  </td>
-                </tr>
-              <% } %>
-            </tbody>
-          </table>
+      
 
           <!-- Pagination -->
-          <div class="mt-6 flex justify-center pagination-container">
-            <nav class="flex items-center gap-2" aria-label="Pagination">
-                <% if (pagination.hasPrevPage) { %>
-                    <a href="?page=<%= pagination.prevPage %>" 
-                       class="px-3 py-2 bg-zinc-700 text-white rounded-md hover:bg-zinc-600 transition-colors">
-                        Previous
-                    </a>
-                <% } %>
-
-                <% for(let i = 1; i <= pagination.totalPages; i++) { %>
-                    <a href="?page=<%= i %>"
-                       class="px-3 py-2 rounded-md <%= pagination.currentPage === i ? 'bg-emerald-500 text-white' : 'bg-zinc-700 text-white hover:bg-zinc-600' %> transition-colors">
-                        <%= i %>
-                    </a>
-                <% } %>
-
-                <% if (pagination.hasNextPage) { %>
-                    <a href="?page=<%= pagination.nextPage %>"
-                       class="px-3 py-2 bg-zinc-700 text-white rounded-md hover:bg-zinc-600 transition-colors">
-                        Next
-                    </a>
-                <% } %>
-            </nav>
-          </div>
+         
 
           <div class="mt-4 text-center text-sm text-gray-400">
-            Showing page <%= pagination.currentPage %> of <%= pagination.totalPages %>
+            Showing page 
           </div>
         </div>
       </main>
@@ -184,9 +116,9 @@
       } finally {
         utils.toggleLoading(false);
       }
-    }
+    } -->
 
-    // Check URL parameters for messages on page load
+    <!-- // Check URL parameters for messages on page load
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const successMsg = urlParams.get('success');
