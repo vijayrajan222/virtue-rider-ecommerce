@@ -65,14 +65,16 @@ export const getlogoutPage = (req, res) => {
     export const getproductPage =(req,res)=>{
         // if(req.session.admin){
             
-                res.render("product")}
+                res.render("admin/product")}
             // }else{
             //     res.render("error.ejs")
         //     }
         
 
 
-
+        export const getcategoryPage =(req,res)=>{
+            res.render("admin/category")
+        }
 
 
 

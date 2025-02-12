@@ -37,36 +37,7 @@
           </header>
 
           <!-- List of Categories -->
-          <div class="space-y-4">
-            <% categories.forEach(category => { %>
-            <div class="bg-zinc-700 p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div class="w-full sm:w-auto">
-                <h2 class="text-base sm:text-lg font-semibold <%= category.isActive ? 'text-white' : 'text-gray-400' %>">
-                  <%= category.name %>
-                  <span class="text-xs sm:text-sm ml-2 <%= category.isActive ? 'text-green-500' : 'text-red-500' %>">
-                    (<%= category.isActive ? 'Active' : 'Hidden' %>)
-                  </span>
-                </h2>
-                <p class="text-xs sm:text-sm text-gray-400 mt-1"><%= category.description %></p>
-              </div>
-              <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <button
-                  onclick="openEditModal('<%= category._id %>', '<%= category.name %>', '<%= category.description %>')"
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm w-full sm:w-auto"
-                >
-                  Edit
-                </button>
-                <button
-                  onclick="confirmToggleCategory('<%= category._id %>', <%= category.isActive %>)"
-                  class="<%= category.isActive ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' %> 
-                         text-white px-4 py-2 rounded-lg transition-colors text-sm w-full sm:w-auto"
-                >
-                  <%= category.isActive ? 'Hide' : 'Show' %>
-                </button>
-              </div>
-            </div>
-            <% }); %>
-          </div>
+         
         </div>
       </main>
     </div>

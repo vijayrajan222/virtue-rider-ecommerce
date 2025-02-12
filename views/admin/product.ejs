@@ -56,105 +56,9 @@
             </div>
 
             <!-- Table Container -->
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-zinc-700">
-                <thead class="bg-zinc-900">
-                  <tr>
-                    <th class="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-300 uppercase tracking-wider">Image</th>
-                    <th class="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-300 uppercase tracking-wider">Product</th>
-                    <th class="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-300 uppercase tracking-wider hidden md:table-cell">Brand</th>
-                    <th class="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-300 uppercase tracking-wider hidden lg:table-cell">Category</th>
-                    <th class="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-300 uppercase tracking-wider">Price</th>
-                    <th class="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-300 uppercase tracking-wider hidden sm:table-cell">Stock</th>
-                    <th class="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-300 uppercase tracking-wider hidden sm:table-cell">Status</th>
-                    <th class="px-4 py-3 text-right text-xs md:text-sm font-medium text-gray-300 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-zinc-700">
-                  <% products.forEach(product => { %>
-                    <tr class="hover:bg-zinc-700/50 transition-colors">
-                      <td class="px-4 py-3 whitespace-nowrap">
-                        <img src="<%= product.imageUrl[0] %>" 
-                             alt="<%= product.productName %>" 
-                             class="w-12 h-12 md:w-16 md:h-16 object-cover rounded-lg">
-                      </td>
-                      <td class="px-4 py-3">
-                        <div class="flex flex-col">
-                          <span class="text-sm md:text-base font-medium text-gray-200"><%= product.productName %></span>
-                          <span class="text-xs text-gray-400 md:hidden"><%= product.brand %></span>
-                        </div>
-                      </td>
-                      <td class="px-4 py-3 text-sm md:text-base text-gray-300 hidden md:table-cell"><%= product.brand %></td>
-                      <td class="px-4 py-3 text-sm md:text-base text-gray-300 hidden lg:table-cell"><%= product.categoriesId.name %></td>
-                      <td class="px-4 py-3 text-sm md:text-base text-gray-200">₹<%= product.price.toLocaleString() %></td>
-                      <td class="px-4 py-3 text-sm md:text-base text-gray-300 hidden sm:table-cell"><%= product.stock %></td>
-                      <td class="px-4 py-3 text-sm md:text-base text-gray-300 hidden sm:table-cell"><%= product.isActive ? 'Active' : 'Inactive' %></td>
-                      <td class="px-4 py-3">
-                        <div class="flex flex-col sm:flex-row gap-2 justify-end">
-                          <button class="edit-product bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200 w-full sm:w-auto"
-                                  data-id="<%= product._id %>"
-                                  type="button">
-                                  Edit
-                          </button>
-                          
-                          <button class="toggle-status px-3 py-1 rounded-md text-sm transition-colors duration-200 w-full sm:w-auto
-                                       <%= product.isActive ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' %> text-white" 
-                                  data-id="<%= product._id %>" 
-                                  data-active="<%= product.isActive %>">
-                            <%= product.isActive ? 'Hide' : 'Show' %>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  <% }); %>
-                </tbody>
-              </table>
-            </div>
-
+           
             <!-- Page Info -->
-            <div class="px-4 py-3 flex flex-col sm:flex-row items-center justify-between border-t border-zinc-700">
-                <div class="text-sm text-gray-400 mb-4 sm:mb-0">
-                    Showing <span class="font-medium"><%= startIndex + 1 %></span> to 
-                    <span class="font-medium"><%= endIndex %></span> of 
-                    <span class="font-medium"><%= totalProducts %></span> products
-                </div>
-
-                <!-- Pagination Controls -->
-                <div class="flex items-center gap-2">
-                    <% if (currentPage > 1) { %>
-                        <a href="?page=1" 
-                           class="px-3 py-1 bg-zinc-700 text-gray-300 rounded hover:bg-zinc-600 text-sm transition-colors">
-                                First
-                            </a>
-                            <a href="?page=<%= currentPage - 1 %>" 
-                               class="px-3 py-1 bg-zinc-700 text-gray-300 rounded hover:bg-zinc-600 text-sm transition-colors">
-                                Previous
-                            </a>
-                    <% } %>
-
-                    <!-- Page Numbers -->
-                    <div class="flex gap-1">
-                        <% for(let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) { %>
-                            <a href="?page=<%= i %>" 
-                               class="px-3 py-1 rounded text-sm <%= currentPage === i ? 'bg-emerald-600 text-white' : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600' %>">
-                                <%= i %>
-                            </a>
-                        <% } %>
-                    </div>
-
-                    <% if (currentPage < totalPages) { %>
-                        <a href="?page=<%= currentPage + 1 %>" 
-                           class="px-3 py-1 bg-zinc-700 text-gray-300 rounded hover:bg-zinc-600 text-sm transition-colors">
-                                Next
-                            </a>
-                            <a href="?page=<%= totalPages %>" 
-                               class="px-3 py-1 bg-zinc-700 text-gray-300 rounded hover:bg-zinc-600 text-sm transition-colors">
-                                Last
-                            </a>
-                    <% } %>
-                </div>
-            </div>
-
+           
           </div>
         </div>
       </main>
@@ -203,15 +107,7 @@
               </select>
             </div>
 
-            <div>
-              <label class="block text-gray-400 mb-1">Category</label>
-              <select name="categoriesId" id="categoriesId" required
-                      class="w-full bg-zinc-800 border border-gray-700 rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-200">
-                <% categories.forEach(category => { %>
-                  <option value="<%= category._id %>"><%= category.name %></option>
-                <% }); %>
-              </select>
-            </div>
+            
 
             <div>
               <label class="block text-gray-400 mb-1">Color</label>
