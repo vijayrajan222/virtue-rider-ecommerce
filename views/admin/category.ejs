@@ -1,25 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Manage Categories</title>
-    <link rel="stylesheet" href="/tailwindcss/output.css" />
-    <link
-      href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  </head>
-  <body class="mybg-green text-white min-h-screen flex flex-col">
-    <%- include('../partials/sidebar') %>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Categories</title>
+  <link rel="stylesheet" href="/tailwindcss/output.css" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body class="mybg-green text-white min-h-screen flex flex-col">
+  <%- include('../partials/sidebar') %>
 
     <!-- Main Content -->
     <div class="lg:ml-64 transition-all" id="main-content">
       <header class="flex items-center justify-between mb-8 p-4 lg:p-8 border-b border-gray-700">
         <button id="toggleSidebar" class="text-white lg:hidden">
-          
+
         </button>
         <h1 class="text-2xl font-semibold text-gray-200">Category Management</h1>
       </header>
@@ -27,17 +26,69 @@
         <div class="bg-zinc-800 rounded-lg p-4 sm:p-6">
           <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
             <h1 class="text-xl sm:text-2xl font-bold text-gray-200">Manage Categories</h1>
-            <button
-              onclick="openAddModal()"
-              class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
-            >
+            <button onclick="openAddModal()"
+              class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto flex items-center justify-center gap-2">
               <i class="fas fa-plus"></i>
               <span>Add Category</span>
             </button>
           </header>
 
+          
           <!-- List of Categories -->
-         
+          <div class="overflow-x-auto">
+            <table class="min-w-full bg-zinc-900 rounded-lg overflow-hidden">
+              <thead class="bg-zinc-800">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">ID</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Description
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-zinc-800">
+                <% if (categories && categories.length > 0) { %>
+                    <% categories.forEach(category => { %>
+                        <tr class="hover:bg-zinc-800 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300"><%= category._id %></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300"><%= category.name %></td>
+                            <td class="px-6 py-4 text-sm text-gray-300">
+                                <div class="max-w-xs overflow-hidden text-ellipsis">
+                                    <%= category.description %>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    <%= category.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                                    <%= category.isActive ? 'Active' : 'Inactive' %>
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <button
+                                    onclick="openEditModal('<%= category._id %>', '<%= category.name %>', '<%= category.description %>')"
+                                    class="text-blue-400 hover:text-blue-300 transition-colors">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button
+                                    onclick="confirmToggleCategory('<%= category._id %>', <%= category.isActive %>)"
+                                    class="text-yellow-400 hover:text-yellow-300 transition-colors">
+                                    <i class="fas fa-<%= category.isActive ? 'eye-slash' : 'eye' %>"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-300">
+                            No categories found
+                        </td>
+                    </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
         </div>
       </main>
     </div>
@@ -47,31 +98,19 @@
       <div class="bg-zinc-900 p-6 rounded-lg w-full max-w-md">
         <h2 class="text-xl font-bold text-gray-200 mb-4">Add Category</h2>
         <form id="addCategoryForm" action="/admin/category/add" method="POST">
-          <input
-            type="text"
-            name="categoryName"
-            placeholder="Category Name"
+          <input type="text" name="categoryName" placeholder="Category Name"
             class="w-full p-2 mb-4 bg-zinc-800 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-gray-200"
-            required
-          />
-          <textarea
-            name="categoryDescription"
-            placeholder="Category Description"
+            required />
+          <textarea name="categoryDescription" placeholder="Category Description"
             class="w-full p-2 mb-4 bg-zinc-800 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-gray-200 min-h-[100px]"
-            required
-          ></textarea>
+            required></textarea>
           <div class="flex flex-col sm:flex-row justify-end gap-3">
-            <button
-              type="button"
-              onclick="closeAddModal()"
-              class="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto"
-            >
+            <button type="button" onclick="closeAddModal()"
+              class="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto">
               Cancel
             </button>
-            <button
-              type="submit"
-              class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto"
-            >
+            <button type="submit"
+              class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto">
               Add
             </button>
           </div>
@@ -80,41 +119,20 @@
     </div>
 
     <!-- Edit Category Modal -->
-    <div
-      id="editModal"
-      class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
-    >
+    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div class="bg-gray-800 p-6 rounded-lg w-96">
         <h2 class="text-xl font-bold text-gray-200 mb-4">Edit Category</h2>
         <form id="editCategoryForm" action="/admin/category/edit" method="POST">
           <input type="hidden" name="categoryId" id="editCategoryId" />
-          <input
-            type="text"
-            name="categoryName"
-            id="editCategoryName"
-            placeholder="Category Name"
-            class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded"
-            required
-          />
-          <textarea
-            name="categoryDescription"
-            id="editCategoryDescription"
-            placeholder="Category Description"
-            class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded"
-            required
-          ></textarea>
+          <input type="text" name="categoryName" id="editCategoryName" placeholder="Category Name"
+            class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded" required />
+          <textarea name="categoryDescription" id="editCategoryDescription" placeholder="Category Description"
+            class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded" required></textarea>
           <div class="flex justify-end space-x-4">
-            <button
-              type="button"
-              onclick="closeEditModal()"
-              class="bg-gray-600 text-white px-4 py-2 rounded-lg"
-            >
+            <button type="button" onclick="closeEditModal()" class="bg-gray-600 text-white px-4 py-2 rounded-lg">
               Cancel
             </button>
-            <button
-              type="submit"
-              class="bg-green-500 text-white px-4 py-2 rounded-lg"
-            >
+            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg">
               Update
             </button>
           </div>
@@ -133,16 +151,16 @@
         toggleLoading: (show) => {
           document.getElementById('loadingSpinner').classList.toggle('hidden', !show);
         },
-        
+
         showAlert: ({ title, text, icon = 'success', confirmButtonColor = '#3B82F6' }) => {
           return Swal.fire({ title, text, icon, confirmButtonColor });
         },
-        
+
         handleApiError: async (response) => {
           const error = await response.text();
           throw new Error(error || 'Something went wrong');
         },
-        
+
         validateInput: (value) => {
           return value.trim().length > 0;
         }
@@ -153,10 +171,10 @@
         toggle: (modalId, show) => {
           document.getElementById(modalId).classList.toggle('hidden', !show);
         },
-        
+
         openAdd: () => modals.toggle('addModal', true),
         closeAdd: () => modals.toggle('addModal', false),
-        
+
         openEdit: (id, name, description) => {
           document.getElementById('editCategoryId').value = id;
           document.getElementById('editCategoryName').value = name;
@@ -170,7 +188,7 @@
       const submitHandlers = {
         async handleSubmit(url, formData, successMessage) {
           const description = formData.get('categoryDescription');
-          
+
           if (!utils.validateInput(description)) {
             await utils.showAlert({
               title: 'Error!',
@@ -182,7 +200,7 @@
           }
 
           utils.toggleLoading(true);
-          
+
           try {
             const response = await fetch(url, {
               method: 'POST',
@@ -196,7 +214,7 @@
               title: 'Success!',
               text: successMessage
             });
-            
+
             window.location.reload();
           } catch (error) {
             await utils.showAlert({
@@ -214,20 +232,20 @@
       // Event Listeners
       document.addEventListener('DOMContentLoaded', () => {
         // Form submissions
-        document.getElementById('addCategoryForm').addEventListener('submit', async function(e) {
+        document.getElementById('addCategoryForm').addEventListener('submit', async function (e) {
           e.preventDefault();
           await submitHandlers.handleSubmit(
-            '/admin/category/add', 
-            new FormData(this), 
+            '/admin/category/add',
+            new FormData(this),
             'Category added successfully'
           );
         });
 
-        document.getElementById('editCategoryForm').addEventListener('submit', async function(e) {
+        document.getElementById('editCategoryForm').addEventListener('submit', async function (e) {
           e.preventDefault();
           await submitHandlers.handleSubmit(
-            '/admin/category/edit', 
-            new FormData(this), 
+            '/admin/category/edit',
+            new FormData(this),
             'Category updated successfully'
           );
         });
@@ -250,43 +268,43 @@
       // Toggle confirmation
       function confirmToggleCategory(categoryId, isActive) {
         const action = isActive ? 'hide' : 'show';
-        const message = isActive ? 
-            "This category will be hidden from users. Continue?" : 
-            "This category will be visible to users. Continue?";
+        const message = isActive ?
+          "This category will be hidden from users. Continue?" :
+          "This category will be visible to users. Continue?";
 
         Swal.fire({
-            title: `${action.charAt(0).toUpperCase() + action.slice(1)} Category?`,
-            text: message,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#000000',
-            cancelButtonColor: '#6B7280',
-            confirmButtonText: 'Yes',
-            cancelButtonText: 'Cancel'
+          title: `${action.charAt(0).toUpperCase() + action.slice(1)} Category?`,
+          text: message,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#000000',
+          cancelButtonColor: '#6B7280',
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Cancel'
         }).then(async (result) => {
-            if (result.isConfirmed) {
-                utils.toggleLoading(true);
-                try {
-                    const response = await fetch(`/admin/category/toggle?id=${categoryId}`);
-                    if (!response.ok) await utils.handleApiError(response);
-                    
-                    await utils.showAlert({
-                        title: 'Success!',
-                        text: `Category ${action}n successfully.`
-                    });
-                    
-                    window.location.reload();
-                } catch (error) {
-                    await utils.showAlert({
-                        title: 'Error!',
-                        text: error.message,
-                        icon: 'error',
-                        confirmButtonColor: '#EF4444'
-                    });
-                } finally {
-                    utils.toggleLoading(false);
-                }
+          if (result.isConfirmed) {
+            utils.toggleLoading(true);
+            try {
+              const response = await fetch(`/admin/category/toggle?id=${categoryId}`);
+              if (!response.ok) await utils.handleApiError(response);
+
+              await utils.showAlert({
+                title: 'Success!',
+                text: `Category ${action}n successfully.`
+              });
+
+              window.location.reload();
+            } catch (error) {
+              await utils.showAlert({
+                title: 'Error!',
+                text: error.message,
+                icon: 'error',
+                confirmButtonColor: '#EF4444'
+              });
+            } finally {
+              utils.toggleLoading(false);
             }
+          }
         });
       }
 
@@ -296,5 +314,6 @@
       window.openEditModal = modals.openEdit;
       window.closeEditModal = modals.closeEdit;
     </script>
-  </body>
+</body>
+
 </html>

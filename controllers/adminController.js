@@ -1,4 +1,5 @@
 import { config } from 'dotenv';
+import { User } from '../models/userModel.js';  // Note: importing from userModel.js instead of User.js
 
 
 config()
@@ -62,9 +63,15 @@ export const getproductPage = (req, res) => {
 }
 
 
-export const getuserPage = (req, res) => {
-    res.render("admin/userList")
-}
+export const getuserPage = async (req, res) => {
+    try {
+        const users = await User.find({}).sort({ createdAt: -1 });
+        res.render('admin/userList', { users });
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).redirect('/admin/userList?error=' + encodeURIComponent('Failed to fetch users'));
+    }
+};
 
 export const getcategoryPage = (req, res) => {
     res.render("admin/category")

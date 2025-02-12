@@ -1,16 +1,33 @@
 import Category from '../models/Category.js'
+
 const categoryController = {
     // Render category management page
     getCategories: async (req, res) => {
         try {
             const categories = await Category.find({}).sort({ createdAt: -1 });
-            res.render('admin/category', { categories });
+            console.log('Fetched categories:', categories); // Debug log
+            
+            // Add more detailed error handling
+            if (!categories) {
+                console.log('No categories found');
+                return res.render('admin/category', { categories: [] });
+            }
+            
+            res.render('admin/category', { 
+                categories,
+                error: null,
+                success: null 
+            });
         } catch (error) {
-            res.status(500).redirect('/admin/category?error=' + encodeURIComponent('Failed to fetch categories'));
+            console.error('Error in getCategories:', error);
+            res.status(500).render('admin/category', { 
+                categories: [],
+                error: 'Failed to fetch categories',
+                success: null
+            });
         }
     },
 
-    // Add new category
     addCategory: async (req, res) => {
         try {
             const { categoryName, categoryDescription } = req.body;
