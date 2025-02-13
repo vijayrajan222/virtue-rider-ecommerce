@@ -4,17 +4,19 @@ const categoryController = {
     // Render category management page
     getCategories: async (req, res) => {
         try {
+            // Add debug logs
+            console.log('Fetching categories...');
             const categories = await Category.find({}).sort({ createdAt: -1 });
-            console.log('Fetched categories:', categories); // Debug log
-            
-            // Add more detailed error handling
-            if (!categories) {
-                console.log('No categories found');
-                return res.render('admin/category', { categories: [] });
+            console.log('Found categories:', categories); // Check if data is being fetched
+
+            // Check if categories exist
+            if (!categories || categories.length === 0) {
+                console.log('No categories found in database');
             }
-            
+
+            // Pass the categories to the view
             res.render('admin/category', { 
-                categories,
+                categories: categories || [], // Ensure categories is always defined
                 error: null,
                 success: null 
             });
@@ -23,7 +25,7 @@ const categoryController = {
             res.status(500).render('admin/category', { 
                 categories: [],
                 error: 'Failed to fetch categories',
-                success: null
+                success: null 
             });
         }
     },

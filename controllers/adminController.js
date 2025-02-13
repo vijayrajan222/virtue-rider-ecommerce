@@ -1,6 +1,5 @@
 import { config } from 'dotenv';
-import { User } from '../models/userModel.js';  // Note: importing from userModel.js instead of User.js
-
+import { User } from '../models/userModel.js'; 
 
 config()
 
@@ -41,12 +40,20 @@ export const login = async (req, res) => {
 
 
 export const getdashboard = async (req, res) => {
-    if (req.session.admin) {
-        try {
-            res.render("dashboard")
-        } catch (error) {
-            res.redirect("pageerror")
-        }
+    try {
+        // You can add queries here to get actual data
+        const data = {
+            totalUsers: 0,
+            totalOrders: 0,
+            totalProducts: 0,
+            totalRevenue: 0,
+            recentOrders: []
+        };
+        
+        res.render("admin/dashboard", { data });
+    } catch (error) {
+        console.error("Dashboard Error:", error);
+        res.status(500).send("Error loading dashboard");
     }
 }
 
