@@ -1,31 +1,35 @@
 import Category from '../models/Category.js'
+import mongoose from 'mongoose'
 
 const categoryController = {
     // Render category management page
     getCategories: async (req, res) => {
         try {
-            // Add debug logs
-            console.log('Fetching categories...');
-            const categories = await Category.find({}).sort({ createdAt: -1 });
-            console.log('Found categories:', categories); // Check if data is being fetched
-
-            // Check if categories exist
-            if (!categories || categories.length === 0) {
-                console.log('No categories found in database');
+            // Check connection state
+            if (mongoose.connection.readyState !== 1) {
+                throw new Error('Database connection not ready');
             }
 
-            // Pass the categories to the view
+            console.log('Fetching categories...');
+            const categories = await Category.find({})
+                .sort({ createdAt: -1 })
+                .lean();  // Convert to plain JavaScript objects
+
+            // Debug logs
+            console.log('Number of categories found:', categories.length);
+            console.log('Categories data:', JSON.stringify(categories, null, 2));
+
             res.render('admin/category', { 
-                categories: categories || [], // Ensure categories is always defined
+                categories: categories,
                 error: null,
-                success: null 
+                title: 'Category Management'
             });
         } catch (error) {
             console.error('Error in getCategories:', error);
-            res.status(500).render('admin/category', { 
+            res.render('admin/category', { 
                 categories: [],
-                error: 'Failed to fetch categories',
-                success: null 
+                error: 'Failed to fetch categories. Please try again.',
+                title: 'Category Management'
             });
         }
     },
