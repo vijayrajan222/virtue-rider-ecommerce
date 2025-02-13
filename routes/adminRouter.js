@@ -27,7 +27,7 @@ adminRouter.get('/userList', getuserPage)
 adminRouter.get('/category', categoryController.getCategories);
 adminRouter.post('/category/add', categoryController.addCategory);
 adminRouter.post('/category/edit', categoryController.editCategory);
-adminRouter.get('/category/toggle', categoryController.toggleCategory);
+adminRouter.delete('/category/delete/:id', categoryController.deleteCategory);
 
 adminRouter.get('/sales-report',getsalesReport)
 

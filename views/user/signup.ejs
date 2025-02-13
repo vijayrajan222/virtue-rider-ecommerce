@@ -137,10 +137,39 @@
         </form>
 
         <!-- General Error Message -->
-        <p
-          id="generalError"
-          class="text-[#9B1C1C] text-xs mt-2 text-center"
-        ></p>
+        <div id="generalError" class="text-red-600 text-sm text-center mt-4 hidden"></div>
+
+        <!-- Loading Spinner -->
+        <div id="loading-spinner" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div class="bg-white p-5 rounded-lg flex flex-col items-center">
+                <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-3"></div>
+                <p class="text-gray-700">Processing...</p>
+            </div>
+        </div>
+
+        <!-- OTP Modal -->
+        <div id="otpModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div class="bg-white p-8 rounded-lg w-96">
+                <h3 class="text-xl font-semibold mb-4">Enter OTP</h3>
+                <p class="text-sm text-gray-600 mb-4">
+                    Please enter the 6-digit code sent to your email.
+                </p>
+                <div class="flex gap-2 mb-4">
+                    <% for(let i = 0; i < 6; i++) { %>
+                        <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center border rounded-lg text-xl" />
+                    <% } %>
+                </div>
+                <p id="otpError" class="text-red-600 text-sm mb-4 hidden"></p>
+                <button id="verifyOtp" class="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-800">
+                    Verify OTP
+                </button>
+                <div class="text-center mt-4">
+                    <button id="resendOtp" class="text-blue-600 hover:underline">Resend OTP</button>
+                    <div id="resendTimer" class="text-sm text-gray-600 mt-1 hidden"></div>
+                    <p id="resendMessage" class="text-sm mt-1 hidden"></p>
+                </div>
+            </div>
+        </div>
 
         <!-- Google Sign in -->
         <div id="google-auth-div">
@@ -155,86 +184,6 @@
           >
             <i class="fa-brands fa-google fa-lg" style="color: #b12020"></i>
           </a>
-        </div>
-
-        <!-- Add this right after your form -->
-        <div id="loading-spinner" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div class="bg-white p-5 rounded-lg flex flex-col items-center">
-            <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-3"></div>
-            <p class="text-gray-700">Sending OTP...</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- OTP Modal -->
-    <div
-      id="otpModal"
-      class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center"
-    >
-      <div class="bg-white p-8 rounded-lg shadow-xl w-96">
-        <h3 class="text-xl font-semibold mb-4">Enter OTP</h3>
-        <p class="text-sm text-gray-600 mb-4">
-          Please enter the OTP sent to your email
-        </p>
-
-        <!-- OTP Error Message -->
-        <p id="otpError" class="text-[#9B1C1C] text-xs mt-1 mb-3 hidden"></p>
-
-        <div class="flex gap-2 mb-4">
-          <input
-            type="text"
-            maxlength="1"
-            class="otp-input w-12 h-12 text-center border-2 rounded-lg"
-          />
-          <input
-            type="text"
-            maxlength="1"
-            class="otp-input w-12 h-12 text-center border-2 rounded-lg"
-          />
-          <input
-            type="text"
-            maxlength="1"
-            class="otp-input w-12 h-12 text-center border-2 rounded-lg"
-          />
-          <input
-            type="text"
-            maxlength="1"
-            class="otp-input w-12 h-12 text-center border-2 rounded-lg"
-          />
-          <input
-            type="text"
-            maxlength="1"
-            class="otp-input w-12 h-12 text-center border-2 rounded-lg"
-          />
-          <input
-            type="text"
-            maxlength="1"
-            class="otp-input w-12 h-12 text-center border-2 rounded-lg"
-          />
-        </div>
-
-        <button
-          id="verifyOtp"
-          class="w-full py-3 bg-black text-white font-semibold rounded-lg hover:bg-gray-800"
-        >
-          Verify OTP
-        </button>
-
-        <div class="text-center mt-4">
-          <button id="resendOtp" class="text-blue-600 hover:underline">
-            Resend OTP
-          </button>
-          <div id="resendTimer" class="text-sm text-gray-600 mt-1 hidden"></div>
-          <p id="resendMessage" class="text-[#9B1C1C] text-xs mt-1 hidden"></p>
-        </div>
-
-        <!-- OTP Verification Loading Spinner -->
-        <div id="otp-loading-spinner" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div class="bg-white p-5 rounded-lg flex flex-col items-center">
-            <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-3"></div>
-            <p class="text-gray-700">Verifying OTP...</p>
-          </div>
         </div>
       </div>
     </div>
