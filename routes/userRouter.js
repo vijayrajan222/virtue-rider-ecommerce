@@ -6,12 +6,12 @@ import {
     getsignUpPage, 
     getforgotPasswordPage 
 } from '../controllers/user/userController.js';
-import { postSignUp } from '../controllers/user/authController.js';
+import { postSignUp, verifyOTP, resendOTP } from '../controllers/user/authController.js';
 
 const userRouter = express.Router();
 
-// Page routes - remove /user prefix
-userRouter.get('/', gethomePage);  // Root route
+// Page routes
+userRouter.get('/', gethomePage);
 userRouter.get('/signup', getsignUpPage);
 userRouter.get('/login', getloginPage);
 userRouter.get('/about', getAboutPage);
@@ -20,6 +20,8 @@ userRouter.get('/forgotPassword', getforgotPasswordPage);
 
 // Auth routes
 userRouter.post('/signup', postSignUp);
+userRouter.post('/verify-otp', verifyOTP);
+userRouter.post('/resend-otp', resendOTP);
 
 // We'll add OTP verification route later
 // userRouter.post('/validate-otp', postOtp);

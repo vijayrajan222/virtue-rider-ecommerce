@@ -38,10 +38,40 @@ app.use('/', userRouter);
 // Database connection
 connectDB();
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});  
+// Dynamic port selection with error handling
+const startServer = async (retries = 0) => {
+    const maxRetries = 5;
+    const basePort = 3000;
+    const port = basePort + retries;
+
+    try {
+        const server = app.listen(port, () => {
+            console.log(`Server is running on port ${port}`);
+        });
+
+        server.on('error', (error) => {
+            if (error.code === 'EADDRINUSE') {
+                console.log(`Port ${port} is in use, trying port ${port + 1}`);
+                if (retries < maxRetries) {
+                    server.close();
+                    startServer(retries + 1);
+                } else {
+                    console.error('No available ports found after maximum retries');
+                    process.exit(1);
+                }
+            } else {
+                console.error('Server error:', error);
+                process.exit(1);
+            }
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+};
+
+// Start the server
+startServer();  
 
 
 

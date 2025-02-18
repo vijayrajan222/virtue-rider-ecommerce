@@ -10,6 +10,14 @@ export const postSignUp = async (req, res) => {
         const { firstName, lastName, email, password } = req.body;
         console.log('Received signup data:', { firstName, lastName, email });
 
+        // Validate input
+        if (!firstName || !lastName || !email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'All fields are required'
+            });
+        }
+
         // Check if user exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -21,13 +29,7 @@ export const postSignUp = async (req, res) => {
 
         // Generate OTP
         const otp = generateOTP();
-        console.log('Generated OTP:', otp); // For debugging
-
-        // Send OTP email
-        const emailSent = await sendOTPEmail(email, otp);
-        if (!emailSent) {
-            throw new Error('Failed to send verification email');
-        }
+        console.log('Generated OTP:', otp);
 
         // Hash password
         const salt = await bcrypt.genSalt(10);
@@ -37,7 +39,7 @@ export const postSignUp = async (req, res) => {
         const newUser = new User({
             firstname: firstName,
             lastname: lastName,
-            email: email,
+            email: email.toLowerCase(),
             password: hashedPassword,
             verificationToken: otp,
             verificationTokenExpiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
@@ -46,10 +48,15 @@ export const postSignUp = async (req, res) => {
         await newUser.save();
         console.log('User saved successfully');
 
+        // Send OTP email
+        const emailSent = await sendOTPEmail(email, otp);
+        if (!emailSent) {
+            throw new Error('Failed to send verification email');
+        }
+
         res.status(200).json({
             success: true,
-            message: 'OTP sent to your email',
-            redirectUrl: '/login'
+            message: 'OTP sent to your email'
         });
 
     } catch (error) {
@@ -204,3 +211,87 @@ export const logout = async (req, res) => {
         res.redirect('/login');
     })
 }
+
+export const verifyOTP = async (req, res) => {
+    try {
+        console.log('Received OTP verification request:', req.body);
+        const { email, otp } = req.body;
+
+        if (!email || !otp) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email and OTP are required'
+            });
+        }
+
+        const user = await User.findOne({
+            email: email.toLowerCase(),
+            verificationToken: otp,
+            verificationTokenExpiresAt: { $gt: new Date() }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid or expired OTP'
+            });
+        }
+
+        // Update user verification status
+        user.isVerified = true;
+        user.verificationToken = undefined;
+        user.verificationTokenExpiresAt = undefined;
+        await user.save();
+
+        console.log('User verified successfully');
+
+        res.status(200).json({
+            success: true,
+            message: 'Email verified successfully',
+            redirectUrl: '/login'
+        });
+
+    } catch (error) {
+        console.error('OTP verification error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to verify OTP'
+        });
+    }
+};
+
+export const resendOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        const newOTP = generateOTP();
+        user.verificationToken = newOTP;
+        user.verificationTokenExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+        await user.save();
+
+        const emailSent = await sendOTPEmail(email, newOTP);
+        if (!emailSent) {
+            throw new Error('Failed to send verification email');
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'OTP resent successfully'
+        });
+
+    } catch (error) {
+        console.error('Resend OTP error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to resend OTP'
+        });
+    }
+};
