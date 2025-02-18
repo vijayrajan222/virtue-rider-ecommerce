@@ -31,7 +31,6 @@
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Category Name</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Description</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Actions</th>
             </tr>
           </thead>
@@ -57,22 +56,10 @@
                     <%= category.description || 'No description' %>
                   </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      <%= category.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
-                    <%= category.isActive ? 'Active' : 'Inactive' %>
-                  </span>
-                </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button onclick="editCategory('<%= category._id %>')"
                           class="text-blue-400 hover:text-blue-300 mr-3">
                     <i class="material-icons">edit</i>
-                  </button>
-                  <button onclick="toggleStatus('<%= category._id %>', <%= category.isActive %>)"
-                          class="text-orange-500 hover:text-orange-400 mr-3">
-                    <i class="material-icons">
-                      <%= category.isActive ? 'visibility_off' : 'visibility' %>
-                    </i>
                   </button>
                   <button onclick="deleteCategory('<%= category._id %>')"
                           class="text-red-400 hover:text-red-300">
@@ -91,23 +78,23 @@
   <div id="categoryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
     <div class="bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4">
       <h2 id="modalTitle" class="text-xl font-semibold text-gray-200 mb-6">Add New Category</h2>
-      <form id="categoryForm" onsubmit="handleSubmit(event)">
-        <input type="hidden" id="categoryId">
+      <form id="categoryForm" onsubmit="handleSubmit(event)" enctype="multipart/form-data">
+        <input type="hidden" id="categoryId" name="categoryId">
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-400 mb-1">Category Name</label>
-            <input type="text" id="categoryName" required
+            <input type="text" id="categoryName" name="name" required
                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-400 mb-1">Description</label>
-            <textarea id="categoryDescription"
+            <textarea id="categoryDescription" name="description"
                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500"
                       rows="3"></textarea>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-400 mb-1">Image</label>
-            <input type="file" id="categoryImage" accept="image/*"
+            <input type="file" id="categoryImage" name="image" accept="image/*"
                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
           </div>
         </div>
@@ -141,19 +128,99 @@
 
     async function handleSubmit(event) {
       event.preventDefault();
-      // Add your form submission logic here
+      const formData = new FormData(event.target);
+      const categoryId = document.getElementById('categoryId').value;
+      
+      try {
+        const url = categoryId ? `/admin/categories/${categoryId}` : '/admin/categories';
+        const method = categoryId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+          method: method,
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save category');
+        }
+
+        await Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: `Category ${categoryId ? 'updated' : 'added'} successfully`,
+          confirmButtonColor: '#FF6B00'
+        });
+
+        window.location.reload();
+      } catch (error) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: error.message,
+          confirmButtonColor: '#FF6B00'
+        });
+      }
     }
 
     async function editCategory(id) {
-      // Add your edit logic here
-    }
+      try {
+        const response = await fetch(`/admin/categories/${id}`);
+        const category = await response.json();
 
-    async function toggleStatus(id, currentStatus) {
-      // Add your status toggle logic here
+        document.getElementById('categoryId').value = category._id;
+        document.getElementById('categoryName').value = category.name;
+        document.getElementById('categoryDescription').value = category.description || '';
+        document.getElementById('modalTitle').textContent = 'Edit Category';
+        
+        openAddModal();
+      } catch (error) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: 'Failed to load category details',
+          confirmButtonColor: '#FF6B00'
+        });
+      }
     }
 
     async function deleteCategory(id) {
-      // Add your delete logic here
+      try {
+        const result = await Swal.fire({
+          title: 'Are you sure?',
+          text: "You won't be able to revert this!",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#FF6B00',
+          cancelButtonColor: '#374151',
+          confirmButtonText: 'Yes, delete it!'
+        });
+
+        if (result.isConfirmed) {
+          const response = await fetch(`/admin/categories/${id}`, {
+            method: 'DELETE'
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to delete category');
+          }
+
+          await Swal.fire({
+            icon: 'success',
+            title: 'Deleted!',
+            text: 'Category has been deleted.',
+            confirmButtonColor: '#FF6B00'
+          });
+
+          window.location.reload();
+        }
+      } catch (error) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: error.message,
+          confirmButtonColor: '#FF6B00'
+        });
+      }
     }
   </script>
 </body>

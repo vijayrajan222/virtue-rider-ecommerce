@@ -1,7 +1,7 @@
 import { config } from 'dotenv';
 import { User } from '../models/userModel.js';
 import { Product } from '../models/productModel.js';
-import { Category } from '../models/categoryModel.js';
+import Category from '../models/categoryModel.js';
 import { Order } from '../models/orderModel.js';
 
 config();
@@ -172,48 +172,84 @@ export const postAddProduct = async (req, res) => {
 export const getCategories = async (req, res) => {
     try {
         const categories = await Category.find();
-        res.render('admin/category', { 
-            categories,
-            path: '/admin/categories'
+        res.render('admin/category', { categories, path: '/admin/categories' });
+    } catch (error) {
+        console.error('Error fetching categories:', error);
+        res.status(500).json({ error: 'Failed to fetch categories' });
+    }
+};
+
+export const createCategory = async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const image = req.file ? `/uploads/${req.file.filename}` : null;
+
+        const newCategory = new Category({
+            name,
+            description,
+            image
         });
-    } catch (error) {
-        console.error("Error fetching categories:", error);
-        res.status(500).send("Error loading categories");
-    }
-};
 
-export const addCategory = async (req, res) => {
-    try {
-        const { name, description } = req.body;
-        const newCategory = new Category({ name, description });
         await newCategory.save();
-        res.json({ success: true });
+        res.status(201).json({ success: true, category: newCategory });
     } catch (error) {
-        console.error("Error adding category:", error);
-        res.status(500).json({ success: false });
+        console.error('Error creating category:', error);
+        res.status(500).json({ error: 'Failed to create category' });
     }
 };
 
-export const editCategory = async (req, res) => {
+export const getCategoryById = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { name, description } = req.body;
-        await Category.findByIdAndUpdate(id, { name, description });
-        res.json({ success: true });
+        const category = await Category.findById(req.params.id);
+        if (!category) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+        res.json(category);
     } catch (error) {
-        console.error("Error editing category:", error);
-        res.status(500).json({ success: false });
+        console.error('Error fetching category:', error);
+        res.status(500).json({ error: 'Failed to fetch category' });
+    }
+};
+
+export const updateCategory = async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const updateData = {
+            name,
+            description
+        };
+
+        if (req.file) {
+            updateData.image = `/uploads/${req.file.filename}`;
+        }
+
+        const category = await Category.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true }
+        );
+
+        if (!category) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+
+        res.json({ success: true, category });
+    } catch (error) {
+        console.error('Error updating category:', error);
+        res.status(500).json({ error: 'Failed to update category' });
     }
 };
 
 export const deleteCategory = async (req, res) => {
     try {
-        const { id } = req.params;
-        await Category.findByIdAndDelete(id);
+        const category = await Category.findByIdAndDelete(req.params.id);
+        if (!category) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
         res.json({ success: true });
     } catch (error) {
-        console.error("Error deleting category:", error);
-        res.status(500).json({ success: false });
+        console.error('Error deleting category:', error);
+        res.status(500).json({ error: 'Failed to delete category' });
     }
 };
 

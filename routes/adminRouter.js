@@ -13,8 +13,9 @@ import {
     postEditProduct,
     deleteProduct,
     getCategories,
-    addCategory,
-    editCategory,
+    createCategory,
+    getCategoryById,
+    updateCategory,
     deleteCategory,
     getOrders,
     updateOrderStatus,
@@ -24,7 +25,7 @@ import {
     logout
 } from '../controllers/adminController.js';
 import { isAdminAuth } from '../middleware/adminAuth.js';
-import upload from '../config/multer.js';
+import upload from '../middleware/multerConfig.js';
 
 const router = express.Router();
 
@@ -54,8 +55,9 @@ router.delete('/products/:id', deleteProduct);
 
 // Category Management
 router.get('/categories', getCategories);
-router.post('/categories', addCategory);
-router.put('/categories/:id', editCategory);
+router.post('/categories', upload.single('image'), createCategory);
+router.get('/categories/:id', getCategoryById);
+router.put('/categories/:id', upload.single('image'), updateCategory);
 router.delete('/categories/:id', deleteCategory);
 
 // Order Management
