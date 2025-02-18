@@ -4,411 +4,158 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manage Categories</title>
+  <title>Categories - Virtue Rider</title>
   <link rel="stylesheet" href="/tailwindcss/output.css" />
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
-<body class="mybg-green text-white min-h-screen flex flex-col">
+<body class="bg-gray-900">
   <%- include('../partials/sidebar') %>
 
-    <!-- Main Content -->
-    <div class="lg:ml-64 transition-all" id="main-content">
-      <header class="flex items-center justify-between mb-8 p-4 lg:p-8 border-b border-gray-700">
-        <button id="toggleSidebar" class="text-white lg:hidden">
+  <div class="p-2 sm:ml-64">
+    <header class="flex items-center justify-between mb-8 p-4 lg:p-8 border-b border-gray-800">
+      <h1 class="text-2xl font-semibold text-gray-200">Category Management</h1>
+      <button onclick="openAddModal()" 
+              class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors">
+        <i class="material-icons align-middle">add</i>
+        Add Category
+      </button>
+    </header>
 
-        </button>
-        <h1 class="text-2xl font-semibold text-gray-200">Category Management</h1>
-      </header>
-      <main class="p-4 lg:p-8">
-        <div class="bg-zinc-800 rounded-lg p-4 sm:p-6">
-          <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-200">Manage Categories</h1>
-            <button onclick="openAddModal()"
-              class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto flex items-center justify-center gap-2">
-              <i class="fas fa-plus"></i>
-              <span>Add Category</span>
-            </button>
-          </header>
+    <!-- Categories Table -->
+    <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden mx-4 border border-gray-700">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-700">
+          <thead class="bg-gray-900">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Category Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Description</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-700">
+            <% categories.forEach(category => { %>
+              <tr class="hover:bg-gray-700 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="h-10 w-10 flex-shrink-0">
+                      <img class="h-10 w-10 rounded-lg object-cover" 
+                           src="<%= category.image %>" 
+                           alt="<%= category.name %>">
+                    </div>
+                    <div class="ml-4">
+                      <div class="text-sm font-medium text-gray-200">
+                        <%= category.name %>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="text-sm text-gray-200">
+                    <%= category.description || 'No description' %>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                      <%= category.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                    <%= category.isActive ? 'Active' : 'Inactive' %>
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <button onclick="editCategory('<%= category._id %>')"
+                          class="text-blue-400 hover:text-blue-300 mr-3">
+                    <i class="material-icons">edit</i>
+                  </button>
+                  <button onclick="toggleStatus('<%= category._id %>', <%= category.isActive %>)"
+                          class="text-orange-500 hover:text-orange-400 mr-3">
+                    <i class="material-icons">
+                      <%= category.isActive ? 'visibility_off' : 'visibility' %>
+                    </i>
+                  </button>
+                  <button onclick="deleteCategory('<%= category._id %>')"
+                          class="text-red-400 hover:text-red-300">
+                    <i class="material-icons">delete</i>
+                  </button>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-          
-
-            <!-- Main Table -->
-            <div class="bg-zinc-800 rounded-lg overflow-hidden">
-                <table class="min-w-full divide-y divide-gray-700">
-                    <thead class="bg-zinc-900">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Name</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Description</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-zinc-800 divide-y divide-gray-700">
-                        <% if (categories && categories.length > 0) { %>
-                            <% categories.forEach(function(category) { %>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                                        <%= category.name %>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-300">
-                                        <%= category.description %>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                            <%= category.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
-                                            <%= category.isActive ? 'Active' : 'Inactive' %>
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <button onclick="openEditModal('<%= category._id %>', '<%= category.name %>', '<%= category.description %>')"
-                                                class="text-blue-400 hover:text-blue-300 mr-3" title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="confirmDelete('<%= category._id %>')"
-                                                class="text-red-400 hover:text-red-300" title="Delete">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            <% }); %>
-                        <% } else { %>
-                            <tr>
-                                <td colspan="4" class="px-6 py-4 text-center text-gray-300">
-                                    No categories found
-                                </td>
-                            </tr>
-                        <% } %>
-                    </tbody>
-                </table>
-            </div>
+  <!-- Add/Edit Category Modal -->
+  <div id="categoryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4">
+      <h2 id="modalTitle" class="text-xl font-semibold text-gray-200 mb-6">Add New Category</h2>
+      <form id="categoryForm" onsubmit="handleSubmit(event)">
+        <input type="hidden" id="categoryId">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1">Category Name</label>
+            <input type="text" id="categoryName" required
+                   class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1">Description</label>
+            <textarea id="categoryDescription"
+                      class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500"
+                      rows="3"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1">Image</label>
+            <input type="file" id="categoryImage" accept="image/*"
+                   class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
           </div>
         </div>
-      </main>
+        <div class="mt-6 flex justify-end space-x-3">
+          <button type="button" onclick="closeModal()"
+                  class="px-4 py-2 bg-gray-600 text-gray-200 rounded-lg hover:bg-gray-700 transition-colors">
+            Cancel
+          </button>
+          <button type="submit"
+                  class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+            Save
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 
-    <!-- Modals -->
-    <div id="addModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-zinc-900 p-6 rounded-lg w-full max-w-md">
-        <h2 class="text-xl font-bold text-gray-200 mb-4">Add Category</h2>
-        <form id="addCategoryForm" action="/admin/category/add" method="POST">
-          <input type="text" name="categoryName" placeholder="Category Name"
-            class="w-full p-2 mb-4 bg-zinc-800 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-gray-200"
-            required />
-          <textarea name="categoryDescription" placeholder="Category Description"
-            class="w-full p-2 mb-4 bg-zinc-800 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-gray-200 min-h-[100px]"
-            required></textarea>
-          <div class="flex flex-col sm:flex-row justify-end gap-3">
-            <button type="button" onclick="closeAddModal()"
-              class="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto">
-              Cancel
-            </button>
-            <button type="submit"
-              class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto">
-              Add
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+  <script>
+    function openAddModal() {
+      document.getElementById('modalTitle').textContent = 'Add New Category';
+      document.getElementById('categoryForm').reset();
+      document.getElementById('categoryId').value = '';
+      document.getElementById('categoryModal').classList.remove('hidden');
+      document.getElementById('categoryModal').classList.add('flex');
+    }
 
-    <!-- Edit Category Modal -->
-    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div class="bg-gray-800 p-6 rounded-lg w-96">
-        <h2 class="text-xl font-bold text-gray-200 mb-4">Edit Category</h2>
-        <form id="editCategoryForm" action="/admin/category/edit" method="POST">
-          <input type="hidden" name="categoryId" id="editCategoryId" />
-          <input type="text" name="categoryName" id="editCategoryName" placeholder="Category Name"
-            class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded" required />
-          <textarea name="categoryDescription" id="editCategoryDescription" placeholder="Category Description"
-            class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded" required></textarea>
-          <div class="flex justify-end space-x-4">
-            <button type="button" onclick="closeEditModal()" class="bg-gray-600 text-white px-4 py-2 rounded-lg">
-              Cancel
-            </button>
-            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg">
-              Update
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    function closeModal() {
+      document.getElementById('categoryModal').classList.add('hidden');
+      document.getElementById('categoryModal').classList.remove('flex');
+    }
 
-    <!-- Add a loading spinner -->
-    <div id="loadingSpinner" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500"></div>
-    </div>
+    async function handleSubmit(event) {
+      event.preventDefault();
+      // Add your form submission logic here
+    }
 
-    <script>
-      // Utility functions for modal and loading management
-      const utils = {
-        toggleLoading: (show) => {
-          document.getElementById('loadingSpinner').classList.toggle('hidden', !show);
-        },
+    async function editCategory(id) {
+      // Add your edit logic here
+    }
 
-        showAlert: ({ title, text, icon = 'success', confirmButtonColor = '#3B82F6' }) => {
-          return Swal.fire({ title, text, icon, confirmButtonColor });
-        },
+    async function toggleStatus(id, currentStatus) {
+      // Add your status toggle logic here
+    }
 
-        handleApiError: async (response) => {
-          const error = await response.text();
-          throw new Error(error || 'Something went wrong');
-        },
-
-        validateInput: (value) => {
-          return value.trim().length > 0;
-        }
-      };
-
-      // Modal management
-      const modals = {
-        toggle: (modalId, show) => {
-          document.getElementById(modalId).classList.toggle('hidden', !show);
-        },
-
-        openAdd: () => modals.toggle('addModal', true),
-        closeAdd: () => modals.toggle('addModal', false),
-
-        openEdit: (id, name, description) => {
-          document.getElementById('editCategoryId').value = id;
-          document.getElementById('editCategoryName').value = name;
-          document.getElementById('editCategoryDescription').value = description;
-          modals.toggle('editModal', true);
-        },
-        closeEdit: () => modals.toggle('editModal', false)
-      };
-
-      // Form submission handlers
-      const submitHandlers = {
-        async handleSubmit(url, formData, successMessage) {
-          const description = formData.get('categoryDescription');
-
-          if (!utils.validateInput(description)) {
-            await utils.showAlert({
-              title: 'Error!',
-              text: 'Description cannot be empty or contain only spaces',
-              icon: 'error',
-              confirmButtonColor: '#EF4444'
-            });
-            return;
-          }
-
-          utils.toggleLoading(true);
-
-          try {
-            const response = await fetch(url, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-              body: new URLSearchParams(formData)
-            });
-
-            if (!response.ok) await utils.handleApiError(response);
-
-            await utils.showAlert({
-              title: 'Success!',
-              text: successMessage
-            });
-
-            window.location.reload();
-          } catch (error) {
-            await utils.showAlert({
-              title: 'Error!',
-              text: error.message,
-              icon: 'error',
-              confirmButtonColor: '#EF4444'
-            });
-          } finally {
-            utils.toggleLoading(false);
-          }
-        }
-      };
-
-      // Event Listeners
-      document.addEventListener('DOMContentLoaded', () => {
-        // Form submissions
-        document.getElementById('addCategoryForm').addEventListener('submit', async function (e) {
-          e.preventDefault();
-          await submitHandlers.handleSubmit(
-            '/admin/category/add',
-            new FormData(this),
-            'Category added successfully'
-          );
-        });
-
-        document.getElementById('editCategoryForm').addEventListener('submit', async function (e) {
-          e.preventDefault();
-          await submitHandlers.handleSubmit(
-            '/admin/category/edit',
-            new FormData(this),
-            'Category updated successfully'
-          );
-        });
-
-        // Check URL params for messages
-        const urlParams = new URLSearchParams(window.location.search);
-        ['success', 'error'].forEach(type => {
-          const message = urlParams.get(type);
-          if (message) {
-            utils.showAlert({
-              title: type.charAt(0).toUpperCase() + type.slice(1) + '!',
-              text: decodeURIComponent(message),
-              icon: type,
-              confirmButtonColor: type === 'success' ? '#3B82F6' : '#EF4444'
-            });
-          }
-        });
-      });
-
-      // Toggle confirmation
-      function confirmToggleCategory(categoryId, isActive) {
-        const action = isActive ? 'hide' : 'show';
-        const message = isActive ?
-          "This category will be hidden from users. Continue?" :
-          "This category will be visible to users. Continue?";
-
-        Swal.fire({
-          title: `${action.charAt(0).toUpperCase() + action.slice(1)} Category?`,
-          text: message,
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#000000',
-          cancelButtonColor: '#6B7280',
-          confirmButtonText: 'Yes',
-          cancelButtonText: 'Cancel'
-        }).then(async (result) => {
-          if (result.isConfirmed) {
-            utils.toggleLoading(true);
-            try {
-              const response = await fetch(`/admin/category/toggle?id=${categoryId}`);
-              if (!response.ok) await utils.handleApiError(response);
-
-              await utils.showAlert({
-                title: 'Success!',
-                text: `Category ${action}n successfully.`
-              });
-
-              window.location.reload();
-            } catch (error) {
-              await utils.showAlert({
-                title: 'Error!',
-                text: error.message,
-                icon: 'error',
-                confirmButtonColor: '#EF4444'
-              });
-            } finally {
-              utils.toggleLoading(false);
-            }
-          }
-        });
-      }
-
-      // Update button onclick handlers to use new modal functions
-      window.openAddModal = modals.openAdd;
-      window.closeAddModal = modals.closeAdd;
-      window.openEditModal = modals.openEdit;
-      window.closeEditModal = modals.closeEdit;
-
-      // Add delete confirmation function
-      function confirmDelete(categoryId) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#EF4444',
-            cancelButtonColor: '#6B7280',
-            confirmButtonText: 'Yes, delete it!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                deleteCategory(categoryId);
-            }
-        });
-      }
-
-      // Add delete function
-      async function deleteCategory(categoryId) {
-        try {
-            const response = await fetch(`/admin/category/delete/${categoryId}`, {
-                method: 'DELETE'
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to delete category');
-            }
-
-            Swal.fire({
-                title: 'Deleted!',
-                text: 'Category has been deleted.',
-                icon: 'success',
-                confirmButtonColor: '#10B981'
-            }).then(() => {
-                window.location.reload();
-            });
-        } catch (error) {
-            console.error('Error:', error);
-            Swal.fire({
-                title: 'Error!',
-                text: 'Failed to delete category',
-                icon: 'error',
-                confirmButtonColor: '#EF4444'
-            });
-        }
-      }
-
-      // Update edit modal function
-      function openEditModal(id, name, description) {
-        document.getElementById('modalTitle').textContent = 'Edit Category';
-        document.getElementById('categoryId').value = id;
-        document.getElementById('categoryName').value = name;
-        document.getElementById('categoryDescription').value = description;
-        document.getElementById('categoryModal').classList.remove('hidden');
-      }
-
-      // Update form submission handler
-      async function handleSubmit(event) {
-        event.preventDefault();
-        const id = document.getElementById('categoryId').value;
-        const formData = {
-            categoryId: id,
-            categoryName: document.getElementById('categoryName').value,
-            categoryDescription: document.getElementById('categoryDescription').value
-        };
-
-        try {
-            const url = id ? '/admin/category/edit' : '/admin/category/add';
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to save category');
-            }
-
-            Swal.fire({
-                title: 'Success!',
-                text: id ? 'Category updated successfully' : 'Category added successfully',
-                icon: 'success',
-                confirmButtonColor: '#10B981'
-            }).then(() => {
-                window.location.reload();
-            });
-        } catch (error) {
-            console.error('Error:', error);
-            Swal.fire({
-                title: 'Error!',
-                text: 'Failed to save category',
-                icon: 'error',
-                confirmButtonColor: '#EF4444'
-            });
-        }
-      }
-    </script>
+    async function deleteCategory(id) {
+      // Add your delete logic here
+    }
+  </script>
 </body>
 
 </html>

@@ -84,14 +84,29 @@ export const getDashboard = async (req, res) => {
 // User Management Controllers
 export const getUsers = async (req, res) => {
     try {
-        const users = await User.find({}).sort({ createdAt: -1 });
-        res.render('admin/userList', { 
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10; // Users per page
+        const skip = (page - 1) * limit;
+
+        const totalUsers = await User.countDocuments();
+        const totalPages = Math.ceil(totalUsers / limit);
+
+        const users = await User.find()
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        res.render('admin/userList', {
             users,
+            currentPage: page,
+            totalPages,
+            totalUsers,
+            limit,
             path: '/admin/users'
         });
     } catch (error) {
         console.error("Error fetching users:", error);
-        res.status(500).redirect('/admin/userList?error=' + encodeURIComponent('Failed to fetch users'));
+        res.status(500).send("Error loading users");
     }
 };
 
