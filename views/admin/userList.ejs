@@ -159,31 +159,56 @@
 
     async function toggleUserStatus(userId, currentStatus) {
       try {
-        const action = currentStatus ? 'unblock' : 'block';
-        const response = await fetch(`/admin/users/${userId}/${action}`, {
+        console.log('Toggling user:', userId); // Debug log
+        
+        const response = await fetch(`/admin/users/${userId}/toggle-status`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           }
         });
 
+        console.log('Response status:', response.status); // Debug log
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
+        console.log('Response data:', data); // Debug log
 
         if (data.success) {
-          await utils.showAlert({
+          // Update the UI
+          const statusSpan = document.getElementById(`status-${userId}`);
+          const toggleBtn = document.querySelector(`button[onclick*="${userId}"]`);
+          
+          if (data.isBlocked) {
+            statusSpan.className = 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800';
+            statusSpan.textContent = 'Inactive';
+            toggleBtn.textContent = 'Unblock';
+            toggleBtn.className = 'text-green-500 hover:text-green-400 transition-colors';
+          } else {
+            statusSpan.className = 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800';
+            statusSpan.textContent = 'Active';
+            toggleBtn.textContent = 'Block';
+            toggleBtn.className = 'text-orange-500 hover:text-orange-400 transition-colors';
+          }
+
+          Swal.fire({
+            icon: 'success',
             title: 'Success!',
-            text: `User ${action}ed successfully`,
-            icon: 'success'
+            text: data.message,
+            confirmButtonColor: '#FF6B00'
           });
-          window.location.reload();
-        } else {
-          throw new Error(data.message || 'Failed to update user status');
         }
       } catch (error) {
-        await utils.showAlert({
+        console.error('Error:', error);
+        Swal.fire({
+          icon: 'error',
           title: 'Error!',
-          text: error.message || 'Something went wrong',
-          icon: 'error'
+          text: error.message || 'Failed to update user status',
+          confirmButtonColor: '#FF6B00'
         });
       }
     }

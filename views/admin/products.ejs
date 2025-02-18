@@ -35,17 +35,17 @@
             <% products.forEach(product => { %>
                 <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden border border-gray-700">
                     <div class="relative aspect-w-16 aspect-h-9">
-                        <img src="<%= product.images[0] || '/images/placeholder.jpg' %>" 
+                        <img src="<%= product.variants && product.variants[0] && product.variants[0].images && product.variants[0].images[0] || '/images/placeholder.jpg' %>" 
                              alt="<%= product.name %>"
                              class="w-full h-48 object-cover">
                         <div class="absolute top-2 right-2 space-x-2">
                             <button onclick="editProduct('<%= product._id %>')"
-                                    class="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                                <i class="material-icons text-sm">edit</i>
+                                    class="p-1 bg-gray-900 bg-opacity-75 rounded-full text-gray-300 hover:text-white">
+                                <i class="material-icons text-xl">edit</i>
                             </button>
                             <button onclick="deleteProduct('<%= product._id %>')"
-                                    class="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
-                                <i class="material-icons text-sm">delete</i>
+                                    class="p-1 bg-gray-900 bg-opacity-75 rounded-full text-red-400 hover:text-red-300">
+                                <i class="material-icons text-xl">delete</i>
                             </button>
                         </div>
                     </div>
@@ -53,10 +53,11 @@
                         <h3 class="text-lg font-semibold text-gray-200 mb-2"><%= product.name %></h3>
                         <p class="text-gray-400 text-sm mb-2"><%= product.description %></p>
                         <div class="flex justify-between items-center">
-                            <div class="text-orange-500 font-bold">₹<%= product.price %></div>
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full 
-                                <%= product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
-                                <%= product.stock > 0 ? 'In Stock' : 'Out of Stock' %>
+                            <span class="text-gray-400 text-sm">
+                                <%= product.variants && product.variants.length ? `${product.variants.length} variants` : 'No variants' %>
+                            </span>
+                            <span class="text-sm font-medium text-orange-500">
+                                <%= product.variants && product.variants[0] ? `₹${product.variants[0].price}` : 'Price not set' %>
                             </span>
                         </div>
                     </div>
@@ -207,11 +208,13 @@
             
             try {
                 const formData = new FormData();
+                const productId = document.getElementById('productId').value;
                 
                 // Add basic product info
                 formData.append('name', document.getElementById('productName').value);
-                formData.append('description', document.getElementById('description').value);
+                formData.append('brand', document.getElementById('brand').value);
                 formData.append('categoryId', document.getElementById('categoryId').value);
+                formData.append('description', document.getElementById('description').value);
                 
                 // Add variants
                 const variants = [];
@@ -233,9 +236,12 @@
                 
                 formData.append('variants', JSON.stringify(variants));
 
-                const response = await fetch('/admin/products', {
-                    method: 'POST',
-                    body: formData // Don't set Content-Type header, browser will set it
+                const method = productId ? 'PUT' : 'POST';
+                const url = productId ? `/admin/products/${productId}` : '/admin/products';
+
+                const response = await fetch(url, {
+                    method,
+                    body: formData
                 });
 
                 const data = await response.json();
@@ -256,7 +262,7 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Error!',
-                    text: error.message || 'Failed to add product',
+                    text: error.message || 'Something went wrong',
                     confirmButtonColor: '#FF6B00'
                 });
             }

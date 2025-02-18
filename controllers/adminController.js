@@ -3,22 +3,8 @@ import User from '../models/userModel.js';
 import Category from '../models/categoryModel.js';
 import Product from '../models/productModel.js';
 import { Order } from '../models/orderModel.js';
-import multer from 'multer';
-import path from 'path';
 
 config();
-
-// Set up multer for file uploads
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'public/uploads/products')
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname))
-    }
-});
-
-const upload = multer({ storage: storage });
 
 // Admin Authentication Controllers
 export const getAdminLogin = (req, res) => {
@@ -99,18 +85,16 @@ export const getDashboard = async (req, res) => {
 export const getUsers = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = 10; // Users per page
+        const limit = 10;
         const skip = (page - 1) * limit;
 
-        // Get total count of users
         const totalUsers = await User.countDocuments();
         const totalPages = Math.ceil(totalUsers / limit);
 
-        // Get users for current page
         const users = await User.find()
             .skip(skip)
             .limit(limit)
-            .sort({ createdAt: -1 }); // Sort by newest first
+            .sort({ createdAt: -1 });
 
         res.render('admin/userList', { 
             users,
@@ -391,21 +375,23 @@ export const postEditProduct = async (req, res) => {
 export const deleteProduct = async (req, res) => {
     try {
         const product = await Product.findByIdAndDelete(req.params.id);
+        
         if (!product) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Product not found' 
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
             });
         }
-        res.json({ 
-            success: true, 
-            message: 'Product deleted successfully' 
+
+        res.json({
+            success: true,
+            message: 'Product deleted successfully'
         });
     } catch (error) {
-        console.error("Error deleting product:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to delete product' 
+        console.error('Error deleting product:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete product'
         });
     }
 };
@@ -464,47 +450,107 @@ export const logout = (req, res) => {
 
 export const addProduct = async (req, res) => {
     try {
-        const product = new Product(req.body);
+        console.log('Received data:', req.body);
+        
+        const { name, description, categoryId } = req.body;
+        let variants = [];
+
+        if (req.body.variants) {
+            try {
+                variants = JSON.parse(req.body.variants);
+            } catch (error) {
+                console.error('Error parsing variants:', error);
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid variant data'
+                });
+            }
+        }
+
+        // Create the product with variants
+        const product = new Product({
+            name,
+            description,
+            categoryId,
+            brand: 'VR',
+            variants: variants.map((variant, index) => ({
+                color: variant.color,
+                size: variant.size,
+                price: parseFloat(variant.price),
+                stock: parseInt(variant.stock),
+                images: req.files ? 
+                    req.files.slice(index * 3, (index + 1) * 3) // Assuming 3 images per variant
+                        .map(file => `/uploads/products/${file.filename}`) 
+                    : []
+            }))
+        });
+
         await product.save();
-        res.status(201).json({ 
-            success: true, 
+
+        res.status(201).json({
+            success: true,
             message: 'Product added successfully',
-            product 
+            product
         });
     } catch (error) {
-        console.error("Error adding product:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to add product' 
+        console.error('Error adding product:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to add product'
         });
     }
 };
 
 export const updateProduct = async (req, res) => {
     try {
-        const product = await Product.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true }
-        ).populate('categoryId');
+        const { name, description, categoryId } = req.body;
+        let variants = [];
 
+        if (req.body.variants) {
+            variants = JSON.parse(req.body.variants);
+        }
+
+        const product = await Product.findById(req.params.id);
         if (!product) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Product not found' 
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
             });
         }
 
-        res.json({ 
-            success: true, 
+        product.name = name;
+        product.description = description;
+        product.categoryId = categoryId;
+        product.variants = variants.map(variant => ({
+            color: variant.color,
+            size: variant.size,
+            price: parseFloat(variant.price),
+            stock: parseInt(variant.stock),
+            images: variant.images || []
+        }));
+
+        if (req.files && req.files.length > 0) {
+            req.files.forEach(file => {
+                const variantIndex = parseInt(file.fieldname.match(/variants\[(\d+)\]/)[1]);
+                if (product.variants[variantIndex]) {
+                    const imagePath = `/uploads/products/${file.filename}`;
+                    product.variants[variantIndex].images.push(imagePath);
+                }
+            });
+        }
+
+        await product.save();
+
+        res.json({
+            success: true,
             message: 'Product updated successfully',
-            product 
+            product
         });
     } catch (error) {
-        console.error("Error updating product:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to update product' 
+        console.error('Error updating product:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to update product'
         });
     }
 };
