@@ -1,4 +1,6 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
 import { 
     getAdminLogin,
     postAdminLogin,
@@ -23,9 +25,20 @@ import {
     logout
 } from '../controllers/adminController.js';
 import { isAdminAuth } from '../middleware/adminAuth.js';
-import upload from '../middleware/multerConfig.js';
 
 const router = express.Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'public/uploads/products')
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname))
+    }
+});
+
+const upload = multer({ storage: storage });
 
 // Admin Authentication Routes (Public)
 router.get('/login', getAdminLogin);
@@ -45,8 +58,8 @@ router.put('/users/:id/toggle-status', toggleUserStatus);
 // Product Management
 router.get('/products', getProducts);
 router.get('/products/:id', getProductById);
-router.post('/products', addProduct);
-router.put('/products/:id', updateProduct);
+router.post('/products', upload.array('variants[images]'), addProduct);
+router.put('/products/:id', upload.array('variants[images]'), updateProduct);
 router.delete('/products/:id', deleteProduct);
 
 // Category Management

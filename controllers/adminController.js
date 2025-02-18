@@ -1,10 +1,24 @@
 import { config } from 'dotenv';
 import User from '../models/userModel.js';
-import { Product } from '../models/productModel.js';
 import Category from '../models/categoryModel.js';
+import Product from '../models/productModel.js';
 import { Order } from '../models/orderModel.js';
+import multer from 'multer';
+import path from 'path';
 
 config();
+
+// Set up multer for file uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'public/uploads/products')
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname))
+    }
+});
+
+const upload = multer({ storage: storage });
 
 // Admin Authentication Controllers
 export const getAdminLogin = (req, res) => {
@@ -268,11 +282,30 @@ export const deleteCategory = async (req, res) => {
 // Product Controllers
 export const getProducts = async (req, res) => {
     try {
-        const products = await Product.find().populate('categoryId');
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        const totalProducts = await Product.countDocuments();
+        const totalPages = Math.ceil(totalProducts / limit);
+
+        const products = await Product.find()
+            .populate('categoryId')
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 });
+
         const categories = await Category.find();
+
         res.render('admin/products', { 
             products,
             categories,
+            currentPage: page,
+            totalPages,
+            totalProducts,
+            limit,
+            hasNextPage: page < totalPages,
+            hasPreviousPage: page > 1,
             path: '/admin/products'
         });
     } catch (error) {
