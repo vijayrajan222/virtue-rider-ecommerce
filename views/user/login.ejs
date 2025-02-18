@@ -25,67 +25,39 @@
     <div class="mt-16"></div>
  <div class=""></div>
     <!-- Centered Login Card -->
-    <div class="mt-28 flex items-center justify-center my-16 px-4 sm:px-8">
-      <div
-        class="w-full max-w-md p-8 bg-white shadow-lg rounded-2xl border border-black/20"
-      >
+    <div class="min-h-screen flex items-center justify-center bg-gray-100">
+      <div class="bg-white p-8 rounded-lg shadow-md w-96">
         <h2 class="text-2xl font-semibold text-center mb-6">Login</h2>
-
-        <!-- Login Form -->
-        <form action="/login" method="post" class="space-y-4" novalidate>
-          <!-- Email Input -->
+        
+        <form id="login-form" class="space-y-4">
           <div>
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              id="email"
-              class="w-full p-3 rounded-lg bg-gray-300 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-            <p id="emailError" class="text-[#9B1C1C] text-xs mt-1 hidden"></p>
+            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+            <input type="email" id="email" name="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black" required>
           </div>
 
-          <!-- Password Input -->
-          <div class="relative">
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              id="password"
-              class="w-full p-3 rounded-lg bg-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-            <button type="button" class="absolute right-3 top-3 text-gray-600">
-              <i class="fa-regular fa-eye"></i>
-            </button>
-            <p id="passwordError" class="text-[#9B1C1C] text-xs mt-1 hidden"></p>
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+            <input type="password" id="password" name="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black" required>
           </div>
-          
-          <!-- Sign up and Forgot Password Links -->
-          <div class="flex justify-between text-sm text-gray-500">
-            <a href="signup" class="hover:underline">Signup</a>
-            <a href="forgotPassword" class="hover:underline">Forgot Password?</a>
+
+          <!-- General Error Message -->
+          <div id="generalError" class="text-red-500 text-sm mt-2 hidden"></div>
+
+          <!-- Loading Spinner -->
+          <div id="loading-spinner" class="hidden">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-black mx-auto"></div>
           </div>
-          <!-- Submit Button -->
-          <button type="submit" class="w-full py-3 bg-black text-white font-semibold rounded-lg hover:bg-gray-800">
+
+          <button type="submit" class="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-800">
             Login
           </button>
         </form>
 
-        <!-- Google Sign in -->
-        <div class="flex justify-center text-center mt-6 text-gray-500 text-sm">
-          Or continue with Google
-        </div>
-        <a class="flex justify-center mt-6" href="/auth/google?trigger=login">
-          <i class="fa-brands fa-google fa-lg" style="color: #b12020"></i>
-        </a>
-
-        <div id="loading-spinner" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div class="bg-white p-5 rounded-lg flex flex-col items-center">
-                <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-3"></div>
-                <p class="text-gray-700">Logging in...</p>
-            </div>
+        <div class="mt-4 text-center">
+          <p class="text-sm text-gray-600">Don't have an account? 
+            <a href="/signup" class="text-black hover:underline">Sign Up</a>
+          </p>
+          <a href="/forgotPassword" class="text-sm text-black hover:underline">Forgot Password?</a>
         </div>
       </div>
     </div>
@@ -95,114 +67,73 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const form = document.querySelector('form');
-        const passwordToggle = document.querySelector('.fa-eye');
+        const loginForm = document.getElementById('login-form');
         const loadingSpinner = document.getElementById('loading-spinner');
-        const emailError = document.getElementById('emailError');
-        const passwordError = document.getElementById('passwordError');
 
-        // Helper function to show error
-        const showError = (element, message) => {
-            element.textContent = message;
-            element.classList.remove('hidden');
-            // Add red border to input
-            element.previousElementSibling.classList.add('border-red-500');
-        };
+        if (!loginForm) {
+            console.error('Login form not found');
+            return;
+        }
 
-        // Helper function to hide error
-        const hideError = (element) => {
-            element.classList.add('hidden');
-            // Remove red border from input
-            element.previousElementSibling.classList.remove('border-red-500');
-        };
-
-        // Clear errors when typing
-        document.getElementById('email').addEventListener('input', () => {
-            hideError(emailError);
-        });
-
-        document.getElementById('password').addEventListener('input', () => {
-            hideError(passwordError);
-        });
-
-        // Toggle password visibility
-        passwordToggle.addEventListener('click', function() {
-            const input = document.getElementById('password');
-            if (input.type === 'password') {
-                input.type = 'text';
-                this.classList.remove('fa-eye');
-                this.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                this.classList.remove('fa-eye-slash');
-                this.classList.add('fa-eye');
-            }
-        });
-
-        // Form validation and submission
-        form.addEventListener('submit', async function(e) {
+        loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            let hasErrors = false;
+            clearErrors();
 
-            // Clear previous errors
-            hideError(emailError);
-            hideError(passwordError);
+            const email = document.getElementById('email')?.value.trim();
+            const password = document.getElementById('password')?.value;
 
-            // Validation
-            if (!email) {
-                showError(emailError, 'Email is required');
-                hasErrors = true;
-            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                showError(emailError, 'Please enter a valid email address');
-                hasErrors = true;
+            if (!email || !password) {
+                showError('generalError', 'All fields are required');
+                return;
             }
-
-            if (!password) {
-                showError(passwordError, 'Password is required');
-                hasErrors = true;
-            }
-
-            if (hasErrors) return;
-
-            // Show loading spinner
-            loadingSpinner.classList.remove('hidden');
 
             try {
+                if (loadingSpinner) loadingSpinner.classList.remove('hidden');
+
                 const response = await fetch('/login', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({
+                        email,
+                        password
+                    })
                 });
 
                 const data = await response.json();
                 
-                // Hide loading spinner
-                loadingSpinner.classList.add('hidden');
+                if (loadingSpinner) loadingSpinner.classList.add('hidden');
 
                 if (data.success) {
-                    window.location.href = data.redirectUrl || '/home';
+                    window.location.href = data.redirectUrl;
                 } else {
-                    // Show error message in appropriate field
-                    if (data.message.toLowerCase().includes('email')) {
-                        showError(emailError, data.message);
-                    } else if (data.message.toLowerCase().includes('password')) {
-                        showError(passwordError, data.message);
-                    } else {
-                        // If message doesn't specifically mention email or password
-                        showError(emailError, data.message);
-                    }
+                    showError('generalError', data.message || 'Login failed');
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                loadingSpinner.classList.add('hidden');
-                showError(emailError, 'Something went wrong. Please try again.');
+                if (loadingSpinner) loadingSpinner.classList.add('hidden');
+                showError('generalError', 'Something went wrong! Please try again.');
             }
         });
+
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.classList.remove('hidden');
+            }
+        }
+
+        function clearErrors() {
+            const errorElements = document.querySelectorAll('[id$="Error"]');
+            errorElements.forEach(element => {
+                if (element) {
+                    element.textContent = '';
+                    element.classList.add('hidden');
+                }
+            });
+        }
     });
     </script>
   </body>

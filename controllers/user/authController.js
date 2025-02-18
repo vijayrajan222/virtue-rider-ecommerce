@@ -123,74 +123,52 @@ export const login = async (req, res) => {
 
 export const postLogin = async (req, res) => {
     try {
+        console.log('Login attempt:', req.body);
         const { email, password } = req.body;
-        
-        // Server-side validation
+
+        // Validate input
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
-                message: 'All fields are required'
-            });
-        }
-
-        // Email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid email format'
+                message: 'Email and password are required'
             });
         }
 
         // Find user
-        const user = await userSchema.findOne({ email });
-
-        // Check if user exists
+        const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
-            return res.status(400).json({
+            return res.status(401).json({
                 success: false,
-                message: "Your email is not registered. Please signup first."
-            });
-        }
-
-        if(!user.password) {
-            return res.status(400).json({
-                success: false,
-                message: 'This email is linked to a Google login. Please log in with Google.'
+                message: 'Invalid email or password'
             });
         }
 
         // Check if user is verified
         if (!user.isVerified) {
-            return res.status(400).json({
+            return res.status(401).json({
                 success: false,
                 message: 'Please verify your email first'
             });
         }
 
-        // Check if user is blocked
-        if (user.blocked) {
-            return res.status(400).json({
+        // Check password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({
                 success: false,
-                message: 'Your account has been blocked'
+                message: 'Invalid email or password'
             });
         }
 
-        // Verify password
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid credentials'
-            });
-        }
+        // Update last login
+        user.lastLogin = new Date();
+        await user.save();
 
         // Set session
-        req.session.user = user._id;
-        req.session.userEmail = user.email;
+        req.session.userId = user._id;
+        req.session.isLoggedIn = true;
 
-        // Return success response with redirect URL
-        return res.json({
+        res.status(200).json({
             success: true,
             message: 'Login successful',
             redirectUrl: '/home'
@@ -198,9 +176,9 @@ export const postLogin = async (req, res) => {
 
     } catch (error) {
         console.error('Login error:', error);
-        return res.status(500).json({
+        res.status(500).json({
             success: false,
-            message: 'Login failed'
+            message: 'Login failed. Please try again.'
         });
     }
 };
