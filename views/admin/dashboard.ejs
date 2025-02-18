@@ -1,9 +1,10 @@
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Admin Dashboard for Onyx" />
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard - Virtue Rider</title>
     <link rel="stylesheet" href="/tailwindcss/output.css" />
     <link
       href="https://fonts.googleapis.com/icon?family=Material+Icons"
@@ -11,18 +12,76 @@
     />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
   </head>
 
-  <body class="mybg-green text-white min-h-screen flex flex-col">
-    <%- include("../partials/sidebar") %>
+  <body class="bg-gray-100">
+    <div class="min-h-screen">
+      <%- include("../partials/sidebar") %>
 
-    <main class="flex-1 p-4 md:p-8 lg:ml-64" role="main">
-      <header
-        class="flex flex-col md:flex-row md:items-center md:justify-between mb-8"
-      >
-        <h1 class="text-2xl font-semibold text-gray-200">Sales Summary</h1>
+      <main class="flex-1 p-4 md:p-8 lg:ml-64" role="main">
+        <header
+          class="flex flex-col md:flex-row md:items-center md:justify-between mb-8"
+        >
+          <h1 class="text-3xl font-bold mb-8">Admin Dashboard</h1>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <!-- Total Users -->
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-gray-500 text-sm font-medium">Total Users</h3>
+            <p class="text-3xl font-bold"><%= data.totalUsers %></p>
+          </div>
+          
+          <!-- Total Products -->
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-gray-500 text-sm font-medium">Total Products</h3>
+            <p class="text-3xl font-bold"><%= data.totalProducts %></p>
+          </div>
+          
+          <!-- Total Orders -->
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-gray-500 text-sm font-medium">Total Orders</h3>
+            <p class="text-3xl font-bold"><%= data.totalOrders %></p>
+          </div>
+          
+          <!-- Total Revenue -->
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-gray-500 text-sm font-medium">Total Revenue</h3>
+            <p class="text-3xl font-bold">₹<%= data.totalRevenue %></p>
+          </div>
+        </div>
         
-      </header>
-    </main>
+        <!-- Recent Orders -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-xl font-bold mb-4">Recent Orders</h2>
+          <div class="overflow-x-auto">
+            <table class="min-w-full">
+              <thead>
+                <tr class="border-b">
+                  <th class="text-left py-3">Order ID</th>
+                  <th class="text-left py-3">Customer</th>
+                  <th class="text-left py-3">Amount</th>
+                  <th class="text-left py-3">Status</th>
+                  <th class="text-left py-3">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% data.recentOrders.forEach(order => { %>
+                  <tr class="border-b">
+                    <td class="py-3"><%= order._id %></td>
+                    <td class="py-3"><%= order.user %></td>
+                    <td class="py-3">₹<%= order.totalAmount %></td>
+                    <td class="py-3"><%= order.status %></td>
+                    <td class="py-3"><%= new Date(order.createdAt).toLocaleDateString() %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
   </body>
 </html>

@@ -1,59 +1,75 @@
 import express from 'express';
-import { getloginPage, getdashboard,getorderPage, getsalesReport,getuserPage} from '../controllers/adminController.js';
-import {login, getproductPage, getcategoryPage,getcouponPage, getofferPage} from '../controllers/adminController.js'
-import { categoryController } from '../controllers/categoryController.js'
-import { User } from '../models/userModel.js';
+import { 
+    getAdminLogin,
+    postAdminLogin,
+    getDashboard,
+    getUsers,
+    blockUser,
+    unblockUser,
+    getProducts,
+    getAddProduct,
+    postAddProduct,
+    getEditProduct,
+    postEditProduct,
+    deleteProduct,
+    getCategories,
+    addCategory,
+    editCategory,
+    deleteCategory,
+    getOrders,
+    updateOrderStatus,
+    getSalesReport,
+    getCoupons,
+    getOffers,
+    logout
+} from '../controllers/adminController.js';
+import { isAdminAuth } from '../middleware/adminAuth.js';
+import upload from '../config/multer.js';
 
+const router = express.Router();
 
-const adminRouter = express.Router();
+// Admin Authentication Routes (Public)
+router.get('/login', getAdminLogin);
+router.post('/login', postAdminLogin);
+router.get('/logout', logout);
 
+// Protected Routes (Require Admin Authentication)
+router.use(isAdminAuth);
 
+// Dashboard
+router.get('/', getDashboard);
+router.get('/dashboard', getDashboard);
 
-adminRouter.get('/login', getloginPage)
+// User Management
+router.get('/users', getUsers);
+router.patch('/users/:id/block', blockUser);
+router.patch('/users/:id/unblock', unblockUser);
 
-adminRouter.post('/login', login);
+// Product Management
+router.get('/products', getProducts);
+router.get('/products/add', getAddProduct);
+router.post('/products/add', upload.array('images', 4), postAddProduct);
+router.get('/products/edit/:id', getEditProduct);
+router.post('/products/edit/:id', upload.array('images', 4), postEditProduct);
+router.delete('/products/:id', deleteProduct);
 
-adminRouter.get("/logout", getloginPage)
+// Category Management
+router.get('/categories', getCategories);
+router.post('/categories', addCategory);
+router.put('/categories/:id', editCategory);
+router.delete('/categories/:id', deleteCategory);
 
-adminRouter.get("/dashboard",getdashboard)
+// Order Management
+router.get('/orders', getOrders);
+router.patch('/orders/:id/status', updateOrderStatus);
 
-adminRouter.get('/product',getproductPage)
+// Reports
+router.get('/sales-report', getSalesReport);
 
-adminRouter.get('/order', getorderPage)
+// Coupon Management
+router.get('/coupons', getCoupons);
 
-adminRouter.get('/userList', getuserPage)
+// Offer Management
+router.get('/offers', getOffers);
 
-
-adminRouter.get('/category', categoryController.getCategories);
-adminRouter.post('/category/add', categoryController.addCategory);
-adminRouter.post('/category/edit', categoryController.editCategory);
-adminRouter.delete('/category/delete/:id', categoryController.deleteCategory);
-
-adminRouter.get('/sales-report',getsalesReport)
-
-adminRouter.get('/coupon', getcouponPage)
-
-adminRouter.get('/offer', getofferPage)
-
-
-// Add this new route for blocking/unblocking users
-adminRouter.post('/user/:userId/toggle-block', async (req, res) => {
-    try {
-        const userId = req.params.userId;
-        const user = await User.findById(userId);
-        
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-
-        user.isBlocked = !user.isBlocked;
-        await user.save();
-
-        res.json({ success: true, message: `User ${user.isBlocked ? 'blocked' : 'unblocked'} successfully` });
-    } catch (error) {
-        console.error('Error toggling user block status:', error);
-        res.status(500).json({ success: false, message: 'Failed to update user status' });
-    }
-});
-
-export default adminRouter;
+export default router;

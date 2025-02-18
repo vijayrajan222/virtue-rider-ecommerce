@@ -5,6 +5,7 @@ import { connectDB } from './db/connectDB.js';
 import userRouter from './routes/userRouter.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import adminRouter from './routes/adminRouter.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,8 +25,12 @@ app.use('/tailwindcss', express.static(path.join(__dirname, 'public', 'tailwindc
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false }
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
 }));
 
 // View engine
@@ -34,6 +39,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Routes
 app.use('/', userRouter);
+app.use('/admin', adminRouter);
 
 // Database connection
 connectDB();

@@ -9,7 +9,6 @@ const categorySchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        required: true,
         trim: true
     },
     isActive: {
@@ -20,6 +19,4 @@ const categorySchema = new mongoose.Schema({
     timestamps: true
 });
 
-
-const Category = mongoose.model('Category', categorySchema);
-export default Category;
+export const Category = mongoose.model('Category', categorySchema);
