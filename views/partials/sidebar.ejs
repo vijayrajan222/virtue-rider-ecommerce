@@ -2,31 +2,31 @@
 <aside class="fixed top-0 left-0 w-64 h-full bg-zinc-900 p-5 shadow-lg md:block hidden z-50 overflow-y-auto">
   <!-- Logo -->
   <div class="flex items-center justify-center mb-8">
-    <img src="/images/whitelogo.png" alt="Onyx Logo" class="h-8 md:h-10 lg:h-12" />
+    <img src="/images/whitelogo.png" alt="Virtue Rider Logo" class="h-8 md:h-10 lg:h-12" />
   </div>
 
   <!-- Navigation Links -->
   <nav class="space-y-2 md:space-y-4" aria-label="Main Navigation">
     <a href="/admin/dashboard" 
-       class="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-zinc-800 group">
+       class="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-zinc-800 group <%= path === '/admin/dashboard' ? 'bg-zinc-800 text-white' : '' %>">
       <i class="material-icons text-lg md:text-xl lg:text-2xl">dashboard</i>
       <span class="text-sm md:text-base">Dashboard</span>
     </a>
 
-    <a href="/admin/product" 
-       class="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-zinc-800 group">
+    <a href="/admin/products" 
+       class="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-zinc-800 group <%= path === '/admin/products' ? 'bg-zinc-800 text-white' : '' %>">
       <i class="material-icons text-lg md:text-xl lg:text-2xl">inventory_2</i>
       <span class="text-sm md:text-base">Products</span>
     </a>
 
-    <a href="/admin/userList" 
-       class="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-zinc-800 group">
+    <a href="/admin/users" 
+       class="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-zinc-800 group <%= path === '/admin/users' ? 'bg-zinc-800 text-white' : '' %>">
       <i class="material-icons text-lg md:text-xl lg:text-2xl">people</i>
       <span class="text-sm md:text-base">Users</span>
     </a>
 
-    <a href="/admin/category" 
-       class="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-zinc-800 group">
+    <a href="/admin/categories" 
+       class="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-zinc-800 group <%= path === '/admin/categories' ? 'bg-zinc-800 text-white' : '' %>">
       <i class="material-icons text-lg md:text-xl lg:text-2xl">category</i>
       <span class="text-sm md:text-base">Categories</span>
     </a>
@@ -95,17 +95,17 @@
         <i class="material-icons text-xl">dashboard</i>
         <span class="text-base">Dashboard</span>
       </a>
-      <a href="/admin/product" 
+      <a href="/admin/products" 
          class="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors p-3 rounded-lg hover:bg-zinc-800">
         <i class="material-icons text-xl">inventory_2</i>
         <span class="text-base">Products</span>
       </a>
-      <a href="/admin/userList" 
+      <a href="/admin/users" 
          class="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors p-3 rounded-lg hover:bg-zinc-800">
         <i class="material-icons text-xl">people</i>
         <span class="text-base">Users</span>
       </a>
-      <a href="/admin/category" 
+      <a href="/admin/categories" 
          class="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors p-3 rounded-lg hover:bg-zinc-800">
         <i class="material-icons text-xl">category</i>
         <span class="text-base">Categories</span>

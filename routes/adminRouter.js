@@ -37,7 +37,6 @@ router.get('/logout', logout);
 router.use(isAdminAuth);
 
 // Dashboard
-router.get('/', getDashboard);
 router.get('/dashboard', getDashboard);
 
 // User Management

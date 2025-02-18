@@ -71,7 +71,10 @@ export const getDashboard = async (req, res) => {
             totalRevenue: 0,
             recentOrders: await Order.find().sort({ createdAt: -1 }).limit(5)
         };
-        res.render("admin/dashboard", { data });
+        res.render("admin/dashboard", { 
+            data,
+            path: '/admin/dashboard'
+        });
     } catch (error) {
         console.error("Dashboard Error:", error);
         res.status(500).send("Error loading dashboard");
@@ -82,7 +85,10 @@ export const getDashboard = async (req, res) => {
 export const getUsers = async (req, res) => {
     try {
         const users = await User.find({}).sort({ createdAt: -1 });
-        res.render('admin/userList', { users });
+        res.render('admin/userList', { 
+            users,
+            path: '/admin/users'
+        });
     } catch (error) {
         console.error("Error fetching users:", error);
         res.status(500).redirect('/admin/userList?error=' + encodeURIComponent('Failed to fetch users'));
@@ -151,7 +157,10 @@ export const postAddProduct = async (req, res) => {
 export const getCategories = async (req, res) => {
     try {
         const categories = await Category.find();
-        res.render("admin/category", { categories });
+        res.render('admin/category', { 
+            categories,
+            path: '/admin/categories'
+        });
     } catch (error) {
         console.error("Error fetching categories:", error);
         res.status(500).send("Error loading categories");
