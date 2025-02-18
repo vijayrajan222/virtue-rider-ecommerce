@@ -10,7 +10,10 @@ import {
     postSignUp, 
     verifyOTP, 
     resendOTP, 
-    postLogin 
+    postLogin,
+    sendForgotPasswordOTP,
+    verifyForgotPasswordOTP,
+    resetPassword 
 } from '../controllers/user/authController.js';
 
 const userRouter = express.Router();
@@ -28,6 +31,11 @@ userRouter.post('/signup', postSignUp);
 userRouter.post('/verify-otp', verifyOTP);
 userRouter.post('/resend-otp', resendOTP);
 userRouter.post('/login', postLogin);
+
+// Forgot password routes
+userRouter.post('/forgot-password/send-otp', sendForgotPasswordOTP);
+userRouter.post('/forgot-password/verify-otp', verifyForgotPasswordOTP);
+userRouter.post('/forgot-password/reset', resetPassword);
 
 // We'll add OTP verification route later
 // userRouter.post('/validate-otp', postOtp);
