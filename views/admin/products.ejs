@@ -151,21 +151,145 @@
         // Form submission
         async function handleSubmit(event) {
             event.preventDefault();
-            // Add your form submission logic here
+            
+            try {
+                const formData = new FormData();
+                const productId = document.getElementById('productId').value;
+                
+                formData.append('name', document.getElementById('productName').value);
+                formData.append('categoryId', document.getElementById('categoryId').value);
+                formData.append('price', document.getElementById('price').value);
+                formData.append('stock', document.getElementById('stock').value);
+                formData.append('description', document.getElementById('description').value);
+                
+                const images = document.getElementById('images').files;
+                for (let i = 0; i < images.length; i++) {
+                    formData.append('images', images[i]);
+                }
+
+                const method = productId ? 'PUT' : 'POST';
+                const url = productId ? `/admin/products/${productId}` : '/admin/products';
+
+                const response = await fetch(url, {
+                    method,
+                    body: formData  // Send as FormData for file uploads
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: data.message,
+                        confirmButtonColor: '#FF6B00'
+                    });
+                    window.location.reload();
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: error.message || 'Something went wrong',
+                    confirmButtonColor: '#FF6B00'
+                });
+            }
         }
 
-        // Product actions
+        // Edit product
         async function editProduct(id) {
-            // Add your edit logic here
+            try {
+                const response = await fetch(`/admin/products/${id}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const product = data.product;
+                    
+                    document.getElementById('modalTitle').textContent = 'Edit Product';
+                    document.getElementById('productId').value = product._id;
+                    document.getElementById('productName').value = product.name;
+                    document.getElementById('categoryId').value = product.categoryId._id;
+                    document.getElementById('price').value = product.price;
+                    document.getElementById('stock').value = product.stock;
+                    document.getElementById('description').value = product.description;
+
+                    document.getElementById('productModal').classList.remove('hidden');
+                    document.getElementById('productModal').classList.add('flex');
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Failed to load product details',
+                    confirmButtonColor: '#FF6B00'
+                });
+            }
         }
 
+        // Delete product
         async function deleteProduct(id) {
-            // Add your delete logic here
+            try {
+                const result = await Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#FF6B00',
+                    cancelButtonColor: '#718096',
+                    confirmButtonText: 'Yes, delete it!'
+                });
+
+                if (result.isConfirmed) {
+                    const response = await fetch(`/admin/products/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted!',
+                            text: data.message,
+                            confirmButtonColor: '#FF6B00'
+                        });
+                        window.location.reload();
+                    } else {
+                        throw new Error(data.message);
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: error.message || 'Failed to delete product',
+                    confirmButtonColor: '#FF6B00'
+                });
+            }
         }
 
         // Search functionality
         document.getElementById('searchInput').addEventListener('input', function(e) {
-            // Add your search logic here
+            const searchTerm = e.target.value.toLowerCase();
+            const products = document.querySelectorAll('.product-card');
+
+            products.forEach(product => {
+                const name = product.querySelector('.product-name').textContent.toLowerCase();
+                const description = product.querySelector('.product-description').textContent.toLowerCase();
+
+                if (name.includes(searchTerm) || description.includes(searchTerm)) {
+                    product.style.display = '';
+                } else {
+                    product.style.display = 'none';
+                }
+            });
         });
     </script>
 </body>

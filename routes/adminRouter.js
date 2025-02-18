@@ -4,13 +4,11 @@ import {
     postAdminLogin,
     getDashboard,
     getUsers,
-    blockUser,
-    unblockUser,
+    toggleUserStatus,
     getProducts,
-    getAddProduct,
-    postAddProduct,
-    getEditProduct,
-    postEditProduct,
+    getProductById,
+    addProduct,
+    updateProduct,
     deleteProduct,
     getCategories,
     createCategory,
@@ -42,22 +40,20 @@ router.get('/dashboard', getDashboard);
 
 // User Management
 router.get('/users', getUsers);
-router.patch('/users/:id/block', blockUser);
-router.patch('/users/:id/unblock', unblockUser);
+router.put('/users/:id/toggle-status', toggleUserStatus);
 
 // Product Management
 router.get('/products', getProducts);
-router.get('/products/add', getAddProduct);
-router.post('/products/add', upload.array('images', 4), postAddProduct);
-router.get('/products/edit/:id', getEditProduct);
-router.post('/products/edit/:id', upload.array('images', 4), postEditProduct);
+router.get('/products/:id', getProductById);
+router.post('/products', addProduct);
+router.put('/products/:id', updateProduct);
 router.delete('/products/:id', deleteProduct);
 
 // Category Management
 router.get('/categories', getCategories);
-router.post('/categories', upload.single('image'), createCategory);
+router.post('/categories', createCategory);
 router.get('/categories/:id', getCategoryById);
-router.put('/categories/:id', upload.single('image'), updateCategory);
+router.put('/categories/:id', updateCategory);
 router.delete('/categories/:id', deleteCategory);
 
 // Order Management

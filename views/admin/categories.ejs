@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories - Virtue Rider</title>
+    <link rel="stylesheet" href="/tailwindcss/output.css" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-900">
+    <%- include('../partials/sidebar', { path: '/admin/categories' }) %>
+
+    <div class="p-2 sm:ml-64">
+        <header class="flex items-center justify-between mb-8 p-4 lg:p-8 border-b border-gray-800">
+            <h1 class="text-2xl font-semibold text-gray-200">Category Management</h1>
+            <button onclick="openAddModal()" 
+                    class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors">
+                <i class="material-icons align-middle">add</i>
+                Add Category
+            </button>
+        </header>
+
+        <!-- Categories Table -->
+        <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden mx-4 border border-gray-700">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead class="bg-gray-900">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Category Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Description</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        <% categories.forEach(category => { %>
+                            <tr class="hover:bg-gray-700 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-200">
+                                        <%= category.name %>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-200">
+                                        <%= category.description || 'No description' %>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button onclick="editCategory('<%= category._id %>')"
+                                            class="text-blue-400 hover:text-blue-300 mr-3">
+                                        <i class="material-icons">edit</i>
+                                    </button>
+                                    <button onclick="deleteCategory('<%= category._id %>')"
+                                            class="text-red-400 hover:text-red-300">
+                                        <i class="material-icons">delete</i>
+                                    </button>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Category Modal -->
+    <div id="categoryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4">
+            <h2 id="modalTitle" class="text-xl font-semibold text-gray-200 mb-6">Add New Category</h2>
+            <form id="categoryForm" onsubmit="handleSubmit(event)">
+                <input type="hidden" id="categoryId">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Category Name</label>
+                        <input type="text" id="categoryName" required
+                               class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Description</label>
+                        <textarea id="description" rows="3" required
+                                  class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500"></textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-4">
+                    <button type="button" onclick="closeModal()"
+                            class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            try {
+                const categoryId = document.getElementById('categoryId').value;
+                const formData = {
+                    name: document.getElementById('categoryName').value,
+                    description: document.getElementById('description').value
+                };
+
+                const method = categoryId ? 'PUT' : 'POST';
+                const url = categoryId ? `/admin/categories/${categoryId}` : '/admin/categories';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: data.message,
+                        confirmButtonColor: '#FF6B00'
+                    });
+                    window.location.reload();
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: error.message || 'Something went wrong',
+                    confirmButtonColor: '#FF6B00'
+                });
+            }
+        }
+
+        async function editCategory(id) {
+            try {
+                const response = await fetch(`/admin/categories/${id}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('modalTitle').textContent = 'Edit Category';
+                    document.getElementById('categoryId').value = data.category._id;
+                    document.getElementById('categoryName').value = data.category.name;
+                    document.getElementById('description').value = data.category.description;
+
+                    document.getElementById('categoryModal').classList.remove('hidden');
+                    document.getElementById('categoryModal').classList.add('flex');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Failed to load category details',
+                    confirmButtonColor: '#FF6B00'
+                });
+            }
+        }
+
+        async function deleteCategory(id) {
+            try {
+                const result = await Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#FF6B00',
+                    cancelButtonColor: '#718096',
+                    confirmButtonText: 'Yes, delete it!'
+                });
+
+                if (result.isConfirmed) {
+                    const response = await fetch(`/admin/categories/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted!',
+                            text: data.message,
+                            confirmButtonColor: '#FF6B00'
+                        });
+                        window.location.reload();
+                    } else {
+                        throw new Error(data.message);
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: error.message || 'Failed to delete category',
+                    confirmButtonColor: '#FF6B00'
+                });
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Add New Category';
+            document.getElementById('categoryForm').reset();
+            document.getElementById('categoryId').value = '';
+            document.getElementById('categoryModal').classList.remove('hidden');
+            document.getElementById('categoryModal').classList.add('flex');
+        }
+
+        function closeModal() {
+            document.getElementById('categoryModal').classList.add('hidden');
+            document.getElementById('categoryModal').classList.remove('flex');
+        }
+    </script>
+</body>
+</html>

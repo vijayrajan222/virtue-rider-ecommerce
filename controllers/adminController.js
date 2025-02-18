@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { User } from '../models/userModel.js';
+import User from '../models/userModel.js';
 import { Product } from '../models/productModel.js';
 import Category from '../models/categoryModel.js';
 import { Order } from '../models/orderModel.js';
@@ -88,20 +88,24 @@ export const getUsers = async (req, res) => {
         const limit = 10; // Users per page
         const skip = (page - 1) * limit;
 
+        // Get total count of users
         const totalUsers = await User.countDocuments();
         const totalPages = Math.ceil(totalUsers / limit);
 
+        // Get users for current page
         const users = await User.find()
-            .sort({ createdAt: -1 })
             .skip(skip)
-            .limit(limit);
+            .limit(limit)
+            .sort({ createdAt: -1 }); // Sort by newest first
 
-        res.render('admin/userList', {
+        res.render('admin/userList', { 
             users,
             currentPage: page,
             totalPages,
             totalUsers,
             limit,
+            hasNextPage: page < totalPages,
+            hasPreviousPage: page > 1,
             path: '/admin/users'
         });
     } catch (error) {
@@ -110,36 +114,189 @@ export const getUsers = async (req, res) => {
     }
 };
 
-export const blockUser = async (req, res) => {
+export const toggleUserStatus = async (req, res) => {
     try {
         const userId = req.params.id;
-        await User.findByIdAndUpdate(userId, { isBlocked: true });
-        res.json({ success: true });
+        console.log("Attempting to toggle user with ID:", userId); // Debug log
+
+        const user = await User.findById(userId);
+        console.log("Found user:", user); // Debug log
+        
+        if (!user) {
+            console.log("No user found with ID:", userId); // Debug log
+            return res.status(404).json({ 
+                success: false, 
+                message: 'User not found' 
+            });
+        }
+
+        // Toggle the status
+        user.isBlocked = !user.isBlocked;
+        await user.save();
+        
+        // Send back the new status
+        res.json({ 
+            success: true,
+            isBlocked: user.isBlocked,
+            message: user.isBlocked ? 'User blocked successfully' : 'User unblocked successfully'
+        });
     } catch (error) {
-        console.error("Error blocking user:", error);
-        res.status(500).json({ success: false });
+        console.error('Error toggling user status:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to update user status' 
+        });
     }
 };
 
-export const unblockUser = async (req, res) => {
+// Category Controllers
+export const getCategories = async (req, res) => {
     try {
-        const userId = req.params.id;
-        await User.findByIdAndUpdate(userId, { isBlocked: false });
-        res.json({ success: true });
+        const categories = await Category.find();
+        res.render('admin/categories', { 
+            categories,
+            path: '/admin/categories'
+        });
     } catch (error) {
-        console.error("Error unblocking user:", error);
-        res.status(500).json({ success: false });
+        console.error("Error fetching categories:", error);
+        res.status(500).send("Error loading categories");
     }
 };
 
-// Product Management Controllers
+export const createCategory = async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const category = new Category({
+            name,
+            description
+        });
+        await category.save();
+        
+        res.status(201).json({ 
+            success: true, 
+            message: 'Category created successfully',
+            category 
+        });
+    } catch (error) {
+        console.error("Error creating category:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to create category' 
+        });
+    }
+};
+
+export const getCategoryById = async (req, res) => {
+    try {
+        const category = await Category.findById(req.params.id);
+        if (!category) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Category not found' 
+            });
+        }
+        res.json({ success: true, category });
+    } catch (error) {
+        console.error("Error fetching category:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch category' 
+        });
+    }
+};
+
+export const updateCategory = async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const category = await Category.findByIdAndUpdate(
+            req.params.id,
+            { name, description },
+            { new: true }
+        );
+
+        if (!category) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Category not found' 
+            });
+        }
+
+        res.json({ 
+            success: true, 
+            message: 'Category updated successfully',
+            category 
+        });
+    } catch (error) {
+        console.error("Error updating category:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to update category' 
+        });
+    }
+};
+
+export const deleteCategory = async (req, res) => {
+    try {
+        const category = await Category.findByIdAndDelete(req.params.id);
+        
+        if (!category) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Category not found' 
+            });
+        }
+
+        // Optional: Update products that use this category
+        await Product.updateMany(
+            { categoryId: req.params.id },
+            { $unset: { categoryId: 1 } }
+        );
+
+        res.json({ 
+            success: true, 
+            message: 'Category deleted successfully' 
+        });
+    } catch (error) {
+        console.error("Error deleting category:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to delete category' 
+        });
+    }
+};
+
+// Product Controllers
 export const getProducts = async (req, res) => {
     try {
-        const products = await Product.find().populate('category');
-        res.render("admin/product", { products });
+        const products = await Product.find().populate('categoryId');
+        const categories = await Category.find();
+        res.render('admin/products', { 
+            products,
+            categories,
+            path: '/admin/products'
+        });
     } catch (error) {
         console.error("Error fetching products:", error);
         res.status(500).send("Error loading products");
+    }
+};
+
+export const getProductById = async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id).populate('categoryId');
+        if (!product) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Product not found' 
+            });
+        }
+        res.json({ success: true, product });
+    } catch (error) {
+        console.error("Error fetching product:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch product' 
+        });
     }
 };
 
@@ -168,92 +325,6 @@ export const postAddProduct = async (req, res) => {
     }
 };
 
-// Category Management Controllers
-export const getCategories = async (req, res) => {
-    try {
-        const categories = await Category.find();
-        res.render('admin/category', { categories, path: '/admin/categories' });
-    } catch (error) {
-        console.error('Error fetching categories:', error);
-        res.status(500).json({ error: 'Failed to fetch categories' });
-    }
-};
-
-export const createCategory = async (req, res) => {
-    try {
-        const { name, description } = req.body;
-        const image = req.file ? `/uploads/${req.file.filename}` : null;
-
-        const newCategory = new Category({
-            name,
-            description,
-            image
-        });
-
-        await newCategory.save();
-        res.status(201).json({ success: true, category: newCategory });
-    } catch (error) {
-        console.error('Error creating category:', error);
-        res.status(500).json({ error: 'Failed to create category' });
-    }
-};
-
-export const getCategoryById = async (req, res) => {
-    try {
-        const category = await Category.findById(req.params.id);
-        if (!category) {
-            return res.status(404).json({ error: 'Category not found' });
-        }
-        res.json(category);
-    } catch (error) {
-        console.error('Error fetching category:', error);
-        res.status(500).json({ error: 'Failed to fetch category' });
-    }
-};
-
-export const updateCategory = async (req, res) => {
-    try {
-        const { name, description } = req.body;
-        const updateData = {
-            name,
-            description
-        };
-
-        if (req.file) {
-            updateData.image = `/uploads/${req.file.filename}`;
-        }
-
-        const category = await Category.findByIdAndUpdate(
-            req.params.id,
-            updateData,
-            { new: true }
-        );
-
-        if (!category) {
-            return res.status(404).json({ error: 'Category not found' });
-        }
-
-        res.json({ success: true, category });
-    } catch (error) {
-        console.error('Error updating category:', error);
-        res.status(500).json({ error: 'Failed to update category' });
-    }
-};
-
-export const deleteCategory = async (req, res) => {
-    try {
-        const category = await Category.findByIdAndDelete(req.params.id);
-        if (!category) {
-            return res.status(404).json({ error: 'Category not found' });
-        }
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Error deleting category:', error);
-        res.status(500).json({ error: 'Failed to delete category' });
-    }
-};
-
-// Product Management Controllers
 export const getEditProduct = async (req, res) => {
     try {
         const { id } = req.params;
@@ -286,12 +357,23 @@ export const postEditProduct = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
     try {
-        const { id } = req.params;
-        await Product.findByIdAndDelete(id);
-        res.json({ success: true });
+        const product = await Product.findByIdAndDelete(req.params.id);
+        if (!product) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Product not found' 
+            });
+        }
+        res.json({ 
+            success: true, 
+            message: 'Product deleted successfully' 
+        });
     } catch (error) {
         console.error("Error deleting product:", error);
-        res.status(500).json({ success: false });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to delete product' 
+        });
     }
 };
 
@@ -345,5 +427,52 @@ export const logout = (req, res) => {
     req.session.destroy(() => {
         res.redirect('/admin/login');
     });
+};
+
+export const addProduct = async (req, res) => {
+    try {
+        const product = new Product(req.body);
+        await product.save();
+        res.status(201).json({ 
+            success: true, 
+            message: 'Product added successfully',
+            product 
+        });
+    } catch (error) {
+        console.error("Error adding product:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to add product' 
+        });
+    }
+};
+
+export const updateProduct = async (req, res) => {
+    try {
+        const product = await Product.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true }
+        ).populate('categoryId');
+
+        if (!product) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Product not found' 
+            });
+        }
+
+        res.json({ 
+            success: true, 
+            message: 'Product updated successfully',
+            product 
+        });
+    } catch (error) {
+        console.error("Error updating product:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to update product' 
+        });
+    }
 };
 

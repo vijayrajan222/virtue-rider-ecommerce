@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import crypto from "crypto";
 
 const userSchema = new mongoose.Schema({
     firstname: {
@@ -38,6 +39,15 @@ const userSchema = new mongoose.Schema({
     },
     verificationToken: String,
     verificationTokenExpiresAt: Date,
+    isBlocked: {
+        type: Boolean,
+        default: false
+    },
+    _id: {
+        type: String,
+        default: () => crypto.randomUUID()
+    }
 }, { timestamps: true });
 
-export const User = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+export default User;
