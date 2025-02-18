@@ -1,6 +1,15 @@
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('signup-form');
     const passwordToggles = document.querySelectorAll('.fa-eye');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const otpModal = document.getElementById('otpModal');
+    const generalError = document.getElementById('generalError');
+    let userEmail = ''; // Store email for OTP verification
+
+    if (!form) {
+        console.error('Signup form not found');
+        return;
+    }
 
     // Password validation function
     const validatePassword = (password) => {
@@ -45,10 +54,19 @@ document.addEventListener('DOMContentLoaded', function () {
     // Helper function to show error
     const showError = (elementId, message) => {
         const errorElement = document.getElementById(elementId);
-        errorElement.textContent = message;
-        errorElement.classList.remove('hidden');
-        // Add red border to input
-        document.getElementById(elementId.replace('Error', '')).classList.add('border-red-500');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+            // Add red border to input
+            document.getElementById(elementId.replace('Error', '')).classList.add('border-red-500');
+        } else {
+            console.error(`Error element with id '${elementId}' not found`);
+            // Fallback to general error if specific error element not found
+            if (generalError) {
+                generalError.textContent = message;
+                generalError.classList.remove('hidden');
+            }
+        }
     };
 
     // Helper function to hide error
@@ -113,57 +131,37 @@ document.addEventListener('DOMContentLoaded', function () {
     // Form submission
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
-        let hasErrors = false;
+        
+        // Clear previous errors
+        clearErrors();
 
-        // Clear all previous errors
-        const errorElements = document.querySelectorAll('[id$="Error"]');
-        errorElements.forEach(element => element.classList.add('hidden'));
+        // Get form data
+        const firstName = document.getElementById('firstName')?.value.trim();
+        const lastName = document.getElementById('lastName')?.value.trim();
+        const email = document.getElementById('email')?.value.trim();
+        const password = document.getElementById('password')?.value;
+        const confirmPassword = document.getElementById('confirmPassword')?.value;
 
-        const firstName = document.getElementById('firstName').value.trim();
-        const lastName = document.getElementById('lastName').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-
-        // Validate all fields
-        if (!firstName || !/^[a-zA-Z]{3,10}$/.test(firstName)) {
-            showError('firstNameError', 'First name should contain only letters (3-10 characters)');
-            hasErrors = true;
-        }
-
-        if (!lastName || !/^[a-zA-Z]{1,10}$/.test(lastName)) {
-            showError('lastNameError', 'Last name should contain only letters (1-10 characters)');
-            hasErrors = true;
-        }
-
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            showError('emailError', 'Please enter a valid email address');
-            hasErrors = true;
-        }
-
-        const passwordValidation = validatePassword(password);
-        if (!passwordValidation.isValid) {
-            showError('passwordError', passwordValidation.message);
-            hasErrors = true;
+        // Basic validation
+        if (!firstName || !lastName || !email || !password || !confirmPassword) {
+            showError('generalError', 'All fields are required');
+            return;
         }
 
         if (password !== confirmPassword) {
-            showError('confirmPasswordError', 'Passwords do not match');
-            hasErrors = true;
+            showError('generalError', 'Passwords do not match');
+            return;
         }
 
-        if (hasErrors) return;
-
-        // Show loading spinner
-        const loadingSpinner = document.getElementById('loading-spinner');
-        loadingSpinner.classList.remove('hidden');
-
-        // If no errors, proceed with form submission
         try {
+            if (loadingSpinner) {
+                loadingSpinner.classList.remove('hidden');
+            }
+
             const response = await fetch('/signup', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     firstName,
@@ -175,24 +173,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const data = await response.json();
             
-            // Hide loading spinner
-            loadingSpinner.classList.add('hidden');
+            if (loadingSpinner) {
+                loadingSpinner.classList.add('hidden');
+            }
 
             if (data.success) {
-                // Show OTP modal
-                document.getElementById('otpModal').classList.remove('hidden');
-                document.getElementById('otpModal').classList.add('flex');
+                userEmail = email;
+                if (form) form.classList.add('hidden');
+                if (otpModal) otpModal.classList.remove('hidden');
+                setupOTPInputs();
             } else {
-                document.getElementById('generalError').textContent = data.message;
-                document.getElementById('generalError').classList.remove('hidden');
+                showError('generalError', data.message || 'Something went wrong! Please try again.');
             }
         } catch (error) {
-            // Hide loading spinner
-            loadingSpinner.classList.add('hidden');
-            
-            console.error('Error:', error);
-            document.getElementById('generalError').textContent = 'Something went wrong! Please try again.';
-            document.getElementById('generalError').classList.remove('hidden');
+            console.error('Signup error:', error);
+            if (loadingSpinner) {
+                loadingSpinner.classList.add('hidden');
+            }
+            showError('generalError', 'Something went wrong! Please try again.');
         }
     });
 
@@ -212,64 +210,44 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Add OTP input handling
-    const otpInputs = document.querySelectorAll('.otp-input');
-    otpInputs.forEach((input, index) => {
-        input.addEventListener('input', function () {
-            if (this.value.length === 1) {
-                if (index < otpInputs.length - 1) otpInputs[index + 1].focus();
-            }
-        });
-
-        input.addEventListener('keydown', function (e) {
-            if (e.key === 'Backspace' && !this.value) {
-                if (index > 0) otpInputs[index - 1].focus();
-            }
-        });
-    });
-
-    // Handle OTP verification
-    document.getElementById('verifyOtp').addEventListener('click', async function () {
+    // OTP Verification
+    document.getElementById('verifyOtp')?.addEventListener('click', async function(e) {
+        e.preventDefault();
+        
+        const otpInputs = document.querySelectorAll('.otp-input');
         const otp = Array.from(otpInputs).map(input => input.value).join('');
-        const email = document.getElementById('email').value;
-        const otpError = document.getElementById('otpError');
-        const otpLoadingSpinner = document.getElementById('otp-loading-spinner');
+
+        if (otp.length !== 6) {
+            showError('otpError', 'Please enter a valid 6-digit OTP');
+            return;
+        }
 
         try {
-            // Show loading spinner
-            otpLoadingSpinner.classList.remove('hidden');
+            loadingSpinner?.classList.remove('hidden');
             
             const response = await fetch('/validate-otp', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ userOtp: otp, email })
+                body: JSON.stringify({
+                    email: userEmail,
+                    userOtp: otp
+                })
             });
 
             const data = await response.json();
-            
-            // Hide loading spinner
-            otpLoadingSpinner.classList.add('hidden');
+            loadingSpinner?.classList.add('hidden');
 
             if (data.success) {
                 window.location.href = data.redirectUrl;
             } else {
-                // Show error message
-                otpError.textContent = data.error || 'Invalid OTP';
-                otpError.classList.remove('hidden');
-                
-                // Clear OTP inputs
-                otpInputs.forEach(input => input.value = '');
-                otpInputs[0].focus();
+                showError('otpError', data.message);
             }
         } catch (error) {
-            // Hide loading spinner
-            otpLoadingSpinner.classList.add('hidden');
-            
-            console.error('Error:', error);
-            otpError.textContent = 'Failed to verify OTP';
-            otpError.classList.remove('hidden');
+            console.error('OTP verification error:', error);
+            loadingSpinner?.classList.add('hidden');
+            showError('otpError', 'Failed to verify OTP');
         }
     });
 
@@ -340,4 +318,35 @@ document.addEventListener('DOMContentLoaded', function () {
             resendButton.disabled = false;
         }
     });
+
+    // Helper functions
+    function clearErrors() {
+        const errorElements = document.querySelectorAll('[id$="Error"]');
+        errorElements.forEach(element => {
+            if (element) {
+                element.textContent = '';
+                element.classList.add('hidden');
+            }
+        });
+    }
+
+    function setupOTPInputs() {
+        const otpInputs = document.querySelectorAll('.otp-input');
+        
+        otpInputs.forEach((input, index) => {
+            input.addEventListener('input', function(e) {
+                if (this.value.length === 1) {
+                    if (index < otpInputs.length - 1) {
+                        otpInputs[index + 1].focus();
+                    }
+                }
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && !this.value && index > 0) {
+                    otpInputs[index - 1].focus();
+                }
+            });
+        });
+    }
 });
