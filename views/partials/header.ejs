@@ -1,0 +1,89 @@
+<header class="fixed w-full z-50 transition-all duration-300" id="navbar">
+    <nav class="container mx-auto px-4 py-4">
+        <div class="flex items-center justify-between">
+            <!-- Logo -->
+            <a href="/" class="flex items-center">
+                <img src="/images/logo.png" alt="Virtue Rider" class="h-12">
+            </a>
+
+            <!-- Desktop Navigation -->
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="/" class="text-white hover:text-gray-200 font-medium">Home</a>
+                <a href="/shop" class="text-white hover:text-gray-200 font-medium">Shop</a>
+                <a href="/about" class="text-white hover:text-gray-200 font-medium">About</a>
+                <a href="/contact" class="text-white hover:text-gray-200 font-medium">Contact</a>
+            </div>
+
+            <!-- User Actions -->
+            <div class="hidden md:flex items-center space-x-6">
+                <% if (locals.isLoggedIn) { %>
+                    <a href="/profile" class="text-white hover:text-gray-200">
+                        <i class="fas fa-user"></i>
+                    </a>
+                    <a href="/cart" class="text-white hover:text-gray-200">
+                        <i class="fas fa-shopping-cart"></i>
+                    </a>
+                    <form action="/logout" method="POST" class="inline">
+                        <button type="submit" class="text-white hover:text-gray-200">Logout</button>
+                    </form>
+                <% } else { %>
+                    <a href="/login" class="text-white hover:text-gray-200 font-medium">Login</a>
+                    <a href="/signup" class="bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-100 font-medium">Sign Up</a>
+                <% } %>
+            </div>
+
+            <!-- Mobile Menu Button -->
+            <button class="md:hidden text-white" id="mobile-menu-button">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="md:hidden hidden bg-white rounded-lg mt-4 p-4 shadow-lg" id="mobile-menu">
+            <div class="flex flex-col space-y-4">
+                <a href="/" class="text-black hover:text-gray-600">Home</a>
+                <a href="/shop" class="text-black hover:text-gray-600">Shop</a>
+                <a href="/about" class="text-black hover:text-gray-600">About</a>
+                <a href="/contact" class="text-black hover:text-gray-600">Contact</a>
+                <% if (locals.isLoggedIn) { %>
+                    <a href="/profile" class="text-black hover:text-gray-600">Profile</a>
+                    <a href="/cart" class="text-black hover:text-gray-600">Cart</a>
+                    <form action="/logout" method="POST">
+                        <button type="submit" class="text-black hover:text-gray-600 w-full text-left">Logout</button>
+                    </form>
+                <% } else { %>
+                    <a href="/login" class="text-black hover:text-gray-600">Login</a>
+                    <a href="/signup" class="text-black hover:text-gray-600">Sign Up</a>
+                <% } %>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<!-- Add Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<!-- Header Script -->
+<script>
+    // Change header background on scroll
+    window.addEventListener('scroll', function() {
+        const navbar = document.getElementById('navbar');
+        if (window.scrollY > 50) {
+            navbar.classList.add('bg-black');
+            navbar.classList.add('shadow-lg');
+        } else {
+            navbar.classList.remove('bg-black');
+            navbar.classList.remove('shadow-lg');
+        }
+    });
+
+    // Mobile menu toggle
+    document.getElementById('mobile-menu-button')?.addEventListener('click', function() {
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (mobileMenu) {
+            mobileMenu.classList.toggle('hidden');
+        }
+    });
+</script> 
