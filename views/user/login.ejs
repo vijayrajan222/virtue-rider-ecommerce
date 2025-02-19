@@ -5,27 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="/tailwindcss/output.css" />
     <title>User login</title>
-    <script src="https://apis.google.com/js/platform.js" async defer></script>
-    <meta
-      name="google-signin-client_id"
-      content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-    />
+    <!-- Google Sign-In -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
-      integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
     />
   </head>
 
-  <body class="bg-gray-300">
-    <!------------ Navbar ---------->
-    <%- include("../partials/nav") %>
-    <div class="mt-16"></div>
- <div class=""></div>
+  <body class="bg-gray-100">
     <!-- Centered Login Card -->
-    <div class="min-h-screen flex items-center justify-center bg-gray-100">
+    <div class="min-h-screen flex items-center justify-center">
       <div class="bg-white p-8 rounded-lg shadow-md w-96">
         <h2 class="text-2xl font-semibold text-center mb-6">Login</h2>
         
@@ -40,10 +30,8 @@
             <input type="password" id="password" name="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black" required>
           </div>
 
-          <!-- General Error Message -->
           <div id="generalError" class="text-red-500 text-sm mt-2 hidden"></div>
 
-          <!-- Loading Spinner -->
           <div id="loading-spinner" class="hidden">
             <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-black mx-auto"></div>
           </div>
@@ -52,6 +40,27 @@
             Login
           </button>
         </form>
+
+        <!-- Divider -->
+        <div class="relative flex items-center justify-center mt-6">
+          <div class="border-t border-gray-300 absolute w-full"></div>
+          <div class="bg-white px-4 relative text-sm text-gray-500">or continue with</div>
+        </div>
+
+        <!-- Google Sign-In Button -->
+        <div id="google-auth-div">
+          <div
+            class="flex justify-center text-center mt-6 text-gray-500 text-sm"
+          >
+            Or continue with Google
+          </div>
+          <a
+            class="flex justify-center mt-6"
+            href="/auth/google?trigger=signup"
+          >
+            <i class="fa-brands fa-google fa-lg" style="color: #b12020"></i>
+          </a>
+        </div>
 
         <div class="mt-4 text-center">
           <p class="text-sm text-gray-600">Don't have an account? 
@@ -62,79 +71,11 @@
       </div>
     </div>
 
-    <!------------- Footer ------------>
-    <%- include("../partials/footer") %>
-
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const loginForm = document.getElementById('login-form');
-        const loadingSpinner = document.getElementById('loading-spinner');
+   
+     
 
-        if (!loginForm) {
-            console.error('Login form not found');
-            return;
-        }
-
-        loginForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            clearErrors();
-
-            const email = document.getElementById('email')?.value.trim();
-            const password = document.getElementById('password')?.value;
-
-            if (!email || !password) {
-                showError('generalError', 'All fields are required');
-                return;
-            }
-
-            try {
-                if (loadingSpinner) loadingSpinner.classList.remove('hidden');
-
-                const response = await fetch('/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email,
-                        password
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (loadingSpinner) loadingSpinner.classList.add('hidden');
-
-                if (data.success) {
-                    window.location.href = data.redirectUrl;
-                } else {
-                    showError('generalError', data.message || 'Login failed');
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                if (loadingSpinner) loadingSpinner.classList.add('hidden');
-                showError('generalError', 'Something went wrong! Please try again.');
-            }
-        });
-
-        function showError(elementId, message) {
-            const errorElement = document.getElementById(elementId);
-            if (errorElement) {
-                errorElement.textContent = message;
-                errorElement.classList.remove('hidden');
-            }
-        }
-
-        function clearErrors() {
-            const errorElements = document.querySelectorAll('[id$="Error"]');
-            errorElements.forEach(element => {
-                if (element) {
-                    element.textContent = '';
-                    element.classList.add('hidden');
-                }
-            });
-        }
-    });
+      
     </script>
   </body>
 </html>

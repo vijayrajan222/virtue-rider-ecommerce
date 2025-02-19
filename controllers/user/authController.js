@@ -405,7 +405,7 @@ export const getGoogleCallback = (req, res) => {
             if (err || !profile) {
                 return res.redirect("/login?message=Authentication failed&alertType=error");
             }
-
+            
             const existingUser = await User.findOne({ email: profile.email });
 
             const names = profile.displayName.split(' ');
@@ -415,24 +415,24 @@ export const getGoogleCallback = (req, res) => {
             // If user exists, check if blocked before logging in
             if (existingUser) {
                 // Check if user is blocked
-                if (existingUser.blocked) {
+                if (existingUser.isBlocked) {
                     return res.redirect("/login?message=Your account has been blocked&alertType=error");
                 }
 
                 // Update googleId if it doesn't exist and unset otpAttempts
                 await User.findByIdAndUpdate(existingUser._id, {
-                    $set: { googleId: existingUser.googleId || profile.id },
-                    $unset: { otpAttempts: 1 }
+                    $set: { googleId: existingUser.googleId || profile.id }
                 });
                 
                 req.session.user = existingUser._id;
                 return res.redirect("/home");
             }
+    
 
             // If user doesn't exist, create new account
             const newUser = new User({
-                firstName: firstName,
-                lastName: lastName,
+                firstname: firstName,
+                lastname: lastName || 'A',
                 email: profile.email,
                 googleId: profile.id,
                 isVerified: true,
@@ -444,7 +444,7 @@ export const getGoogleCallback = (req, res) => {
 
         } catch (error) {
             console.error("Google authentication error:", error);
-            return res.redirect("/login?message=Authentication failed&alertType=error");
+            return res.send(error)
         }
     })(req, res);
 };
