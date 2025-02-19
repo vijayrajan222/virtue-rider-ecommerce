@@ -26,7 +26,9 @@
     "mailtrap": "^3.4.0",
     "mongoose": "^8.9.7",
     "nodemailer": "^6.10.0",
-    "parser": "^0.1.4"
+    "parser": "^0.1.4",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.9",

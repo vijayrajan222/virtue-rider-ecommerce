@@ -2,6 +2,7 @@ import User from "../../models/userModel.js";
 import bcrypt from 'bcryptjs';
 import { generateTokenAndSetCookies } from "../../utils/genarateTokenAndSetCookie.js";
 import { generateOTP, sendOTPEmail } from '../../utils/sendOTP.js'
+import passport from 'passport';
 
 
 
@@ -70,7 +71,7 @@ export const postSignUp = async (req, res) => {
 const postOtp = async (req, res) => {
     try {
         const { userOtp, email } = req.body;
-        const user = await userSchema.findOne({ email, otp: userOtp });
+        const user = await User.findOne({ email, otp: userOtp });
 
         if (!user) {
             return res.status(400).json({ success: false, message: 'Invalid OTP' });
@@ -89,7 +90,7 @@ const postOtp = async (req, res) => {
 
         // If OTP matches, verify user
         if (user.otp === userOtp) {
-            await userSchema.findByIdAndUpdate(user._id, {
+            await User.findByIdAndUpdate(user._id, {
                 $set: { isVerified: true },
                 $unset: { otp: 1, otpExpiresAt: 1, otpAttempts: 1 }
             });
@@ -387,4 +388,63 @@ export const resetPassword = async (req, res) => {
             message: 'Failed to reset password'
         });
     }
+};
+
+export const getGoogle = (req, res) => {
+    // Store the trigger in session before redirecting to Google
+    req.session.authTrigger = req.query.trigger;
+    
+    passport.authenticate("google", {
+        scope: ["email", "profile"],
+    })(req, res);
+};
+
+export const getGoogleCallback = (req, res) => {
+    passport.authenticate("google", { failureRedirect: "/login" }, async (err, profile) => {
+        try {
+            if (err || !profile) {
+                return res.redirect("/login?message=Authentication failed&alertType=error");
+            }
+
+            const existingUser = await User.findOne({ email: profile.email });
+
+            const names = profile.displayName.split(' ');
+            const firstName = names[0];
+            const lastName = names.slice(1).join(' ')
+            
+            // If user exists, check if blocked before logging in
+            if (existingUser) {
+                // Check if user is blocked
+                if (existingUser.blocked) {
+                    return res.redirect("/login?message=Your account has been blocked&alertType=error");
+                }
+
+                // Update googleId if it doesn't exist and unset otpAttempts
+                await User.findByIdAndUpdate(existingUser._id, {
+                    $set: { googleId: existingUser.googleId || profile.id },
+                    $unset: { otpAttempts: 1 }
+                });
+                
+                req.session.user = existingUser._id;
+                return res.redirect("/home");
+            }
+
+            // If user doesn't exist, create new account
+            const newUser = new User({
+                firstName: firstName,
+                lastName: lastName,
+                email: profile.email,
+                googleId: profile.id,
+                isVerified: true,
+            });
+            await newUser.save();
+            
+            req.session.user = newUser._id;
+            return res.redirect("/home");
+
+        } catch (error) {
+            console.error("Google authentication error:", error);
+            return res.redirect("/login?message=Authentication failed&alertType=error");
+        }
+    })(req, res);
 };

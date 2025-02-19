@@ -6,6 +6,8 @@ import userRouter from './routes/userRouter.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import adminRouter from './routes/adminRouter.js';
+import './utils/googleAuth.js';
+import passport from 'passport';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,6 +38,10 @@ app.use(session({
 // View engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// Initialize passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Routes
 app.use('/', userRouter);

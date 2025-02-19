@@ -13,7 +13,9 @@ import {
     postLogin,
     sendForgotPasswordOTP,
     verifyForgotPasswordOTP,
-    resetPassword 
+    resetPassword,
+    getGoogle,
+    getGoogleCallback 
 } from '../controllers/user/authController.js';
 
 const userRouter = express.Router();
@@ -31,6 +33,9 @@ userRouter.post('/signup', postSignUp);
 userRouter.post('/verify-otp', verifyOTP);
 userRouter.post('/resend-otp', resendOTP);
 userRouter.post('/login', postLogin);
+userRouter.get('/auth/google/callback', getGoogleCallback);
+userRouter.get('/auth/google', getGoogle);
+
 
 // Forgot password routes
 userRouter.post('/forgot-password/send-otp', sendForgotPasswordOTP);

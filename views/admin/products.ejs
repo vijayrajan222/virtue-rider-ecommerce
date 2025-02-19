@@ -133,7 +133,7 @@
     <div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-gray-800 rounded-lg p-8 max-w-4xl w-full mx-4">
             <h2 id="modalTitle" class="text-xl font-semibold text-gray-200 mb-6">Add New Product</h2>
-            <form id="productForm" onsubmit="event.preventDefault(); if(validateForm()) handleSubmit(event)">
+            <form id="productForm" enctype="multipart/form-data" onsubmit="handleSubmit(event)">
                 <input type="hidden" id="productId">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Basic Product Info -->
