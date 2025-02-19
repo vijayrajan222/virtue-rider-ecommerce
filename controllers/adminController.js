@@ -450,8 +450,9 @@ export const logout = (req, res) => {
 
 export const addProduct = async (req, res) => {
     try {
-        console.log('Received data:', req.body);
-        
+        console.log('Received files:', req.files);
+        console.log('Received body:', req.body);
+
         const { name, description, categoryId } = req.body;
         let variants = [];
 
@@ -459,7 +460,6 @@ export const addProduct = async (req, res) => {
             try {
                 variants = JSON.parse(req.body.variants);
             } catch (error) {
-                console.error('Error parsing variants:', error);
                 return res.status(400).json({
                     success: false,
                     message: 'Invalid variant data'
@@ -467,21 +467,37 @@ export const addProduct = async (req, res) => {
             }
         }
 
-        // Create the product with variants
+        // Handle image uploads
+        const images = [];
+        if (req.files) {
+            // Collect all uploaded images
+            for (let i = 1; i <= 3; i++) {
+                const fieldName = `image${i}`;
+                if (req.files[fieldName] && req.files[fieldName][0]) {
+                    images.push(`/uploads/products/${req.files[fieldName][0].filename}`);
+                }
+            }
+        }
+
+        if (images.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'At least one image is required'
+            });
+        }
+
+        // Create the product with variants and images
         const product = new Product({
             name,
             description,
             categoryId,
             brand: 'VR',
-            variants: variants.map((variant, index) => ({
+            variants: variants.map(variant => ({
                 color: variant.color,
                 size: variant.size,
                 price: parseFloat(variant.price),
                 stock: parseInt(variant.stock),
-                images: req.files ? 
-                    req.files.slice(index * 3, (index + 1) * 3) // Assuming 3 images per variant
-                        .map(file => `/uploads/products/${file.filename}`) 
-                    : []
+                images: images // Assign all images to each variant
             }))
         });
 
@@ -493,7 +509,7 @@ export const addProduct = async (req, res) => {
             product
         });
     } catch (error) {
-        console.error('Error adding product:', error);
+        console.error('Error in addProduct:', error);
         res.status(500).json({
             success: false,
             message: error.message || 'Failed to add product'
