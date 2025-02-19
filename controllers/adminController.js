@@ -568,6 +568,7 @@ const addProduct = async (req, res) => {
     }
 };
 
+
 const updateProduct = async (req, res) => {
     try {
         const { name, description, categoryId } = req.body;

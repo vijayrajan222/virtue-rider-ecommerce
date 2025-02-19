@@ -35,7 +35,7 @@ router.post('/login', postAdminLogin);
 router.get('/logout', logout);
 
 // Protected Routes (Require Admin Authentication)
-router.use(isAdminAuth);
+// router.use(isAdminAuth);
 
 // Dashboard
 router.get('/dashboard', getDashboard);
@@ -47,8 +47,8 @@ router.put('/users/:id/toggle-status', toggleUserStatus);
 // Product Management
 router.get('/products', getProducts);
 router.get('/products/:id', getProductById);
-router.post('/products', upload.array('images', 10), addProduct);
-router.put('/products/:id', upload.array('images', 10), updateProduct);
+router.post('/products', upload, addProduct);
+// router.put('/products/:id', upload.array('images', 10), updateProduct);
 router.delete('/products/:id', deleteProduct);
 router.patch('/products/:id/toggle-visibility', toggleProductVisibility);
 router.post('/products/:id/remove-image', removeProductImage);
