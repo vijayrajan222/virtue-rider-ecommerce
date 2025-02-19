@@ -535,16 +535,28 @@
 
                 // Collect variant data
                 const variants = [];
-                document.querySelectorAll(".variant-row").forEach((row) => {
-                    const size = row.querySelector(".variant-size").value;
-                    const stock = row.querySelector(".variant-stock").value;
-                    variants.push({ size, stock });
+                document.querySelectorAll("#variantsContainer > div").forEach((variantDiv, index) => {
+                    const size = variantDiv.querySelector("select").value;
+                    const stock = variantDiv.querySelector("input[type='number']").value;
+
+                    // Collect images for this variant
+                    const variantImages = [];
+                    const variantImageInput = variantDiv.querySelector("input[type='file']");
+                    if (variantImageInput.files.length > 0) {
+                        for (let i = 0; i < variantImageInput.files.length; i++) {
+                            const file = variantImageInput.files[i];
+                            variantImages.push(file);
+                            formData.append(`variantImages-${index}-${i}`, file); // Store images uniquely for each variant
+                        }
+                    }
+
+                    variants.push({ size, stock, images: variantImages });
                 });
 
                 formData.append("variants", JSON.stringify(variants));
 
-                // Collect image files
-                const imageInputs = form.querySelectorAll('input[type="file"]');
+                // Collect main product images
+                const imageInputs = document.querySelectorAll('input[type="file"][name^="image"]');
                 imageInputs.forEach((input, index) => {
                     if (input.files.length > 0) {
                         formData.append(`image${index + 1}`, input.files[0]);
@@ -552,35 +564,32 @@
                 });
 
                 try {
-
-                    console.log("Form Data Start")
-                    formData.forEach((value, key) => {
-                        console.log(`${key}:`, value);
-                    });
-                    console.log("Form Data End")
-
-                    const response = await fetch("/admin/products", {
+                    // Send data to the backend
+                    fetch("/upload", {
                         method: "POST",
                         body: formData
-                    });
+                    })
+                        .then(response => response.text())  // Get response as text
+                        .then(data => {
+                            console.log("Raw response:", data);
+                            return JSON.parse(data); // Try to parse JSON after logging
+                        })
+                        .catch(error => console.error("Error submitting product:", error));
 
                     const result = await response.json();
-                    console.log("message", result);
-
                     if (result.success) {
                         alert("Product added successfully!");
-                        closeModal();
-                        location.reload();
+                        closeModal(); // Close the modal after successful submission
+                        form.reset(); // Reset the form
+                        document.getElementById("variantsContainer").innerHTML = ""; // Clear variants
                     } else {
-                        alert(result.message || "Failed to add product");
+                        alert("Error: " + result.message);
                     }
                 } catch (error) {
-                    console.error("Error:", error);
+                    console.error("Error submitting product:", error);
                     alert("An error occurred. Please try again.");
                 }
             }
-
-
 
 
 
