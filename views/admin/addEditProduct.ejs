@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= isEdit ? 'Edit' : 'Add' %> Product - Virtue Rider</title>
+    <link rel="stylesheet" href="/tailwindcss/output.css" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-900">
+    <%- include("../partials/sidebar") %>
+
+    <div class="p-2 sm:ml-64">
+        <div class="bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-semibold text-gray-200 mb-6">
+                <%= isEdit ? 'Edit' : 'Add' %> Product
+            </h2>
+
+            <form id="productForm" class="space-y-6" method="POST" enctype="multipart/form-data">
+                <!-- Main Product Details -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Product Name -->
+                    <div>
+                        <label class="block text-gray-400 mb-2">Product Name</label>
+                        <input type="text" 
+                               name="name" 
+                               required
+                               value="<%= product?.name || '' %>"
+                               class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                    </div>
+
+                    <!-- Category -->
+                    <div>
+                        <label class="block text-gray-400 mb-2">Category</label>
+                        <select name="category" 
+                                required
+                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                            <option value="">Select Category</option>
+                            <% categories.forEach(category => { %>
+                                <option value="<%= category._id %>" 
+                                    <%= product?.categoryId === category._id ? 'selected' : '' %>>
+                                    <%= category.name %>
+                                </option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <!-- Price -->
+                    <div>
+                        <label class="block text-gray-400 mb-2">Price (₹)</label>
+                        <input type="number" 
+                               name="price" 
+                               required
+                               min="0"
+                               value="<%= product?.price || '' %>"
+                               class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                    </div>
+
+                    <!-- Color -->
+                    <div>
+                        <label class="block text-gray-400 mb-2">Color</label>
+                        <input type="text" 
+                               name="color" 
+                               required
+                               value="<%= product?.color || '' %>"
+                               class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                    </div>
+                </div>
+
+                <!-- Hidden Brand Field -->
+                <input type="hidden" name="brand" value="VR">
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-gray-400 mb-2">Description</label>
+                    <textarea name="description" 
+                            required
+                            rows="4" 
+                            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500"><%= product?.description || '' %></textarea>
+                </div>
+
+                <!-- Product Images -->
+                <div class="space-y-4">
+                    <label class="block text-gray-400 mb-2">Product Images</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-gray-400 mb-1">Main Image</label>
+                            <input type="file" 
+                                   name="mainImage" 
+                                   accept="image/*"
+                                   <%= !isEdit ? 'required' : '' %>
+                                   class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 mb-1">Second Image</label>
+                            <input type="file" 
+                                   name="image2" 
+                                   accept="image/*"
+                                   <%= !isEdit ? 'required' : '' %>
+                                   class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 mb-1">Third Image</label>
+                            <input type="file" 
+                                   name="image3" 
+                                   accept="image/*"
+                                   <%= !isEdit ? 'required' : '' %>
+                                   class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Size Variants -->
+                <div class="mt-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-gray-200">Size Variants</h3>
+                        <button type="button" 
+                                onclick="addVariant()"
+                                class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                            Add Size
+                        </button>
+                    </div>
+
+                    <div id="variantsContainer" class="space-y-4">
+                        <!-- Initial Variant -->
+                        <div class="variant-item bg-gray-700 p-4 rounded-lg">
+                            <div class="flex items-center gap-4">
+                                <div class="flex-1">
+                                    <select name="variants[0].size" 
+                                            required
+                                            class="w-full px-4 py-2 bg-gray-600 border border-gray-500 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                                        <option value="">Select Size</option>
+                                        <option value="S">Small (S)</option>
+                                        <option value="M">Medium (M)</option>
+                                        <option value="L">Large (L)</option>
+                                        <option value="XL">Extra Large (XL)</option>
+                                    </select>
+                                </div>
+                                <div class="flex-1">
+                                    <input type="number" 
+                                           name="variants[0].stock" 
+                                           required
+                                           min="0"
+                                           placeholder="Stock Quantity"
+                                           class="w-full px-4 py-2 bg-gray-600 border border-gray-500 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                                </div>
+                                <button type="button" 
+                                        onclick="removeVariant(this)"
+                                        class="text-red-400 hover:text-red-300">
+                                    <i class="material-icons">delete</i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Buttons -->
+                <div class="flex justify-end space-x-4 mt-8">
+                    <button type="button" 
+                            onclick="window.history.back()"
+                            class="px-6 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                        <%= isEdit ? 'Update' : 'Add' %> Product
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let variantCount = 1;
+
+        function addVariant() {
+            const container = document.getElementById('variantsContainer');
+            const template = document.querySelector('.variant-item').cloneNode(true);
+            
+            // Update field names
+            const select = template.querySelector('select');
+            const input = template.querySelector('input[type="number"]');
+            
+            select.name = `variants[${variantCount}].size`;
+            select.value = '';
+            
+            input.name = `variants[${variantCount}].stock`;
+            input.value = '';
+            
+            container.appendChild(template);
+            variantCount++;
+        }
+
+        function removeVariant(button) {
+            const variants = document.querySelectorAll('.variant-item');
+            if (variants.length > 1) {
+                button.closest('.variant-item').remove();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Cannot Remove',
+                    text: 'At least one size variant is required',
+                    confirmButtonColor: '#FF6B00'
+                });
+            }
+        }
+    </script>
+</body>
+</html> 

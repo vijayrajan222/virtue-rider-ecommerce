@@ -21,15 +21,13 @@
         <h1 class="text-2xl font-semibold text-gray-200">Dashboard Overview</h1>
       </header>
 
-      <!-- Stats Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 px-4">
+      <!-- Statistics Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <!-- Total Users Card -->
-        <div class="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-gray-400 text-sm">Total Users</h3>
-            <span class="bg-orange-500/20 text-orange-500 p-2 rounded-lg">
-              <i class="material-icons">sports_motorsports</i>
-            </span>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-gray-400">Total Users</h3>
+            <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl group-hover:rotate-12 transition-transform">sports_motorsports</i>
           </div>
           <div class="flex items-baseline">
             <p class="text-3xl font-bold text-gray-200"><%= data.totalUsers %></p>
@@ -37,12 +35,10 @@
         </div>
 
         <!-- Total Products Card -->
-        <div class="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-gray-400 text-sm">Total Products</h3>
-            <span class="bg-blue-500/20 text-blue-500 p-2 rounded-lg">
-              <i class="material-icons">two_wheeler</i>
-            </span>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-gray-400">Total Products</h3>
+            <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl group-hover:rotate-12 transition-transform">two_wheeler</i>
           </div>
           <div class="flex items-baseline">
             <p class="text-3xl font-bold text-gray-200"><%= data.totalProducts %></p>
@@ -50,12 +46,10 @@
         </div>
 
         <!-- Total Orders Card -->
-        <div class="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-gray-400 text-sm">Total Orders</h3>
-            <span class="bg-purple-500/20 text-purple-500 p-2 rounded-lg">
-              <i class="material-icons">delivery_dining</i>
-            </span>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-gray-400">Total Orders</h3>
+            <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl group-hover:rotate-12 transition-transform">delivery_dining</i>
           </div>
           <div class="flex items-baseline">
             <p class="text-3xl font-bold text-gray-200"><%= data.totalOrders %></p>
@@ -63,52 +57,49 @@
         </div>
 
         <!-- Total Revenue Card -->
-        <div class="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-gray-400 text-sm">Total Revenue</h3>
-            <span class="bg-green-500/20 text-green-500 p-2 rounded-lg">
-              <i class="material-icons">payments</i>
-            </span>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-gray-400">Total Revenue</h3>
+            <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl group-hover:rotate-12 transition-transform">trending_up</i>
           </div>
           <div class="flex items-baseline">
-            <p class="text-3xl font-bold text-gray-200">₹<%= data.totalRevenue %></p>
+            <p class="text-3xl font-bold text-gray-200">₹<%= data.totalRevenue.toLocaleString() %></p>
           </div>
         </div>
       </div>
 
-      <!-- Recent Orders -->
-      <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden mx-4 border border-gray-700">
-        <div class="p-6 border-b border-gray-700">
-          <h3 class="text-gray-200 font-semibold">Recent Orders</h3>
+      <!-- Recent Orders Table -->
+      <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+        <div class="flex items-center gap-3 mb-4">
+          <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">delivery_dining</i>
+          <h2 class="text-xl font-semibold text-gray-200">Recent Orders</h2>
         </div>
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-700">
-            <thead class="bg-gray-900">
+          <table class="w-full text-left">
+            <thead class="bg-gray-700 text-gray-200">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Order ID</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Customer</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Amount</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Date</th>
+                <th class="p-4">Order ID</th>
+                <th class="p-4">Customer</th>
+                <th class="p-4">Amount</th>
+                <th class="p-4">Status</th>
+                <th class="p-4">Date</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-700">
+            <tbody>
               <% data.recentOrders.forEach(order => { %>
-                <tr class="hover:bg-gray-700 transition-colors">
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-200">#<%= order._id %></td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-200"><%= order.user %></td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-200">₹<%= order.totalAmount %></td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      <%= order.status === 'delivered' ? 'bg-green-100 text-green-800' : 
-                         order.status === 'cancelled' ? 'bg-red-100 text-red-800' : 
-                         'bg-yellow-100 text-yellow-800' %>">
+                <tr class="border-b border-gray-700">
+                  <td class="p-4 text-gray-300">#<%= order._id.toString().slice(-6) %></td>
+                  <td class="p-4 text-gray-300"><%= order.userId?.name || 'Unknown' %></td>
+                  <td class="p-4 text-gray-300">₹<%= order.totalAmount.toLocaleString() %></td>
+                  <td class="p-4">
+                    <span class="px-2 py-1 rounded-full text-xs 
+                      <%= order.status === 'Delivered' ? 'bg-green-900/30 text-green-400' : 
+                        order.status === 'Pending' ? 'bg-yellow-900/30 text-yellow-400' : 
+                        'bg-red-900/30 text-red-400' %>">
                       <%= order.status %>
                     </span>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-200">
-                    <%= new Date(order.createdAt).toLocaleDateString() %>
-                  </td>
+                  <td class="p-4 text-gray-300"><%= new Date(order.createdAt).toLocaleDateString() %></td>
                 </tr>
               <% }); %>
             </tbody>

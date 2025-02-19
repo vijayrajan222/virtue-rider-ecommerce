@@ -21,7 +21,9 @@ import {
     getSalesReport,
     getCoupons,
     getOffers,
-    logout
+    logout,
+    toggleProductVisibility,
+    removeProductImage
 } from '../controllers/adminController.js';
 import { isAdminAuth } from '../middleware/adminAuth.js';
 
@@ -45,9 +47,11 @@ router.put('/users/:id/toggle-status', toggleUserStatus);
 // Product Management
 router.get('/products', getProducts);
 router.get('/products/:id', getProductById);
-router.post('/products', upload, addProduct);
-router.put('/products/:id', upload, updateProduct);
+router.post('/products', upload.array('images', 10), addProduct);
+router.put('/products/:id', upload.array('images', 10), updateProduct);
 router.delete('/products/:id', deleteProduct);
+router.patch('/products/:id/toggle-visibility', toggleProductVisibility);
+router.post('/products/:id/remove-image', removeProductImage);
 
 // Category Management
 router.get('/categories', getCategories);

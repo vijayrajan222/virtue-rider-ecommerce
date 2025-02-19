@@ -1906,6 +1906,10 @@ video {
   background-color: rgb(127 29 29 / 0.3);
 }
 
+.bg-yellow-900\/30 {
+  background-color: rgb(113 63 18 / 0.3);
+}
+
 .bg-opacity-40 {
   --tw-bg-opacity: 0.4;
 }
@@ -3273,6 +3277,10 @@ video {
 
   .md\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .md\:flex-row {

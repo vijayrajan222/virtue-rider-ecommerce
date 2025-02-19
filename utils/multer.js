@@ -30,19 +30,14 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// Configure multer with error handling
+// Create multer instance
 const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
     limits: {
         fileSize: 5 * 1024 * 1024, // 5MB limit
-        files: 3 // Maximum 3 files per upload
     }
-}).fields([
-    { name: 'image1', maxCount: 1 },
-    { name: 'image2', maxCount: 1 },
-    { name: 'image3', maxCount: 1 }
-]);
+});
 
 // Wrapper function to handle multer errors
 const uploadMiddleware = (req, res, next) => {
@@ -53,12 +48,6 @@ const uploadMiddleware = (req, res, next) => {
                 return res.status(400).json({
                     success: false,
                     message: 'File size too large. Maximum size is 5MB'
-                });
-            }
-            if (err.code === 'LIMIT_FILE_COUNT') {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Too many files. Maximum is 3 images'
                 });
             }
             return res.status(400).json({

@@ -31,63 +31,101 @@
         </header>
 
         <!-- Products Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 p-6">
-            <% products.forEach(product => { %>
-                <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-orange-500">
-                    <div class="relative aspect-w-1 aspect-h-1 group">
-                        <img src="<%= product.variants && product.variants[0] && product.variants[0].images && product.variants[0].images[0] || '/images/placeholder.jpg' %>" 
-                             alt="<%= product.name %>"
-                             class="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110">
-                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300">
-                            <div class="absolute top-4 right-4 space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <button onclick="editProduct('<%= product._id %>')"
-                                        class="p-2 bg-gray-900 rounded-full text-gray-300 hover:text-white hover:bg-orange-500 transition-all duration-300">
-                                    <i class="material-icons">edit</i>
-                                </button>
-                                <button onclick="deleteProduct('<%= product._id %>')"
-                                        class="p-2 bg-gray-900 rounded-full text-red-400 hover:text-white hover:bg-red-500 transition-all duration-300">
-                                    <i class="material-icons">delete</i>
-                                </button>
-                            </div>
-                        </div>
+        <div class="p-8">
+            <div class="bg-gray-800 rounded-lg shadow-lg">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-semibold text-gray-200">Products</h2>
+                        <button onclick="openAddModal()" 
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            + Add Product
+                        </button>
                     </div>
-                    <div class="p-6">
-                        <h3 class="text-xl font-semibold text-gray-200 mb-2 truncate hover:text-orange-500 transition-colors">
-                            <%= product.name %>
-                        </h3>
-                        <p class="text-gray-400 text-sm mb-4 line-clamp-2 h-10">
-                            <%= product.description %>
-                        </p>
-                        <div class="flex justify-between items-center">
-                            <div class="flex items-center space-x-2">
-                                <span class="px-3 py-1 bg-gray-700 rounded-full text-sm text-gray-300">
-                                    <%= product.variants && product.variants.length ? `${product.variants.length} variants` : 'No variants' %>
-                                </span>
-                                <% if (product.isActive) { %>
-                                    <span class="px-3 py-1 bg-green-900/30 text-green-400 rounded-full text-sm">Active</span>
-                                <% } else { %>
-                                    <span class="px-3 py-1 bg-red-900/30 text-red-400 rounded-full text-sm">Inactive</span>
-                                <% } %>
-                            </div>
-                            <span class="text-lg font-medium text-orange-500">
-                                <%= product.variants && product.variants[0] ? `₹${product.variants[0].price}` : 'Price not set' %>
-                            </span>
-                        </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-700 text-gray-200">
+                                <tr>
+                                    <th class="p-4">IMAGE</th>
+                                    <th class="p-4">PRODUCT</th>
+                                    <th class="p-4">BRAND</th>
+                                    <th class="p-4">CATEGORY</th>
+                                    <th class="p-4">PRICE</th>
+                                    <th class="p-4">STOCK</th>
+                                    <th class="p-4">STATUS</th>
+                                    <th class="p-4">ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% products.forEach(product => { %>
+                                    <tr class="border-b border-gray-700 transition-all duration-200 <%= product.isHidden ? 'opacity-50' : '' %>"
+                                        id="product-row-<%= product._id %>">
+                                        <td class="p-4">
+                                            <img src="<%= product.variants?.[0]?.images?.[0] || '/images/placeholder.jpg' %>" 
+                                                 alt="<%= product.name %>"
+                                                 class="w-16 h-16 object-cover rounded-lg">
+                                        </td>
+                                        <td class="p-4 text-gray-200"><%= product.name %></td>
+                                        <td class="p-4 text-gray-200"><%= product.brand %></td>
+                                        <td class="p-4 text-gray-200"><%= product.categoryId?.name %></td>
+                                        <td class="p-4 text-gray-200">₹<%= product.variants?.[0]?.price || 'N/A' %></td>
+                                        <td class="p-4 text-gray-200"><%= product.variants?.[0]?.stock || 0 %></td>
+                                        <td class="p-4">
+                                            <span class="px-2 py-1 rounded-full text-sm <%= product.isActive ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400' %>">
+                                                <%= product.isActive ? 'Active' : 'Inactive' %>
+                                            </span>
+                                        </td>
+                                        <td class="p-4">
+                                            <div class="flex gap-2">
+                                                <button onclick="editProduct('<%= product._id %>')"
+                                                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">
+                                                    Edit
+                                                </button>
+                                                <button onclick="toggleHideProduct('<%= product._id %>', <%= product.isHidden %>)"
+                                                        class="<%= product.isHidden ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' %> text-white px-3 py-1 rounded"
+                                                        id="hide-button-<%= product._id %>">
+                                                    <%= product.isHidden ? 'Unhide' : 'Hide' %>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            <% }); %>
+            </div>
         </div>
 
         <!-- Pagination -->
         <div class="flex justify-center my-8">
             <nav class="flex space-x-2" aria-label="Pagination">
+                <% if (hasPreviousPage) { %>
+                    <a href="?page=<%= previousPage %>" 
+                       class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700">
+                        Previous
+                    </a>
+                <% } %>
+
                 <% for(let i = 1; i <= totalPages; i++) { %>
                     <a href="?page=<%= i %>" 
                        class="px-4 py-2 rounded-lg <%= currentPage === i ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700' %>">
                         <%= i %>
                     </a>
                 <% } %>
+
+                <% if (hasNextPage) { %>
+                    <a href="?page=<%= nextPage %>" 
+                       class="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700">
+                        Next
+                    </a>
+                <% } %>
             </nav>
+        </div>
+
+        <!-- Products count info -->
+        <div class="text-center text-gray-400 text-sm">
+            Showing <%= startIndex %>-<%= endIndex %> of <%= totalProducts %> products
         </div>
     </div>
 
@@ -95,7 +133,7 @@
     <div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-gray-800 rounded-lg p-8 max-w-4xl w-full mx-4">
             <h2 id="modalTitle" class="text-xl font-semibold text-gray-200 mb-6">Add New Product</h2>
-            <form id="productForm" onsubmit="handleSubmit(event)">
+            <form id="productForm" onsubmit="event.preventDefault(); if(validateForm()) handleSubmit(event)">
                 <input type="hidden" id="productId">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Basic Product Info -->
@@ -422,6 +460,73 @@
                 }
             });
         });
+
+        async function toggleHideProduct(productId, currentlyHidden) {
+            try {
+                const response = await fetch(`/admin/products/${productId}/toggle-visibility`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update UI
+                    const row = document.getElementById(`product-row-${productId}`);
+                    const button = document.getElementById(`hide-button-${productId}`);
+                    
+                    if (currentlyHidden) {
+                        // Unhiding
+                        row.classList.remove('opacity-50');
+                        button.textContent = 'Hide';
+                        button.classList.remove('bg-green-600', 'hover:bg-green-700');
+                        button.classList.add('bg-red-600', 'hover:bg-red-700');
+                    } else {
+                        // Hiding
+                        row.classList.add('opacity-50');
+                        button.textContent = 'Unhide';
+                        button.classList.remove('bg-red-600', 'hover:bg-red-700');
+                        button.classList.add('bg-green-600', 'hover:bg-green-700');
+                    }
+                    
+                    // Update the onclick handler with the new state
+                    button.setAttribute('onclick', `toggleHideProduct('${productId}', ${!currentlyHidden})`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to toggle product visibility');
+            }
+        }
+
+        // Add this function to handle image removal
+        async function removeImage(variantIndex, imageIndex) {
+            try {
+                const productId = document.getElementById('productId').value;
+                const response = await fetch(`/admin/products/${productId}/remove-image`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        variantIndex,
+                        imageIndex
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Reload the page to show updated images
+                    window.location.reload();
+                } else {
+                    alert('Failed to remove image: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error removing image:', error);
+                alert('Failed to remove image');
+            }
+        }
     </script>
 
     <style>

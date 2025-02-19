@@ -7,161 +7,201 @@ import { Order } from '../models/orderModel.js';
 config();
 
 // Admin Authentication Controllers
-export const getAdminLogin = (req, res) => {
-    res.render('admin/login', { message: null });
-};
-
-export const postAdminLogin = async (req, res) => {
+const getAdminLogin = async (req, res) => {
     try {
-        const { email, password } = req.body;
-        console.log("Login Attempt:", email, password);
-
-        if (!email || !password) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Email and password are required" 
-            });
-        }
-
-        // Check credentials against environment variables
-        if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
-            // Set session
-            req.session.admin = true;
-            
-            // Save session before sending response
-            req.session.save((err) => {
-                if (err) {
-                    console.error("Session save error:", err);
-                    return res.status(500).json({
-                        success: false,
-                        message: "Error saving session"
-                    });
-                }
-                
-                console.log("Session saved, admin logged in");
-                return res.status(200).json({
-                    success: true,
-                    message: "Login successful",
-                    redirectUrl: "/admin/dashboard"
-                });
-            });
+        if (req.session.admin) {
+            res.redirect('/admin/dashboard');
         } else {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid credentials"
+            res.render('admin/login', {
+                path: req.path,
+                title: 'Admin Login'
             });
         }
     } catch (error) {
-        console.error("Login Error:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error"
-        });
+        console.error('Error:', error);
+        res.status(500).send('Server Error');
+    }
+};
+
+const postAdminLogin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+            req.session.admin = true;
+            res.status(200).json({ success: true, redirectUrl: '/admin/dashboard' });
+        } else {
+            res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+const logout = async (req, res) => {
+    try {
+        req.session.destroy();
+        res.redirect('/admin/login');
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).send('Server Error');
     }
 };
 
 // Dashboard Controller
-export const getDashboard = async (req, res) => {
+const getDashboard = async (req, res) => {
     try {
-        console.log("Loading dashboard...");
+        // Get all the required data
+        const totalUsers = await User.countDocuments();
+        const totalProducts = await Product.countDocuments();
+        const totalOrders = await Order.countDocuments();
+        
+        // Calculate total revenue
+        const orders = await Order.find({ status: 'Delivered' });
+        const totalRevenue = orders.reduce((acc, order) => acc + order.totalAmount, 0);
+
+        // Get recent orders
+        const recentOrders = await Order.find()
+            .populate('userId', 'name email')
+            .sort({ createdAt: -1 })
+            .limit(5);
+
+        // Get top selling products
+        const topProducts = await Product.find()
+            .sort({ 'sales': -1 })
+            .limit(5);
+
+        // Monthly revenue data for chart
+        const monthlyRevenue = await Order.aggregate([
+            {
+                $match: {
+                    status: 'Delivered',
+                    createdAt: { 
+                        $gte: new Date(new Date().getFullYear(), 0, 1) // From start of current year
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: { $month: '$createdAt' },
+                    total: { $sum: '$totalAmount' }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        // Prepare data object
         const data = {
-            totalUsers: await User.countDocuments(),
-            totalOrders: await Order.countDocuments(),
-            totalProducts: await Product.countDocuments(),
-            totalRevenue: 0,
-            recentOrders: await Order.find().sort({ createdAt: -1 }).limit(5)
+            totalUsers,
+            totalProducts,
+            totalOrders,
+            totalRevenue,
+            recentOrders,
+            topProducts,
+            monthlyRevenue,
+            // Add current date for display
+            currentDate: new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            })
         };
-        res.render("admin/dashboard", { 
+
+        // Render dashboard with all data
+        res.render('admin/dashboard', {
+            path: req.path,
+            title: 'Dashboard',
             data,
-            path: '/admin/dashboard'
+            admin: req.session.admin
         });
+
     } catch (error) {
-        console.error("Dashboard Error:", error);
-        res.status(500).send("Error loading dashboard");
+        console.error('Error in getDashboard:', error);
+        res.status(500).send('Server Error');
     }
 };
 
 // User Management Controllers
-export const getUsers = async (req, res) => {
+const getUsers = async (req, res) => {
     try {
+        // Pagination parameters
         const page = parseInt(req.query.page) || 1;
-        const limit = 10;
+        const limit = 10; // Items per page
         const skip = (page - 1) * limit;
 
+        // Get total count of users
         const totalUsers = await User.countDocuments();
         const totalPages = Math.ceil(totalUsers / limit);
 
+        // Get users for current page with field selection
         const users = await User.find()
+            .select('firstname lastname email isBlocked')
+            .sort({ createdAt: -1 })
             .skip(skip)
-            .limit(limit)
-            .sort({ createdAt: -1 });
+            .limit(limit);
 
-        res.render('admin/userList', { 
-            users,
+        // Map the users to match the view's expected format
+        const mappedUsers = users.map(user => ({
+            _id: user._id,
+            firstName: user.firstname, // map to match view
+            lastName: user.lastname,   // map to match view
+            email: user.email,
+            isBlocked: user.isBlocked
+        }));
+
+        // Render the userList view (not users)
+        res.render('admin/userList', {
+            users: mappedUsers,
             currentPage: page,
             totalPages,
             totalUsers,
-            limit,
+            path: req.path,
+            title: 'Users',
             hasNextPage: page < totalPages,
             hasPreviousPage: page > 1,
-            path: '/admin/users'
+            nextPage: page + 1,
+            previousPage: page - 1,
+            lastPage: totalPages,
+            limit
         });
+
     } catch (error) {
-        console.error("Error fetching users:", error);
-        res.status(500).send("Error loading users");
+        console.error('Error fetching users:', error);
+        res.status(500).send('Error fetching users');
     }
 };
 
-export const toggleUserStatus = async (req, res) => {
+const toggleUserStatus = async (req, res) => {
     try {
-        const userId = req.params.id;
-        console.log("Attempting to toggle user with ID:", userId); // Debug log
-
-        const user = await User.findById(userId);
-        console.log("Found user:", user); // Debug log
-        
+        const user = await User.findById(req.params.id);
         if (!user) {
-            console.log("No user found with ID:", userId); // Debug log
-            return res.status(404).json({ 
-                success: false, 
-                message: 'User not found' 
-            });
+            return res.status(404).json({ success: false, message: 'User not found' });
         }
-
-        // Toggle the status
         user.isBlocked = !user.isBlocked;
         await user.save();
-        
-        // Send back the new status
-        res.json({ 
-            success: true,
-            isBlocked: user.isBlocked,
-            message: user.isBlocked ? 'User blocked successfully' : 'User unblocked successfully'
-        });
+        res.json({ success: true, message: `User ${user.isBlocked ? 'blocked' : 'unblocked'} successfully` });
     } catch (error) {
-        console.error('Error toggling user status:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to update user status' 
-        });
+        console.error('Error:', error);
+        res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
 
 // Category Controllers
-export const getCategories = async (req, res) => {
+const getCategories = async (req, res) => {
     try {
         const categories = await Category.find();
-        res.render('admin/categories', { 
+        res.render('admin/categories', {
             categories,
-            path: '/admin/categories'
+            path: req.path,
+            title: 'Categories'
         });
     } catch (error) {
-        console.error("Error fetching categories:", error);
-        res.status(500).send("Error loading categories");
+        console.error('Error:', error);
+        res.status(500).send('Server Error');
     }
 };
 
-export const createCategory = async (req, res) => {
+const createCategory = async (req, res) => {
     try {
         const { name, description } = req.body;
         const category = new Category({
@@ -184,7 +224,7 @@ export const createCategory = async (req, res) => {
     }
 };
 
-export const getCategoryById = async (req, res) => {
+const getCategoryById = async (req, res) => {
     try {
         const category = await Category.findById(req.params.id);
         if (!category) {
@@ -203,7 +243,7 @@ export const getCategoryById = async (req, res) => {
     }
 };
 
-export const updateCategory = async (req, res) => {
+const updateCategory = async (req, res) => {
     try {
         const { name, description } = req.body;
         const category = await Category.findByIdAndUpdate(
@@ -233,7 +273,7 @@ export const updateCategory = async (req, res) => {
     }
 };
 
-export const deleteCategory = async (req, res) => {
+const deleteCategory = async (req, res) => {
     try {
         const category = await Category.findByIdAndDelete(req.params.id);
         
@@ -264,41 +304,53 @@ export const deleteCategory = async (req, res) => {
 };
 
 // Product Controllers
-export const getProducts = async (req, res) => {
+const getProducts = async (req, res) => {
     try {
+        // Pagination parameters
         const page = parseInt(req.query.page) || 1;
-        const limit = 10;
+        const limit = 10; // Items per page
         const skip = (page - 1) * limit;
 
+        // Get total count of products
         const totalProducts = await Product.countDocuments();
         const totalPages = Math.ceil(totalProducts / limit);
 
+        // Get products for current page
         const products = await Product.find()
             .populate('categoryId')
+            .sort({ createdAt: -1 })
             .skip(skip)
-            .limit(limit)
-            .sort({ createdAt: -1 });
+            .limit(limit);
 
-        const categories = await Category.find();
+        // Get all categories for the form
+        const categories = await Category.find().sort({ name: 1 });
 
-        res.render('admin/products', { 
+        // Render the products page with all necessary data
+        res.render('admin/products', {
             products,
             categories,
             currentPage: page,
             totalPages,
             totalProducts,
-            limit,
+            path: req.path,
+            title: 'Products',
             hasNextPage: page < totalPages,
             hasPreviousPage: page > 1,
-            path: '/admin/products'
+            nextPage: page + 1,
+            previousPage: page - 1,
+            lastPage: totalPages,
+            itemsPerPage: limit,
+            startIndex: skip + 1,
+            endIndex: Math.min(skip + limit, totalProducts)
         });
+
     } catch (error) {
-        console.error("Error fetching products:", error);
-        res.status(500).send("Error loading products");
+        console.error('Error fetching products:', error);
+        res.status(500).send('Error fetching products');
     }
 };
 
-export const getProductById = async (req, res) => {
+const getProductById = async (req, res) => {
     try {
         const product = await Product.findById(req.params.id).populate('categoryId');
         if (!product) {
@@ -317,11 +369,11 @@ export const getProductById = async (req, res) => {
     }
 };
 
-export const getAddProduct = (req, res) => {
+const getAddProduct = (req, res) => {
     res.render("admin/addProduct");
 };
 
-export const postAddProduct = async (req, res) => {
+const postAddProduct = async (req, res) => {
     try {
         const { name, description, price, category } = req.body;
         const images = req.files.map(file => file.path);
@@ -342,7 +394,7 @@ export const postAddProduct = async (req, res) => {
     }
 };
 
-export const getEditProduct = async (req, res) => {
+const getEditProduct = async (req, res) => {
     try {
         const { id } = req.params;
         const product = await Product.findById(id).populate('category');
@@ -354,7 +406,7 @@ export const getEditProduct = async (req, res) => {
     }
 };
 
-export const postEditProduct = async (req, res) => {
+const postEditProduct = async (req, res) => {
     try {
         const { id } = req.params;
         const { name, description, price, category } = req.body;
@@ -372,7 +424,7 @@ export const postEditProduct = async (req, res) => {
     }
 };
 
-export const deleteProduct = async (req, res) => {
+const deleteProduct = async (req, res) => {
     try {
         const product = await Product.findByIdAndDelete(req.params.id);
         
@@ -397,17 +449,23 @@ export const deleteProduct = async (req, res) => {
 };
 
 // Order Management Controllers
-export const getOrders = async (req, res) => {
+const getOrders = async (req, res) => {
     try {
-        const orders = await Order.find().populate('user').sort({ createdAt: -1 });
-        res.render("admin/order", { orders });
+        const orders = await Order.find()
+            .populate('userId')
+            .populate('products.productId');
+        res.render('admin/orders', {
+            orders,
+            path: req.path,
+            title: 'Orders'
+        });
     } catch (error) {
-        console.error("Error fetching orders:", error);
-        res.status(500).send("Error loading orders");
+        console.error('Error:', error);
+        res.status(500).send('Server Error');
     }
 };
 
-export const updateOrderStatus = async (req, res) => {
+const updateOrderStatus = async (req, res) => {
     try {
         const { orderId, status } = req.body;
         await Order.findByIdAndUpdate(orderId, { status });
@@ -419,7 +477,7 @@ export const updateOrderStatus = async (req, res) => {
 };
 
 // Sales Report Controllers
-export const getSalesReport = async (req, res) => {
+const getSalesReport = async (req, res) => {
     try {
         const orders = await Order.find({ status: 'delivered' })
             .populate('user')
@@ -432,23 +490,16 @@ export const getSalesReport = async (req, res) => {
 };
 
 // Coupon Management Controllers
-export const getCoupons = (req, res) => {
+const getCoupons = (req, res) => {
     res.render("admin/coupon");
 };
 
 // Offer Management Controllers
-export const getOffers = (req, res) => {
+const getOffers = (req, res) => {
     res.render("admin/offers");
 };
 
-// Logout Controller
-export const logout = (req, res) => {
-    req.session.destroy(() => {
-        res.redirect('/admin/login');
-    });
-};
-
-export const addProduct = async (req, res) => {
+const addProduct = async (req, res) => {
     try {
         console.log('Received files:', req.files);
         console.log('Received body:', req.body);
@@ -509,7 +560,7 @@ export const addProduct = async (req, res) => {
             product
         });
     } catch (error) {
-        console.error('Error in addProduct:', error);
+        console.error('Error adding product:', error);
         res.status(500).json({
             success: false,
             message: error.message || 'Failed to add product'
@@ -517,7 +568,7 @@ export const addProduct = async (req, res) => {
     }
 };
 
-export const updateProduct = async (req, res) => {
+const updateProduct = async (req, res) => {
     try {
         const { name, description, categoryId } = req.body;
         let variants = [];
@@ -569,5 +620,95 @@ export const updateProduct = async (req, res) => {
             message: error.message || 'Failed to update product'
         });
     }
+};
+
+const toggleProductVisibility = async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        product.isHidden = !product.isHidden;
+        await product.save();
+
+        res.json({
+            success: true,
+            message: `Product ${product.isHidden ? 'hidden' : 'unhidden'} successfully`,
+            isHidden: product.isHidden
+        });
+    } catch (error) {
+        console.error('Error toggling product visibility:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to toggle product visibility'
+        });
+    }
+};
+
+const removeProductImage = async (req, res) => {
+    try {
+        const { variantIndex, imageIndex } = req.body;
+        const product = await Product.findById(req.params.id);
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        if (!product.variants[variantIndex]) {
+            return res.status(404).json({
+                success: false,
+                message: 'Variant not found'
+            });
+        }
+
+        // Remove the image from the array
+        product.variants[variantIndex].images.splice(imageIndex, 1);
+        await product.save();
+
+        res.json({
+            success: true,
+            message: 'Image removed successfully'
+        });
+    } catch (error) {
+        console.error('Error removing image:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to remove image'
+        });
+    }
+};
+
+// Single export statement at the end
+export {
+    getAdminLogin,
+    postAdminLogin,
+    logout,
+    getDashboard,
+    getUsers,
+    toggleUserStatus,
+    getProducts,
+    getProductById,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    toggleProductVisibility,
+    removeProductImage,
+    getCategories,
+    createCategory,
+    getCategoryById,
+    updateCategory,
+    deleteCategory,
+    getCoupons,
+    getOffers,
+    getOrders,
+    updateOrderStatus,
+    getSalesReport
 };
 
