@@ -159,19 +159,29 @@
                             </select>
                         </div>
                         <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">Color</label>
+                            <input type="text" id="color" required
+                                   class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">Price</label>
+                            <input type="number" id="price" required min="0" step="0.01"
+                                   class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                        </div>
+                        <div>
                             <label class="block text-sm font-medium text-gray-400 mb-1">Description</label>
                             <textarea id="description" rows="3" required
                                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500"></textarea>
                         </div>
                     </div>
 
-                    <!-- Variants Section -->
+                    <!-- Modified Variants Section -->
                     <div>
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-medium text-gray-300">Variants</h3>
+                            <h3 class="text-lg font-medium text-gray-300">Size Variants</h3>
                             <button type="button" onclick="addVariant()"
                                     class="px-3 py-1 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
-                                Add Variant
+                                Add Size Variant
                             </button>
                         </div>
                         <div id="variantsContainer" class="space-y-4">
@@ -181,7 +191,7 @@
 
                     <!-- Product Images -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-1">Product Images (Upload 3 images)</label>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Product Images</label>
                         <div class="space-y-3">
                             <div>
                                 <label class="text-xs text-gray-500">Main Image</label>
@@ -227,18 +237,13 @@
             
             variantDiv.innerHTML = `
                 <div class="flex justify-between items-center">
-                    <h4 class="text-gray-300 font-medium">Variant ${variantCount + 1}</h4>
+                    <h4 class="text-gray-300 font-medium">Size Variant ${variantCount + 1}</h4>
                     <button type="button" onclick="removeVariant(${variantCount})"
                             class="text-red-400 hover:text-red-300">
                         <i class="material-icons">delete</i>
                     </button>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-1">Color</label>
-                        <input type="text" name="variants[${variantCount}][color]" required
-                               class="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
-                    </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-400 mb-1">Size</label>
                         <select name="variants[${variantCount}][size]" required
@@ -249,20 +254,10 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-1">Price</label>
-                        <input type="number" name="variants[${variantCount}][price]" required min="0" step="0.01"
-                               class="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
-                    </div>
-                    <div>
                         <label class="block text-sm font-medium text-gray-400 mb-1">Stock</label>
                         <input type="number" name="variants[${variantCount}][stock]" required min="0"
                                class="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
                     </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-400 mb-1">Images</label>
-                    <input type="file" name="variants[${variantCount}][images]" multiple accept="image/*"
-                           class="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
                 </div>
             `;
             
@@ -288,23 +283,17 @@
                 formData.append('brand', document.getElementById('brand').value);
                 formData.append('categoryId', document.getElementById('categoryId').value);
                 formData.append('description', document.getElementById('description').value);
+                formData.append('color', document.getElementById('color').value);
+                formData.append('price', document.getElementById('price').value);
                 
-                // Add variants
+                // Add variants (now only size and stock)
                 const variants = [];
-                document.querySelectorAll('[id^="variant-"]').forEach((variantDiv, index) => {
+                document.querySelectorAll('[id^="variant-"]').forEach((variantDiv) => {
                     const variant = {
-                        color: variantDiv.querySelector('[name$="[color]"]').value,
                         size: variantDiv.querySelector('[name$="[size]"]').value,
-                        price: variantDiv.querySelector('[name$="[price]"]').value,
                         stock: variantDiv.querySelector('[name$="[stock]"]').value
                     };
                     variants.push(variant);
-                    
-                    // Add images
-                    const imageFiles = variantDiv.querySelector('[name$="[images]"]').files;
-                    for (let i = 0; i < imageFiles.length; i++) {
-                        formData.append(`variants[${index}][images]`, imageFiles[i]);
-                    }
                 });
                 
                 formData.append('variants', JSON.stringify(variants));
