@@ -48,17 +48,17 @@
       <!-- Users Table -->
       <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden mx-4 border border-gray-700">
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-700 text-gray-200">
+          <table class="min-w-full divide-y divide-gray-700">
             <thead class="bg-gray-900">
              <tr class="border-b border-gray-700">
-                <th class="py-3 px-4 text-gray-200">S.No</th>
-                <th class="py-3 px-4 text-gray-200">Name</th>
-                <th class="py-3 px-4 text-gray-200">Email</th>
-                <th class="py-3 px-4 text-gray-200">Status</th>
-                <th class="py-3 px-4 text-gray-200">Action</th>
+                <th class="py-3 px-4">S.No</th>
+                <th class="py-3 px-4">Name</th>
+                <th class="py-3 px-4">Email</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4">Action</th>
               </tr>
             </thead>
-            <tbody class="text-gray-200">
+            <tbody>
               <% if (userList.length > 0) { %>
                 <% userList.forEach((user, index) => { %>
                   <tr class="border-b border-gray-700 hover:bg-zinc-700 transition-colors">

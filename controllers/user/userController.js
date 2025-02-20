@@ -1,22 +1,43 @@
-export const getAboutPage = (req, res) =>{
+import Product from '../../models/productModel.js';
+
+const getAboutPage = (req, res) =>{
     res.render('user/about')
 }
 
-
-export const getsignUpPage = (req, res)=> {
+const getsignUpPage = (req, res)=> {
     res.render('user/signup')
 }
 
-
-export const getloginPage = (req, res)=> {
+const getloginPage = (req, res)=> {
     res.render('user/login')
 }
 
-export const gethomePage = (req,res)=>{
-    res.render('user/home')
+const gethomePage = async (req, res) => {
+    try {
+        // Fetch latest products
+        const products = await Product.find({ isHidden: false })
+            .sort({ createdAt: -1 })  // Sort by newest first
+            .limit(10)  // Limit to 10 products
+            .populate('categoryId');
+
+        res.render('user/home', {
+            products,
+            user: req.session.user
+        });
+    } catch (error) {
+        console.error('Error fetching home page:', error);
+        res.status(500).send('Server Error');
+    }
 }
 
-
-export const getforgotPasswordPage = (req,res)=>{
+const getforgotPasswordPage = (req,res)=>{
     res.render('user/forgotPassword')
 }
+
+export {
+    getAboutPage,
+    getsignUpPage,
+    getloginPage,
+    gethomePage,
+    getforgotPasswordPage
+};
