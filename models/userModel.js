@@ -45,6 +45,17 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    otp: { 
+        type: String
+    },
+    otpExpiresAt: { 
+        type: Date 
+    },
+    otpAttempts: { 
+        type: Number, 
+        default: 0 
+    },
+    
     _id: {
         type: String,
         default: () => crypto.randomUUID()

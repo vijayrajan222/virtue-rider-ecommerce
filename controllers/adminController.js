@@ -134,24 +134,25 @@ const getUsers = async (req, res) => {
         const totalPages = Math.ceil(totalUsers / limit);
 
         // Get users for current page with field selection
-        const users = await User.find()
-            .select('firstname lastname email isBlocked')
+        const userList = await User.find()
+            .select('firstname lastname email isBlocked isVerified')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
         // Map the users to match the view's expected format
-        const mappedUsers = users.map(user => ({
+        const mappedUserList = userList.map(user => ({
             _id: user._id,
-            firstName: user.firstname, // map to match view
-            lastName: user.lastname,   // map to match view
+            firstName: user.firstname,
+            lastName: user.lastname,
             email: user.email,
-            isBlocked: user.isBlocked
+            isBlocked: user.isBlocked,
+            isVerified: user.isVerified
         }));
 
-        // Render the userList view (not users)
+        // Render the userList view with correct variable name
         res.render('admin/userList', {
-            users: mappedUsers,
+            userList: mappedUserList,
             currentPage: page,
             totalPages,
             totalUsers,
@@ -173,18 +174,35 @@ const getUsers = async (req, res) => {
 
 const toggleUserStatus = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
+        const userId = req.params.id;
+        const user = await User.findById(userId);
+
         if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+            return res.status(404).json({ error: 'User not found' });
         }
+
         user.isBlocked = !user.isBlocked;
         await user.save();
-        res.json({ success: true, message: `User ${user.isBlocked ? 'blocked' : 'unblocked'} successfully` });
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ success: false, message: 'Server Error' });
+
+        // Return JSON response for API calls
+        if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+            return res.json({ 
+                success: true, 
+                message: `User successfully ${user.isBlocked ? 'blocked' : 'unblocked'}`
+            });
+        }
+
+        // Fallback to redirect for regular form submissions
+        res.redirect('/admin/userList');
+    } catch (err) {
+        console.error(err);
+        if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+            return res.status(500).json({ error: 'Server Error' });
+        }
+        res.status(500).send('Server Error');
     }
 };
+
 
 // Category Controllers
 const getCategories = async (req, res) => {
