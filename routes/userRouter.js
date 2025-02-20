@@ -17,6 +17,7 @@ import {
     getGoogle,
     getGoogleCallback 
 } from '../controllers/user/authController.js';
+import { getShop } from '../controllers/user/shopController.js';
 
 const userRouter = express.Router();
 
@@ -27,6 +28,7 @@ userRouter.get('/login', getloginPage);
 userRouter.get('/about', getAboutPage);
 userRouter.get('/home', gethomePage);
 userRouter.get('/forgotPassword', getforgotPasswordPage);
+userRouter.get('/shop', getShop);
 
 // Auth routes
 userRouter.post('/signup', postSignUp);
