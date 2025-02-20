@@ -91,7 +91,7 @@
                                                         Edit
                                                     </button>
                                                     <button
-                                                        onclick="toggleHideProduct('<%= product._id %>', <%= product.isHidden ? 'true' : 'false' %>)"
+                                                        onclick="toggleHideProduct(`<%= product._id %>`, <%= product.isHidden ? 'true' : 'false' %>)"
                                                         class="<%= product.isHidden ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' %> text-white px-3 py-1 rounded"
                                                         id="hide-button-<%= product._id %>">
                                                         <%= product.isHidden ? 'Unhide' : 'Hide' %>
@@ -145,6 +145,8 @@
             <div class="bg-gray-800 rounded-lg p-8 max-w-4xl w-full mx-4">
                 <h2 id="modalTitle" class="text-xl font-semibold text-gray-200 mb-6">Add New Product</h2>
                 <form id="productForm" enctype="multipart/form-data" onsubmit="handleSubmit(event)">
+
+
                     <input type="hidden" id="productId">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Basic Product Info -->
@@ -207,17 +209,17 @@
                             <label class="block text-sm font-medium text-gray-400 mb-1">Product Images</label>
                             <div class="space-y-3">
                                 <div>
-                                    <label class="text-xs text-gray-500">Main Image</label>
+                                    <label class="text-xs text-gray-500">Main Image (Required)</label>
                                     <input type="file" name="image1" accept="image/*" required
                                         class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
                                 </div>
                                 <div>
-                                    <label class="text-xs text-gray-500">Second Image</label>
+                                    <label class="text-xs text-gray-500">Additional Image</label>
                                     <input type="file" name="image2" accept="image/*"
                                         class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
                                 </div>
                                 <div>
-                                    <label class="text-xs text-gray-500">Third Image</label>
+                                    <label class="text-xs text-gray-500">Additional Image</label>
                                     <input type="file" name="image3" accept="image/*"
                                         class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
                                 </div>
@@ -289,89 +291,71 @@
             }
 
             // Modified handleSubmit function
-            // async function handleSubmit(event) {
-            //     event.preventDefault();
-            //     try {
-            //         const formData = new FormData();
-            //         const productId = document.getElementById('productId').value;
+            async function handleSubmit(event) {
+                event.preventDefault();
+                
+                try {
+                    const formData = new FormData();
+                    
+                    // Add basic product info
+                    formData.append('name', document.getElementById('productName').value);
+                    formData.append('brand', document.getElementById('brand').value);
+                    formData.append('color', document.getElementById('color').value);
+                    formData.append('price', document.getElementById('price').value);
+                    formData.append('categoryId', document.getElementById('categoryId').value);
+                    formData.append('description', document.getElementById('description').value);
 
+                    // Add variants
+                    const variants = [];
+                    document.querySelectorAll('#variantsContainer > div').forEach(variantDiv => {
+                        variants.push({
+                            size: variantDiv.querySelector('select').value,
+                            stock: parseInt(variantDiv.querySelector('input[type="number"]').value)
+                        });
+                    });
+                    formData.append('variants', JSON.stringify(variants));
 
-            //         // Add basic product info
-            //         formData.append('name', document.getElementById('productName').value);
-            //         formData.append('brand', document.getElementById('brand').value);
-            //         formData.append('categoryId', document.getElementById('categoryId').value);
-            //         formData.append('description', document.getElementById('description').value);
+                    // Add images
+                    const image1 = document.querySelector('input[name="image1"]').files[0];
+                    const image2 = document.querySelector('input[name="image2"]').files[0];
+                    const image3 = document.querySelector('input[name="image3"]').files[0];
 
-            //         // Add variants
-            //         const variants = [];
-            //         document.querySelectorAll('[id^="variant-"]').forEach((variantDiv, index) => {
-            //             const variant = {
-            //                 size: variantDiv.querySelector('[name$="[size]"]').value,
-            //                 stock: variantDiv.querySelector('[name$="[stock]"]').value
-            //             };
-            //             variants.push(variant);
+                    if (!image1) {
+                        throw new Error('Main image is required');
+                    }
 
-            //             // Add images
-            //             const imageFiles = variantDiv.querySelector('[name$="[images]"]').files;
-            //             for (let i = 0; i < imageFiles.length; i++) {
-            //                 formData.append(`variants[${index}][images]`, imageFiles[i]);
-            //             }
-            //         });
+                    formData.append('image1', image1);
+                    if (image2) formData.append('image2', image2);
+                    if (image3) formData.append('image3', image3);
 
-            //         formData.append('variants', JSON.stringify(variants));
+                    const response = await fetch('/admin/products', {
+                        method: 'POST',
+                        body: formData
+                    });
 
-            //         // Add product images
-            //         const image1 = document.querySelector('input[name="image1"]');
-            //         const image2 = document.querySelector('input[name="image2"]');
-            //         const image3 = document.querySelector('input[name="image3"]');
-            //         if (image1 && image1.files.length > 0) {
-            //             formData.append('image1', image1.files[0]);
-            //         }
-            //         if (image2 && image2.files.length > 0) {
-            //             formData.append('image2', image2.files[0]);
-            //         }
-            //         if (image3 && image3.files.length > 0) {
-            //             formData.append('image3', image3.files[0]);
-            //         }
+                    const data = await response.json();
 
-            //         console.log("this is form data", formData.values);
-
-
-            //         const method = productId ? 'PUT' : 'POST';
-            //         const url = productId ? `/admin/products/${productId}` : '/admin/products';
-
-            //         const response = await fetch(url, {
-            //             method,
-            //             body : formData
-            //         });
-
-            //         console.log("uikjhuk",response)
-
-            //         const data = await response.json();
-
-            //         if (data.success) {
-            //             await Swal.fire({
-            //                 icon: 'success',
-            //                 title: 'Success!',
-            //                 text: data.message,
-            //                 confirmButtonColor: '#FF6B00'
-            //             });
-            //             window.location.reload();
-            //         } else {
-            //             throw new Error(data.message);
-            //         }
-            //     } catch (error) {
-            //         console.error('Error:', error);
-            //         Swal.fire({
-            //             icon: 'error',
-            //             title: 'Error!',
-            //             text: error.message || 'Something went wrong',
-            //             confirmButtonColor: '#FF6B00'
-            //         });
-            //     }
-            // }
-
-
+                    if (data.success) {
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: data.message || 'Product added successfully',
+                            confirmButtonColor: '#FF6B00'
+                        });
+                        window.location.reload();
+                    } else {
+                        throw new Error(data.message || 'Failed to add product');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: error.message || 'Something went wrong',
+                        confirmButtonColor: '#FF6B00'
+                    });
+                }
+            }
 
             // Modal functions
             function openAddModal() {
@@ -517,81 +501,6 @@
                     alert('Failed to toggle product visibility');
                 }
             }
-
-
-            async function handleSubmit(event) {
-                event.preventDefault();
-
-                const form = document.getElementById("productForm");
-                const formData = new FormData();
-
-                // Collect basic product data
-                formData.append("name", document.getElementById("productName").value);
-                formData.append("brand", document.getElementById("brand").value);
-                formData.append("color", document.getElementById("color").value);
-                formData.append("price", document.getElementById("price").value);
-                formData.append("categoryId", document.getElementById("categoryId").value);
-                formData.append("description", document.getElementById("description").value);
-
-                // Collect variant data
-                const variants = [];
-                document.querySelectorAll("#variantsContainer > div").forEach((variantDiv, index) => {
-                    const size = variantDiv.querySelector("select").value;
-                    const stock = variantDiv.querySelector("input[type='number']").value;
-
-                    // Collect images for this variant
-                    const variantImages = [];
-                    const variantImageInput = variantDiv.querySelector("input[type='file']");
-                    if (variantImageInput.files.length > 0) {
-                        for (let i = 0; i < variantImageInput.files.length; i++) {
-                            const file = variantImageInput.files[i];
-                            variantImages.push(file);
-                            formData.append(`variantImages-${index}-${i}`, file); // Store images uniquely for each variant
-                        }
-                    }
-
-                    variants.push({ size, stock, images: variantImages });
-                });
-
-                formData.append("variants", JSON.stringify(variants));
-
-                // Collect main product images
-                const imageInputs = document.querySelectorAll('input[type="file"][name^="image"]');
-                imageInputs.forEach((input, index) => {
-                    if (input.files.length > 0) {
-                        formData.append(`image${index + 1}`, input.files[0]);
-                    }
-                });
-
-                try {
-                    // Send data to the backend
-                    fetch("/upload", {
-                        method: "POST",
-                        body: formData
-                    })
-                        .then(response => response.text())  // Get response as text
-                        .then(data => {
-                            console.log("Raw response:", data);
-                            return JSON.parse(data); // Try to parse JSON after logging
-                        })
-                        .catch(error => console.error("Error submitting product:", error));
-
-                    const result = await response.json();
-                    if (result.success) {
-                        alert("Product added successfully!");
-                        closeModal(); // Close the modal after successful submission
-                        form.reset(); // Reset the form
-                        document.getElementById("variantsContainer").innerHTML = ""; // Clear variants
-                    } else {
-                        alert("Error: " + result.message);
-                    }
-                } catch (error) {
-                    console.error("Error submitting product:", error);
-                    alert("An error occurred. Please try again.");
-                }
-            }
-
-
 
             // Add this function to handle image removal
             async function removeImage(variantIndex, imageIndex) {

@@ -504,54 +504,55 @@ const addProduct = async (req, res) => {
         console.log('Received files:', req.files);
         console.log('Received body:', req.body);
 
-        const { name, description, categoryId } = req.body;
+        const { name, description, categoryId, color, price, brand, variants: variantsJson } = req.body;
+        
+        // Parse variants
         let variants = [];
-
-        if (req.body.variants) {
-            try {
-                variants = JSON.parse(req.body.variants);
-            } catch (error) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Invalid variant data'
-                });
-            }
+        try {
+            variants = JSON.parse(variantsJson);
+            // Add color and price to each variant
+            variants = variants.map(variant => ({
+                ...variant,
+                color: color,  // Add color to each variant
+                price: parseFloat(price)  // Add price to each variant
+            }));
+        } catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid variant data'
+            });
         }
 
         // Handle image uploads
         const images = [];
         if (req.files) {
-            // Collect all uploaded images
-            for (let i = 1; i <= 3; i++) {
-                const fieldName = `image${i}`;
-                if (req.files[fieldName] && req.files[fieldName][0]) {
-                    images.push(`/uploads/products/${req.files[fieldName][0].filename}`);
-                }
+            if (req.files.image1) {
+                images.push('/uploads/products/' + req.files.image1[0].filename);
+            }
+            if (req.files.image2) {
+                images.push('/uploads/products/' + req.files.image2[0].filename);
+            }
+            if (req.files.image3) {
+                images.push('/uploads/products/' + req.files.image3[0].filename);
             }
         }
 
-        if (images.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'At least one image is required'
-            });
-        }
-
-        // Create the product with variants and images
+        // Create the product
         const product = new Product({
             name,
             description,
             categoryId,
-            brand: 'VR',
+            brand: brand || 'VR',
             variants: variants.map(variant => ({
-                color: variant.color,
                 size: variant.size,
-                price: parseFloat(variant.price),
                 stock: parseInt(variant.stock),
+                color: variant.color,
+                price: variant.price,
                 images: images // Assign all images to each variant
             }))
         });
 
+        console.log('Product to be saved:', product);
         await product.save();
 
         res.status(201).json({

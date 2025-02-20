@@ -1,97 +1,40 @@
-// import multer from 'multer';
-// import path from 'path';
-// import { fileURLToPath } from 'url';
+import multer from "multer";
+import path from 'path';
+import fs from 'fs';
 
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
-
-// // Configure storage
-// const storage = multer.diskStorage({
-//     destination: function (req, file, cb) {
-//         // Ensure the uploads directory exists
-//         const uploadPath = path.join(__dirname, '../public/uploads/products');
-//         cb(null, uploadPath);
-//     },
-//     filename: function (req, file, cb) {
-//         // Create a unique filename with original extension
-//         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-//         cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname));
-//     }
-// });
-
-// // File filter
-// const fileFilter = (req, file, cb) => {
-//     // Check file type
-//     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-//     if (allowedTypes.includes(file.mimetype)) {
-//         cb(null, true);
-//     } else {
-//         cb(new Error('Invalid file type. Only JPG, JPEG, PNG and WebP are allowed.'), false);
-//     }
-// };
-
-// // Create multer instance
-// const upload = multer({
-//     storage: storage,
-//     fileFilter: fileFilter,
-//     limits: {
-//         fileSize: 5 * 1024 * 1024, // 5MB limit
-//     }
-// });
-
-// // Wrapper function to handle multer errors
-// const uploadMiddleware = (req, res, next) => {
-//     upload(req, res, function (err) {
-//         if (err instanceof multer.MulterError) {
-//             // A Multer error occurred
-//             if (err.code === 'LIMIT_FILE_SIZE') {
-//                 return res.status(400).json({
-//                     success: false,
-//                     message: 'File size too large. Maximum size is 5MB'
-//                 });
-//             }
-//             return res.status(400).json({
-//                 success: false,
-//                 message: err.message
-//             });
-//         } else if (err) {
-//             // An unknown error occurred
-//             return res.status(400).json({
-//                 success: false,
-//                 message: err.message
-//             });
-//         }
-//         next();
-//     });
-// };
-
-// // Export as default
-// export default upload;
-
-// export { uploadMiddleware };      
-
-
-import multer from 'multer'
-
-// Configure Multer Storage
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/products/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
+// Create both directories if they don't exist
+const directories = ['public/uploads/products', 'static/uploads/products'];
+directories.forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
     }
 });
 
-// File Upload Middleware
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'public/uploads/products');
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+// Export the multer instance directly instead of an object
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // Limit to 5MB
-}).fields([
-    { name: 'image1', maxCount: 1 },
-    { name: 'image2', maxCount: 1 },
-    { name: 'image3', maxCount: 1 }
-]);
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|jpg|png|gif|webp/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
 
-// Route
-export default upload
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error('Only image files are allowed!'));
+    },
+    limits: { fileSize: 5 * 1024 * 1024 }
+});
+
+// Export the multer instance directly
+export default upload;

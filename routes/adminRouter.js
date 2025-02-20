@@ -1,5 +1,4 @@
 import express from 'express';
-import upload from '../utils/multer.js';
 import { 
     getAdminLogin,
     postAdminLogin,
@@ -26,6 +25,7 @@ import {
     removeProductImage
 } from '../controllers/adminController.js';
 import { isAdminAuth } from '../middleware/adminAuth.js';
+import upload from '../utils/multer.js';
 
 const router = express.Router();
 
@@ -47,8 +47,16 @@ router.put('/users/:id/toggle-status', toggleUserStatus);
 // Product Management
 router.get('/products', getProducts);
 router.get('/products/:id', getProductById);
-router.post('/products', upload, addProduct);
-// router.put('/products/:id', upload.array('images', 10), updateProduct);
+router.post('/products', upload.fields([
+    { name: 'image1', maxCount: 1 },
+    { name: 'image2', maxCount: 1 },
+    { name: 'image3', maxCount: 1 }
+]), addProduct);
+router.put('/products/:id', upload.fields([
+    { name: 'image1', maxCount: 1 },
+    { name: 'image2', maxCount: 1 },
+    { name: 'image3', maxCount: 1 }
+]), updateProduct);
 router.delete('/products/:id', deleteProduct);
 router.patch('/products/:id/toggle-visibility', toggleProductVisibility);
 router.post('/products/:id/remove-image', removeProductImage);
