@@ -212,8 +212,8 @@
                             <label class="block text-sm font-medium text-gray-400 mb-1">Product Images</label>
                             <div class="space-y-3">
                                 <div>
-                                    <label class="text-xs text-gray-500">Main Image (Required)</label>
-                                    <input type="file" name="image1" accept="image/*" required
+                                    <label class="text-xs text-gray-500">Main Image</label>
+                                    <input type="file" name="image1" accept="image/*"
                                         class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
                                     <img class="image-preview w-24 h-24 mt-2 rounded-lg object-cover hidden">
                                 </div>
@@ -404,6 +404,12 @@
                     if (data.success) {
                         const product = data.product;
 
+                        // Reset the form and clear existing variants
+                        document.getElementById('productForm').reset();
+                        document.getElementById('variantsContainer').innerHTML = '';
+                        variantCount = 0; // Reset variant count
+
+                        // Set basic product details
                         document.getElementById('modalTitle').textContent = 'Edit Product';
                         document.getElementById('productId').value = product._id;
                         document.getElementById('productName').value = product.name;
@@ -411,8 +417,87 @@
                         document.getElementById('categoryId').value = product.categoryId._id;
                         document.getElementById('description').value = product.description;
 
+                        // Add existing variants with their values
+                        if (product.variants && product.variants.length > 0) {
+                            product.variants.forEach((variant, index) => {
+                                // Add variant UI
+                                const variantsContainer = document.getElementById('variantsContainer');
+                                const variantDiv = document.createElement('div');
+                                variantDiv.className = 'p-4 bg-gray-700 rounded-lg space-y-3';
+                                variantDiv.id = `variant-${variantCount}`;
+
+                                variantDiv.innerHTML = `
+                                    <div class="flex justify-between items-center">
+                                        <h4 class="text-gray-300 font-medium">Variant ${variantCount + 1}</h4>
+                                        <button type="button" onclick="removeVariant(${variantCount})"
+                                                class="text-red-400 hover:text-red-300">
+                                            <i class="material-icons">delete</i>
+                                        </button>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-400 mb-1">Size</label>
+                                            <select name="variants[${variantCount}][size]" required
+                                                    class="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                                                <option value="S" ${variant.size === 'S' ? 'selected' : ''}>Small (S)</option>
+                                                <option value="M" ${variant.size === 'M' ? 'selected' : ''}>Medium (M)</option>
+                                                <option value="L" ${variant.size === 'L' ? 'selected' : ''}>Large (L)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-400 mb-1">Stock</label>
+                                            <input type="number" name="variants[${variantCount}][stock]" required min="0"
+                                                   value="${variant.stock}"
+                                                   class="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                                        </div>
+                                    </div>
+                                `;
+
+                                variantsContainer.appendChild(variantDiv);
+                                variantCount++;
+
+                                // Set color and price from the first variant
+                                if (index === 0) {
+                                    document.getElementById('color').value = variant.color || '';
+                                    document.getElementById('price').value = variant.price || '';
+                                }
+                            });
+
+                            // Handle image previews and file input display
+                            const firstVariant = product.variants[0];
+                            if (firstVariant.images && firstVariant.images.length > 0) {
+                                firstVariant.images.forEach((imagePath, index) => {
+                                    const inputField = document.querySelector(`input[name="image${index + 1}"]`);
+                                    const previewContainer = inputField.nextElementSibling;
+                                    
+                                    // Create a custom file list to show the current image
+                                    const dataTransfer = new DataTransfer();
+                                    const fileName = imagePath.split('/').pop();
+                                    
+                                    // Store the current image path
+                                    inputField.dataset.currentImage = imagePath;
+                                    
+                                    // Create a fake file object
+                                    const fakeFile = new File([''], fileName, {
+                                        type: 'image/jpeg',
+                                    });
+                                    
+                                    dataTransfer.items.add(fakeFile);
+                                    inputField.files = dataTransfer.files;
+                                    
+                                    // Show preview
+                                    if (previewContainer && previewContainer.tagName === 'IMG') {
+                                        previewContainer.src = imagePath;
+                                        previewContainer.classList.remove('hidden');
+                                    }
+                                });
+                            }
+                        }
+
+                        // Show the modal
                         document.getElementById('productModal').classList.remove('hidden');
                         document.getElementById('productModal').classList.add('flex');
+                        initializeImageUploads();
                     } else {
                         throw new Error(data.message);
                     }
