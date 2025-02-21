@@ -64,7 +64,7 @@
                                         <tr class="border-b border-gray-700 transition-all duration-200 <%= product.isHidden ? 'opacity-50' : '' %>"
                                             id="product-row-<%= product._id %>">
                                             <td class="p-4">
-                                                <img src="<%= product.variants?.[0]?.images?.[0] || '/images/placeholder.jpg' %>"
+                                                <img src="<%= product.images?.[0] || '/images/placeholder.jpg' %>"
                                                     alt="<%= product.name %>" class="w-16 h-16 object-cover rounded-lg">
                                             </td>
                                             <td class="p-4 text-gray-200">
@@ -76,7 +76,7 @@
                                             <td class="p-4 text-gray-200">
                                                 <%= product.categoryId?.name %>
                                             </td>
-                                            <td class="p-4 text-gray-200">₹<%= product.variants?.[0]?.price || 'N/A' %>
+                                            <td class="p-4 text-gray-200">₹<%= product.price || 'N/A' %>
                                             </td>
                                             <td class="p-4 text-gray-200">
                                                 <%= product.variants?.[0]?.stock || 0 %>
@@ -419,6 +419,9 @@
             }
 
             async function handleSubmit(event) {
+
+                console.log('add new product')
+
                 event.preventDefault();
 
                 try {
@@ -484,8 +487,12 @@
                 }
             }
 
-            async function handleEditSubmit(event, productId) {
-    event.preventDefault();
+    async function handleEditSubmit(event) {
+                event.preventDefault();
+                console.log('update product')
+                
+
+                const productId = document.getElementById('productId').value
 
     try {
         const formData = new FormData();
@@ -497,7 +504,8 @@
         formData.append('price', document.getElementById('price').value);
         formData.append('categoryId', document.getElementById('categoryId').value);
         formData.append('description', document.getElementById('description').value);
-        formData.append('productId', productId); // Pass the product ID
+        formData.append('productId', document.getElementById('productId').value);
+
 
         // Add variants
         const variants = [];
@@ -552,35 +560,49 @@
 
             // Modal functions
             function openAddModal() {
-                document.getElementById('modalTitle').textContent = 'Add New Product';
+
+                console.log('add model ')
+
                 document.getElementById('productForm').reset();
+                document.getElementById('modalTitle').textContent = 'Add New Product';
                 document.getElementById('productId').value = '';
                 document.getElementById('productModal').classList.remove('hidden');
                 document.getElementById('productModal').classList.add('flex');
+                document.getElementById('productForm').onsubmit = handleSubmit;
                 initializeImageUploads();
             }
-
-            function openEditModal() {
-                document.getElementById('modalTitle').textContent = 'Add New Product';
-                document.getElementById('productForm').reset();
-                document.getElementById('productId').value = '';
-                document.getElementById('productModal').classList.remove('hidden');
-                document.getElementById('productModal').classList.add('flex');
+            
+            function openEditModal(id) {
+                // document.getElementById('modalTitle').textContent = 'Add New Product';
+                // document.getElementById('productModal').classList.remove('hidden');
+                // document.getElementById('productModal').classList.add('flex');
+                // document.getElementById('productForm').reset();
+                
+                console.log(typeof id)
+                
                 initializeImageUploads();
+                document.getElementById('productForm').onsubmit = handleEditSubmit;
+                document.getElementById('productId').value = id
+                
+                loadProducts(id)
             }
-
+            
             function closeModal() {
+                
+                document.getElementById('productForm').reset();
                 document.getElementById('productModal').classList.add('hidden');
                 document.getElementById('productModal').classList.remove('flex');
             }
 
             // Edit product
             async function editProduct(id) {
-                openEditModal()
+                openEditModal(id)
 
             }
 
-            async function handleEditSubmit(event) {
+            async function loadProducts(id) {
+
+                console.log('load product')
 
                 try {
                     const response = await fetch(`/admin/products/${id}`);
@@ -588,6 +610,7 @@
 
                     if (data.success) {
                         const product = data.product;
+
 
                         document.getElementById('modalTitle').textContent = 'Edit Product';
                         document.getElementById('productId').value = product._id;
@@ -599,36 +622,36 @@
                         document.getElementById('price').value = product.price || '';
 
                         // Handle image previews and file input display
-                        if (product.variants && product.variants.length > 0) {
-                            const variant = product.variants[0];
-                            if (variant.images && variant.images.length > 0) {
-                                variant.images.forEach((imagePath, index) => {
-                                    const inputField = document.querySelector(`input[name="image${index + 1}"]`);
-                                    const previewContainer = inputField.nextElementSibling;
+if (product.images && product.images.length > 0) {
+    product.images.forEach((imagePath, index) => {
+        const inputField = document.querySelector(`input[name="image${index + 1}"]`);
+        if (!inputField) return;
 
-                                    // Create a custom file list to show the current image
-                                    const dataTransfer = new DataTransfer();
-                                    const fileName = imagePath.split('/').pop();
+        const previewContainer = inputField.nextElementSibling;
 
-                                    // Store the current image path
-                                    inputField.dataset.currentImage = imagePath;
+        // Create a custom file list to show the current image
+        const dataTransfer = new DataTransfer();
+        const fileName = imagePath.split('/').pop();
 
-                                    // Create a fake file object
-                                    const fakeFile = new File([''], fileName, {
-                                        type: 'image/jpeg',
-                                    });
+        // Store the current image path
+        inputField.dataset.currentImage = imagePath;
 
-                                    dataTransfer.items.add(fakeFile);
-                                    inputField.files = dataTransfer.files;
+        // Create a fake file object
+        const fakeFile = new File([''], fileName, {
+            type: 'image/jpeg',
+        });
 
-                                    // Show preview
-                                    if (previewContainer && previewContainer.tagName === 'IMG') {
-                                        previewContainer.src = imagePath;
-                                        previewContainer.classList.remove('hidden');
-                                    }
-                                });
-                            }
-                        }
+        dataTransfer.items.add(fakeFile);
+        inputField.files = dataTransfer.files;
+
+        // Show preview
+        if (previewContainer && previewContainer.tagName === 'IMG') {
+            previewContainer.src = imagePath;
+            previewContainer.classList.remove('hidden');
+        }
+    });
+}
+
 
                         document.getElementById('productModal').classList.remove('hidden');
                         document.getElementById('productModal').classList.add('flex');

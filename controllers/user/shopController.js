@@ -81,7 +81,7 @@ export const getShop = async (req, res) => {
             .limit(limit);
 
         // Filter out products where category wasn't populated
-        const filteredProducts = products.filter(product => product.categoriesId);
+        const filteredProducts = products.filter(product => product.categoryId);
 
         // Get total count for pagination
         const totalProducts = await Product.countDocuments(filter);

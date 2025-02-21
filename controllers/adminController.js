@@ -522,18 +522,19 @@ const addProduct = async (req, res) => {
         console.log('Received files:', req.files);
         console.log('Received body:', req.body);
 
+
         const { name, description, categoryId, color, price, brand, variants: variantsJson } = req.body;
         
         // Parse variants
         let variants = [];
         try {
             variants = JSON.parse(variantsJson);
-            // Add color and price to each variant
-            variants = variants.map(variant => ({
-                ...variant,
-                color: color,  // Add color to each variant
-                price: parseFloat(price)  // Add price to each variant
-            }));
+            // // Add color and price to each variant
+            // variants = variants.map(variant => ({
+            //     ...variant,
+            //     color: color,  // Add color to each variant
+            //     price: parseFloat(price)  // Add price to each variant
+            // }));
         } catch (error) {
             return res.status(400).json({
                 success: false,
@@ -563,11 +564,12 @@ const addProduct = async (req, res) => {
             brand: brand || 'VR',
             variants: variants.map(variant => ({
                 size: variant.size,
-                stock: parseInt(variant.stock),
-                color: variant.color,
-                price: variant.price,
-                images: images // Assign all images to each variant
-            }))
+                stock: parseInt(variant.stock), // Assign all images to each variant
+            })),
+            color,
+            price:Number(price),
+            images
+            
         });
 
         console.log('Product to be saved:', product);
@@ -588,15 +590,83 @@ const addProduct = async (req, res) => {
 };
 
 
+// const updateProduct = async (req, res) => {
+//     try {
+//         const { name, description, categoryId,price,color } = req.body;
+//         let variants = [];
+
+//         if (req.body.variants) {
+//             variants = JSON.parse(req.body.variants);
+//         }
+
+//         const product = await Product.findById(req.params.id);
+//         if (!product) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Product not found'
+//             });
+//         }
+
+//         product.name = name;
+//         product.description = description;
+//         product.categoryId = categoryId;
+//         product.variants = variants.map(variant => ({
+//             color: variant.color,
+//             size: variant.size,
+//             price: parseFloat(variant.price),
+//             stock: parseInt(variant.stock),
+//             images: variant.images || []
+//         }));
+
+//         if (req.files && req.files.length > 0) {
+//             req.files.forEach(file => {
+//                 const variantIndex = parseInt(file.fieldname.match(/variants\[(\d+)\]/)[1]);
+//                 if (product.variants[variantIndex]) {
+//                     const imagePath = `/uploads/products/${file.filename}`;
+//                     product.variants[variantIndex].images.push(imagePath);
+//                 }
+//             });
+//         }
+
+//         await product.save();
+
+//         res.json({
+//             success: true,
+//             message: 'Product updated successfully',
+//             product
+//         });
+//     } catch (error) {
+//         console.error('Error updating product:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: error.message || 'Failed to update product'
+//         });
+//     }
+// };
+
+
 const updateProduct = async (req, res) => {
     try {
-        const { name, description, categoryId } = req.body;
-        let variants = [];
 
-        if (req.body.variants) {
-            variants = JSON.parse(req.body.variants);
+        console.log('update product')
+
+        console.log('Received files:', req.files);
+        console.log('Received body:', req.body);
+
+        const { name, description, categoryId, price, color, brand, variants: variantsJson } = req.body;
+        
+        // Parse variants
+        let variants = [];
+        try {
+            variants = JSON.parse(variantsJson);
+        } catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid variant data'
+            });
         }
 
+        // Find the product
         const product = await Product.findById(req.params.id);
         if (!product) {
             return res.status(404).json({
@@ -605,27 +675,34 @@ const updateProduct = async (req, res) => {
             });
         }
 
+        // Handle image uploads
+        const images = [...product.images]; // Retain existing images
+        if (req.files) {
+            if (req.files.image1) {
+                images.push('/uploads/products/' + req.files.image1[0].filename);
+            }
+            if (req.files.image2) {
+                images.push('/uploads/products/' + req.files.image2[0].filename);
+            }
+            if (req.files.image3) {
+                images.push('/uploads/products/' + req.files.image3[0].filename);
+            }
+        }
+
+        // Update product details
         product.name = name;
         product.description = description;
         product.categoryId = categoryId;
+        product.color = color;
+        product.price = Number(price);
+        product.brand = brand || 'VR';
         product.variants = variants.map(variant => ({
-            color: variant.color,
             size: variant.size,
-            price: parseFloat(variant.price),
             stock: parseInt(variant.stock),
-            images: variant.images || []
         }));
+        product.images = images;
 
-        if (req.files && req.files.length > 0) {
-            req.files.forEach(file => {
-                const variantIndex = parseInt(file.fieldname.match(/variants\[(\d+)\]/)[1]);
-                if (product.variants[variantIndex]) {
-                    const imagePath = `/uploads/products/${file.filename}`;
-                    product.variants[variantIndex].images.push(imagePath);
-                }
-            });
-        }
-
+        console.log('Updated product:', product);
         await product.save();
 
         res.json({

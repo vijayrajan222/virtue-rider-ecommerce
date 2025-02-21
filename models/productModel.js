@@ -1,27 +1,18 @@
 import mongoose from 'mongoose';
 
 const variantSchema = new mongoose.Schema({
-    color: {
-        type: String,
-        required: true
-    },
+   
     size: {
         type: String,
         enum: ['S', 'M', 'L'],
         required: true
     },
-    price: {
-        type: Number,
-        required: true
-    },
+ 
     stock: {
         type: Number,
         required: true,
         default: 0
     },
-    images: [{
-        type: String
-    }]
 });
 
 const productSchema = new mongoose.Schema({
@@ -39,6 +30,10 @@ const productSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    color: {
+        type: String,
+        required: true
+    },
     categoryId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category',
@@ -48,11 +43,18 @@ const productSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+
+    }, price: {
+        type: Number,
+        required: true
     },
     isHidden: {
         type: Boolean,
         default: false
-    }
+    },
+    images: [{
+        type: String
+    }]
 }, {
     timestamps: true
 });
