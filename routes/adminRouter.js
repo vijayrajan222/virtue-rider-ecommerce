@@ -1,31 +1,24 @@
 import express from 'express';
 import { 
-    getAdminLogin,
-    postAdminLogin,
-    getDashboard,
-    getUsers,
-    toggleUserStatus,
-    getProducts,
-    getProductById,
-    addProduct,
-    updateProduct,
-    deleteProduct,
+    
+   
     getCategories,
     createCategory,
     getCategoryById,
     updateCategory,
     deleteCategory,
-    getOrders,
-    updateOrderStatus,
-    getSalesReport,
-    getCoupons,
-    getOffers,
-    logout,
-    toggleProductVisibility,
-    removeProductImage
-} from '../controllers/adminController.js';
-import { isAdminAuth } from '../middleware/adminAuth.js';
+    
+   
+    
+} from '../controllers/admin/categoryController.js';
+
+
+import { getProducts, getProductById, addProduct, updateProduct, deleteProduct, removeProductImage, toggleProductVisibility} from '../controllers/admin/productController.js'
+import {getDashboard} from '../controllers/admin/dashboardController.js';
+import {getAdminLogin, postAdminLogin, logout} from '../controllers/admin/adminauthController.js';
+
 import upload from '../utils/multer.js';
+import { getUsers, toggleUserStatus } from '../controllers/admin/userController.js';
 
 const router = express.Router();
 
@@ -33,9 +26,6 @@ const router = express.Router();
 router.get('/login', getAdminLogin);
 router.post('/login', postAdminLogin);
 router.get('/logout', logout);
-
-// Protected Routes (Require Admin Authentication)
-// router.use(isAdminAuth);
 
 // Dashboard
 router.get('/dashboard', getDashboard);
@@ -68,17 +58,5 @@ router.get('/categories/:id', getCategoryById);
 router.put('/categories/:id', updateCategory);
 router.delete('/categories/:id', deleteCategory);
 
-// Order Management
-router.get('/orders', getOrders);
-router.patch('/orders/:id/status', updateOrderStatus);
-
-// Reports
-router.get('/sales-report', getSalesReport);
-
-// Coupon Management
-router.get('/coupons', getCoupons);
-
-// Offer Management
-router.get('/offers', getOffers);
 
 export default router;

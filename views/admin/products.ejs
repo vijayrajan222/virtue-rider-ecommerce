@@ -318,20 +318,26 @@
                                 <div>
                                     <label class="text-xs text-gray-500">Main Image</label>
                                     <input type="file" name="image1" accept="image/*"
+                                        onchange="handleImageChange(0, this)"
                                         class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
-                                    <img class="image-preview w-24 h-24 mt-2 rounded-lg object-cover hidden">
+                                    <img class="image-preview w-24 h-24 mt-2 rounded-lg object-cover hidden"
+                                        id="imagePreview1" src="" alt="Main Image Preview">
                                 </div>
                                 <div>
                                     <label class="text-xs text-gray-500">Additional Image</label>
                                     <input type="file" name="image2" accept="image/*"
+                                        onchange="handleImageChange(1, this)"
                                         class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
-                                    <img class="image-preview w-24 h-24 mt-2 rounded-lg object-cover hidden">
+                                    <img class="image-preview w-24 h-24 mt-2 rounded-lg object-cover hidden"
+                                        id="imagePreview2" src="" alt="Main Image Preview">
                                 </div>
                                 <div>
                                     <label class="text-xs text-gray-500">Additional Image</label>
                                     <input type="file" name="image3" accept="image/*"
+                                        onchange="handleImageChange(3, this)"
                                         class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
-                                    <img class="image-preview w-24 h-24 mt-2 rounded-lg object-cover hidden">
+                                    <img class="image-preview w-24 h-24 mt-2 rounded-lg object-cover hidden"
+                                        id="imagePreview3" src="" alt="Main Image Preview">
                                 </div>
                             </div>
                         </div>
@@ -487,75 +493,75 @@
                 }
             }
 
-    async function handleEditSubmit(event) {
+            async function handleEditSubmit(event) {
                 event.preventDefault();
                 console.log('update product')
-                
+
 
                 const productId = document.getElementById('productId').value
 
-    try {
-        const formData = new FormData();
+                try {
+                    const formData = new FormData();
 
-        // Add basic product info
-        formData.append('name', document.getElementById('productName').value);
-        formData.append('brand', document.getElementById('brand').value);
-        formData.append('color', document.getElementById('color').value);
-        formData.append('price', document.getElementById('price').value);
-        formData.append('categoryId', document.getElementById('categoryId').value);
-        formData.append('description', document.getElementById('description').value);
-        formData.append('productId', document.getElementById('productId').value);
+                    // Add basic product info
+                    formData.append('name', document.getElementById('productName').value);
+                    formData.append('brand', document.getElementById('brand').value);
+                    formData.append('color', document.getElementById('color').value);
+                    formData.append('price', document.getElementById('price').value);
+                    formData.append('categoryId', document.getElementById('categoryId').value);
+                    formData.append('description', document.getElementById('description').value);
+                    formData.append('productId', document.getElementById('productId').value);
 
 
-        // Add variants
-        const variants = [];
-        document.querySelectorAll('#variantsContainer > div').forEach(variantDiv => {
-            variants.push({
-                size: variantDiv.querySelector('select').value,
-                stock: parseInt(variantDiv.querySelector('input[type="number"]').value)
-            });
-        });
-        formData.append('variants', JSON.stringify(variants));
+                    // Add variants
+                    const variants = [];
+                    document.querySelectorAll('#variantsContainer > div').forEach(variantDiv => {
+                        variants.push({
+                            size: variantDiv.querySelector('select').value,
+                            stock: parseInt(variantDiv.querySelector('input[type="number"]').value)
+                        });
+                    });
+                    formData.append('variants', JSON.stringify(variants));
 
-        // Add images
-        const image1 = document.querySelector('input[name="image1"]').files[0];
-        const image2 = document.querySelector('input[name="image2"]').files[0];
-        const image3 = document.querySelector('input[name="image3"]').files[0];
+                    // Add images
+                    const image1 = document.querySelector('input[name="image1"]').files[0];
+                    const image2 = document.querySelector('input[name="image2"]').files[0];
+                    const image3 = document.querySelector('input[name="image3"]').files[0];
 
-        // Check if new images are uploaded; otherwise, preserve old ones
-        if (image1) formData.append('image1', image1);
-        if (image2) formData.append('image2', image2);
-        if (image3) formData.append('image3', image3);
+                    // Check if new images are uploaded; otherwise, preserve old ones
+                    if (image1) formData.append('image1', image1);
+                    if (image2) formData.append('image2', image2);
+                    if (image3) formData.append('image3', image3);
 
-        // Make the API request
-        const response = await fetch(`/admin/products/${productId}`, {
-            method: 'PUT', // Use PUT for updating
-            body: formData
-        });
+                    // Make the API request
+                    const response = await fetch(`/admin/products/${productId}`, {
+                        method: 'PUT', // Use PUT for updating
+                        body: formData
+                    });
 
-        const data = await response.json();
+                    const data = await response.json();
 
-        if (data.success) {
-            await Swal.fire({
-                icon: 'success',
-                title: 'Success!',
-                text: data.message || 'Product updated successfully',
-                confirmButtonColor: '#FF6B00'
-            });
-            window.location.reload();
-        } else {
-            throw new Error(data.message || 'Failed to update product');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error!',
-            text: error.message || 'Something went wrong',
-            confirmButtonColor: '#FF6B00'
-        });
-    }
-}
+                    if (data.success) {
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: data.message || 'Product updated successfully',
+                            confirmButtonColor: '#FF6B00'
+                        });
+                        window.location.reload();
+                    } else {
+                        throw new Error(data.message || 'Failed to update product');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: error.message || 'Something went wrong',
+                        confirmButtonColor: '#FF6B00'
+                    });
+                }
+            }
 
 
             // Modal functions
@@ -571,24 +577,24 @@
                 document.getElementById('productForm').onsubmit = handleSubmit;
                 initializeImageUploads();
             }
-            
+
             function openEditModal(id) {
                 // document.getElementById('modalTitle').textContent = 'Add New Product';
                 // document.getElementById('productModal').classList.remove('hidden');
                 // document.getElementById('productModal').classList.add('flex');
                 // document.getElementById('productForm').reset();
-                
+
                 console.log(typeof id)
-                
+
                 initializeImageUploads();
                 document.getElementById('productForm').onsubmit = handleEditSubmit;
                 document.getElementById('productId').value = id
-                
+
                 loadProducts(id)
             }
-            
+
             function closeModal() {
-                
+
                 document.getElementById('productForm').reset();
                 document.getElementById('productModal').classList.add('hidden');
                 document.getElementById('productModal').classList.remove('flex');
@@ -622,35 +628,37 @@
                         document.getElementById('price').value = product.price || '';
 
                         // Handle image previews and file input display
-if (product.images && product.images.length > 0) {
-    product.images.forEach((imagePath, index) => {
-        const inputField = document.querySelector(`input[name="image${index + 1}"]`);
-        if (!inputField) return;
+                        if (product.images && product.images.length > 0) {
+                            product.images.forEach((imagePath, index) => {
+                               
+                                const inputField = document.querySelector(`input[name="image${index + 1}"]`);
 
-        const previewContainer = inputField.nextElementSibling;
+                                if (!inputField) return;
 
-        // Create a custom file list to show the current image
-        const dataTransfer = new DataTransfer();
-        const fileName = imagePath.split('/').pop();
+                                const previewContainer = inputField.nextElementSibling;
 
-        // Store the current image path
-        inputField.dataset.currentImage = imagePath;
+                                // Create a custom file list to show the current image
+                                const dataTransfer = new DataTransfer();
+                                const fileName = imagePath.split('/').pop();
 
-        // Create a fake file object
-        const fakeFile = new File([''], fileName, {
-            type: 'image/jpeg',
-        });
+                                // Store the current image path
+                                inputField.dataset.currentImage = imagePath;
 
-        dataTransfer.items.add(fakeFile);
-        inputField.files = dataTransfer.files;
+                                // Create a fake file object
+                                const fakeFile = new File([''], fileName, {
+                                    type: 'image/jpeg',
+                                });
 
-        // Show preview
-        if (previewContainer && previewContainer.tagName === 'IMG') {
-            previewContainer.src = imagePath;
-            previewContainer.classList.remove('hidden');
-        }
-    });
-}
+                                dataTransfer.items.add(fakeFile);
+                                inputField.files = dataTransfer.files;
+
+                                // Show preview
+                                if (previewContainer && previewContainer.tagName === 'IMG') {
+                                    previewContainer.src = imagePath;
+                                    previewContainer.classList.remove('hidden');
+                                }
+                            });
+                        }
 
 
                         document.getElementById('productModal').classList.remove('hidden');
