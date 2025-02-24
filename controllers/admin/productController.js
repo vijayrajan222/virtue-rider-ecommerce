@@ -385,18 +385,26 @@ export const getProducts = async (req, res) => {
 export const getProductById = async (req, res) => {
     try {
         const product = await Product.findById(req.params.id).populate('categoryId');
+
         if (!product) {
-            return res.status(404).json({
-                success: false,
-                message: 'Product not found'
-            });
+            return res.status(404).json({ success: false, message: 'Product not found' });
         }
-        res.json({ success: true, product });
+
+        // Ensure images have a full URL
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        const images = product.images.map(image => image.startsWith("/") ? `${baseUrl}${image}` : image);
+
+        res.json({
+            success: true,
+            product: {
+                ...product._doc,
+                images // Updated to full URLs
+            }
+        });
+
     } catch (error) {
         console.error("Error fetching product:", error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch product'
-        });
+        res.status(500).json({ success: false, message: 'Failed to fetch product' });
     }
 };
+
