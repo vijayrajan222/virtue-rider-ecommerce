@@ -1,4 +1,4 @@
-import Product from '../../models/productModel.js';
+import Product from '../../models/productModel.js'
 import Category from '../../models/categoryModel.js';
 
 
@@ -7,6 +7,10 @@ export const getShop = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = 12;
         const skip = (page - 1) * limit;
+
+         const categories = await Category.find({ isActive: true });
+         console.log("Categories fetched:", categories); // Debugging log
+
 
         // Build filter query
         const filter = { 
@@ -70,18 +74,16 @@ export const getShop = async (req, res) => {
                 sortQuery = { createdAt: -1 };
         }
 
-        // Fetch products
-        const products = await Product.find(filter)
-            .populate({
-                path: 'categoriesId',
-                match: { isActive: true }
-            })
-            .sort(sortQuery)
-            .skip(skip)
-            .limit(limit);
+        const products = await Product.find({ isActive: true })
+        .populate('categoriesId')  // Ensure categories are populated
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+        console.log("Fetched Products:", products); // Debugging log
+
 
         // Filter out products where category wasn't populated
-        const filteredProducts = products.filter(product => product.categoryId);
+        const filteredProducts = products.filter(product => product.categoriesId);
 
         // Get total count for pagination
         const totalProducts = await Product.countDocuments(filter);
@@ -97,6 +99,8 @@ export const getShop = async (req, res) => {
         if (req.xhr) {
             return res.json({
                 products: processedProducts,
+                categories,   // ✅ Ensure categories is passed to EJS
+
                 pagination: {
                     currentPage: page,
                     totalPages,
@@ -123,6 +127,8 @@ export const getShop = async (req, res) => {
         }
         res.status(500).render('user/shop', {
             products: [],
+            categories: [],  // ✅ Ensure categories is passed, even if empty
+
             pagination: {
                 currentPage: 1,
                 totalPages: 1,

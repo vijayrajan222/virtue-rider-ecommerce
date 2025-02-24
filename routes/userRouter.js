@@ -17,8 +17,8 @@ import {
     getGoogle,
     getGoogleCallback 
 } from '../controllers/user/authController.js';
+import { getShop } from '../controllers/user/shopController.js';  
 import{getProductDetails} from '../controllers/user/productviewController.js'
-import { getShop } from '../controllers/user/shopController.js';
 
 const userRouter = express.Router();
 
