@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtue Rider - Premium Helmets</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<style>
+        .main-image-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background-color: #f9fafb;
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .main-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+
+        .main-image-container:hover img {
+            transform: scale(1.1);
+        }
+
+        /* Thumbnail scrollbar */
+        .thumbnail-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: #888 #f1f1f1;
+        }
+
+        .thumbnail-scroll::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .thumbnail-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .thumbnail-scroll::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .thumbnail-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+    <%- include("../partials/nav") %>
+
+        <main class="min-h-screen pt-20 pb-12">
+            <!-- Breadcrumb -->
+            <nav class="max-w-7xl mx-auto px-4 py-4">
+                <ol class="flex items-center space-x-2 text-sm">
+                    <li><a href="/" class="text-gray-500 hover:text-gray-900">Home</a></li>
+                    <li><span class="text-gray-400">/</span></li>
+                    <li><a href="/shop" class="text-gray-500 hover:text-gray-900">Shop</a></li>
+                    <li><span class="text-gray-400">/</span></li>
+                    <li class="text-gray-900 font-medium">
+                        <%= product.name %>
+                    </li>
+                </ol>
+            </nav>
+
+            <!-- Product Details -->
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Left: Image Gallery -->
+                        <div class="space-y-4">
+                            <!-- Main Image -->
+                            <div class="main-image-container">
+                                <img id="mainImage"
+                                    src="<%= product.images.length > 0 ? product.images[0] : '/images/placeholder.jpg' %>"
+                                    alt="<%= product.name %>" />
+                            </div>
+
+                            <!-- Thumbnails -->
+                            <div class="thumbnail-scroll flex space-x-4 overflow-x-auto py-2">
+                                <% product.images.forEach((image, index)=> { %>
+                                    <button onclick="updateMainImage('<%= image %>', this)" class="thumbnail-btn flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 
+                                           <%= index === 0 ? 'border-gray-900' : 'border-transparent' %> 
+                                           hover:border-gray-900 transition-all">
+                                        <img src="<%= image %>" alt="Product view <%= index + 1 %>"
+                                            class="w-full h-full object-cover" />
+                                    </button>
+                                    <% }) %>
+                            </div>
+                        </div>
+
+                        <!-- Right: Product Info -->
+                        <div class="space-y-6">
+                            <div>
+                                <h1 class="text-3xl font-bold text-gray-900">
+                                    <%= product.name %>
+                                </h1>
+                                <p class="text-gray-500 mt-2">
+                                    <%= product.description %>
+                                </p>
+                            </div>
+
+                            <!-- Price -->
+                            <div class="space-y-2">
+                                <div class="flex items-baseline gap-3">
+                                    <span class="text-4xl font-bold text-gray-900">
+                                        ₹<%= product.price.toLocaleString('en-IN') %>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Stock & Variants -->
+                            <div>
+                                <label for="variantSelect" class="text-sm font-medium text-gray-900">Choose
+                                    Size:</label>
+                                <select id="variantSelect"
+                                    class="w-full px-4 py-2 border rounded-md focus:outline-none">
+                                    <% product.variants.forEach(variant=> { %>
+                                        <option value="<%= variant.size %>" <%=variant.stock> 0 ? '' : 'disabled' %>>
+                                            <%= variant.size %> (<%= variant.stock> 0 ? variant.stock + ' available' :
+                                                    'Out of Stock' %>)
+                                        </option>
+                                        <% }) %>
+                                </select>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="space-y-4 pt-6">
+                                <% if (product.variants.some(variant=> variant.stock > 0)) { %>
+                                    <button onclick="addToCart('<%= product._id %>')"
+                                        class="w-full py-4 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
+                                        <i class="fas fa-shopping-cart"></i>
+                                        Add to Cart
+                                    </button>
+                                    <button onclick="buyNow('<%= product._id %>')"
+                                        class="w-full py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                                        <i class="fas fa-bolt"></i>
+                                        Buy Now
+                                    </button>
+                                    <% } %>
+                                        <button onclick="toggleWishlist('<%= product._id %>')"
+                                            class="w-full py-4 bg-white text-gray-900 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                                            <i class="far fa-heart"></i>
+                                            Add to Wishlist
+                                        </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <%- include("../partials/footer") %>
+
+            <script>
+                function updateMainImage(imageUrl, thumbnailBtn) {
+                    document.getElementById('mainImage').src = imageUrl;
+                    document.querySelectorAll('.thumbnail-btn').forEach(btn => {
+                        btn.classList.remove('border-gray-900');
+                        btn.classList.add('border-transparent');
+                    });
+                    thumbnailBtn.classList.remove('border-transparent');
+                    thumbnailBtn.classList.add('border-gray-900');
+                }
+
+                async function addToCart(productId) {
+                    // Implement add to cart logic
+                }
+
+                async function buyNow(productId) {
+                    await addToCart(productId);
+                    window.location.href = '/checkout';
+                }
+
+                async function toggleWishlist(productId) {
+                    // Implement wishlist logic
+                }
+            </script>
+</body>
+
+</html>

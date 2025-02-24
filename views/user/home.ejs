@@ -52,13 +52,13 @@
               <div class="bg-gray-900 rounded-2xl overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300">
                 <!-- Product Image -->
                 <div class="relative aspect-square overflow-hidden bg-gray-800">
-                  <img src="<%= product.variants[0]?.images[0] %>" 
+                  <img src="<%= product.images[0] %>" 
                        alt="<%= product.name %>"
                        class="w-full h-full object-cover transform transition-all duration-500 group-hover:scale-105"
                        loading="lazy" />
-                  <% if (product.variants[0]?.discountPrice < product.variants[0]?.price) { %>
+                  <% if (product.variants?.discountPrice < product.variants?.price) { %>
                     <div class="absolute top-3 right-3 bg-gray-800/90 backdrop-blur-sm text-gray-200 px-3 py-1 rounded-full text-xs font-medium">
-                      -<%= Math.round((product.variants[0].price - product.variants[0].discountPrice) / product.variants[0].price * 100) %>%
+                      -<%= Math.round((product.price - product.discountPrice) / product.variants[0].price * 100) %>%
                     </div>
                   <% } %>
                   <!-- Quick View Button -->
@@ -89,9 +89,9 @@
 
                   <!-- Price -->
                   <div class="flex items-baseline gap-2">
-                    <span class="text-lg font-bold text-gray-200">₹<%= product.variants[0]?.price %></span>
-                    <% if (product.variants[0]?.discountPrice < product.variants[0]?.price) { %>
-                      <span class="text-sm text-gray-400 line-through">₹<%= product.variants[0]?.price %></span>
+                    <span class="text-lg font-bold text-gray-200">₹<%= product.price %></span>
+                    <% if (product.price) { %>
+                      <span class="text-sm text-gray-400 line-through">₹<%= product.price %></span>
                     <% } %>
                   </div>
                 </div>

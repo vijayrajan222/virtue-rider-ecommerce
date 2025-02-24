@@ -153,6 +153,7 @@
                     <input type="hidden" id="productId">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Basic Product Info -->
+
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-400 mb-1">Product Name</label>
@@ -248,7 +249,7 @@
         </div>
 
         <!-- Edit Product Modal -->
-        <div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div id="productEditModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
             <div class="bg-gray-800 rounded-lg p-8 max-w-4xl w-full mx-4">
                 <h2 id="modalTitle" class="text-xl font-semibold text-gray-200 mb-6">Edit Product</h2>
                 <form id="productForm" enctype="multipart/form-data" onsubmit="handleEditSubmit(event)">
@@ -298,6 +299,7 @@
                         </div>
 
                         <!-- Variants Section (now only with size and stock) -->
+                        <!-- Variants Section -->
                         <div>
                             <div class="flex justify-between items-center mb-4">
                                 <h3 class="text-lg font-medium text-gray-300">Size Variants</h3>
@@ -306,10 +308,14 @@
                                     Add Size Variant
                                 </button>
                             </div>
+
+                            <!-- Container for Variants -->
                             <div id="variantsContainer" class="space-y-4">
-                                <!-- Variants will be added here dynamically -->
+                                <!-- Default Variant Row (Cloned for new variants) -->
+
                             </div>
                         </div>
+
 
                         <!-- Product Images -->
                         <div>
@@ -424,6 +430,7 @@
                 variant.remove();
             }
 
+
             async function handleSubmit(event) {
 
                 console.log('add new product')
@@ -495,8 +502,6 @@
 
             async function handleEditSubmit(event) {
                 event.preventDefault();
-                console.log('update product')
-
 
                 const productId = document.getElementById('productId').value
 
@@ -513,14 +518,15 @@
                     formData.append('productId', document.getElementById('productId').value);
 
 
-                    // Add variants
                     const variants = [];
+
                     document.querySelectorAll('#variantsContainer > div').forEach(variantDiv => {
                         variants.push({
                             size: variantDiv.querySelector('select').value,
                             stock: parseInt(variantDiv.querySelector('input[type="number"]').value)
                         });
                     });
+
                     formData.append('variants', JSON.stringify(variants));
 
                     // Add images
@@ -542,6 +548,7 @@
                     const data = await response.json();
 
                     if (data.success) {
+
                         await Swal.fire({
                             icon: 'success',
                             title: 'Success!',
@@ -584,7 +591,6 @@
                 // document.getElementById('productModal').classList.add('flex');
                 // document.getElementById('productForm').reset();
 
-                console.log(typeof id)
 
                 initializeImageUploads();
                 document.getElementById('productForm').onsubmit = handleEditSubmit;
@@ -607,8 +613,7 @@
             }
 
             async function loadProducts(id) {
-
-                console.log('load product')
+                console.log('Loading product with ID:', id);
 
                 try {
                     const response = await fetch(`/admin/products/${id}`);
@@ -617,58 +622,81 @@
                     if (data.success) {
                         const product = data.product;
 
-
+                        // Set basic product details
                         document.getElementById('modalTitle').textContent = 'Edit Product';
                         document.getElementById('productId').value = product._id;
                         document.getElementById('productName').value = product.name;
                         document.getElementById('brand').value = product.brand;
-                        document.getElementById('categoryId').value = product.categoryId._id;
+                        document.getElementById('categoryId').value = product.categoryId?._id || '';
                         document.getElementById('description').value = product.description;
                         document.getElementById('color').value = product.color || '';
                         document.getElementById('price').value = product.price || '';
 
-                        // Handle image previews and file input display
-                        if (product.images && product.images.length > 0) {
-                            product.images.forEach((imagePath, index) => {
-                               
-                                const inputField = document.querySelector(`input[name="image${index + 1}"]`);
+                        // 🛠 Handle Variants (Size + Stock)
+                        const variantsContainer = document.getElementById('variantsContainer');
+                        variantsContainer.innerHTML = ''; // Clear previous variants
 
-                                if (!inputField) return;
-
-                                const previewContainer = inputField.nextElementSibling;
-
-                                // Create a custom file list to show the current image
-                                const dataTransfer = new DataTransfer();
-                                const fileName = imagePath.split('/').pop();
-
-                                // Store the current image path
-                                inputField.dataset.currentImage = imagePath;
-
-                                // Create a fake file object
-                                const fakeFile = new File([''], fileName, {
-                                    type: 'image/jpeg',
-                                });
-
-                                dataTransfer.items.add(fakeFile);
-                                inputField.files = dataTransfer.files;
-
-                                // Show preview
-                                if (previewContainer && previewContainer.tagName === 'IMG') {
-                                    previewContainer.src = imagePath;
-                                    previewContainer.classList.remove('hidden');
-                                }
+                        if (Array.isArray(product.variants) && product.variants.length > 0) {
+                            product.variants.forEach((variant, index) => {
+                                const variantDiv = document.createElement('div');
+                                variantDiv.className = 'p-4 bg-gray-700 rounded-lg space-y-3';
+                                variantDiv.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-gray-300 font-medium">Variant ${index + 1}</h4>
+                            <button type="button" onclick="removeVariant(this)"
+                                    class="text-red-400 hover:text-red-300">
+                                <i class="material-icons">delete</i>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Size</label>
+                                <select name="variants[${index}][size]" required
+                                        class="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                                    <option value="S" ${variant.size === "S" ? "selected" : ""}>Small (S)</option>
+                                    <option value="M" ${variant.size === "M" ? "selected" : ""}>Medium (M)</option>
+                                    <option value="L" ${variant.size === "L" ? "selected" : ""}>Large (L)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Stock</label>
+                                <input type="number" name="variants[${index}][stock]" value="${variant.stock || 0}" required min="0"
+                                    class="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                            </div>
+                        </div>
+                    `;
+                                variantsContainer.appendChild(variantDiv);
                             });
+                        } else {
+                            console.warn('No variants found for this product.');
                         }
 
+                        // 🖼️ Load Product Images
+                        const imageInputs = document.querySelectorAll('[data-image-input]');
+                        const imagePreviews = document.querySelectorAll('.image-preview');
 
+                        const images = product.images || [];
+
+                        imageInputs.forEach((input, index) => {
+                            if (images[index]) {
+                                input.setAttribute("data-existing", images[index]);
+                                imagePreviews[index].src = images[index];
+                                imagePreviews[index].classList.remove("hidden");
+                            } else {
+                                input.removeAttribute("data-existing");
+                                imagePreviews[index].classList.add("hidden");
+                            }
+                        });
+
+                        // Show the modal
                         document.getElementById('productModal').classList.remove('hidden');
                         document.getElementById('productModal').classList.add('flex');
-                        initializeImageUploads();
+
                     } else {
                         throw new Error(data.message);
                     }
                 } catch (error) {
-                    console.error('Error:', error);
+                    console.error('Error loading product:', error);
                     Swal.fire({
                         icon: 'error',
                         title: 'Error!',
@@ -676,8 +704,8 @@
                         confirmButtonColor: '#FF6B00'
                     });
                 }
-
             }
+
 
             // Delete product
             async function deleteProduct(id) {

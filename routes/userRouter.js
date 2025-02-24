@@ -17,6 +17,7 @@ import {
     getGoogle,
     getGoogleCallback 
 } from '../controllers/user/authController.js';
+import{getProductDetails} from '../controllers/user/productviewController.js'
 import { getShop } from '../controllers/user/shopController.js';
 
 const userRouter = express.Router();
@@ -29,7 +30,7 @@ userRouter.get('/about', getAboutPage);
 userRouter.get('/home', gethomePage);
 userRouter.get('/forgotPassword', getforgotPasswordPage);
 userRouter.get('/shop', getShop);
-
+userRouter.get('/product/:id',getProductDetails)
 // Auth routes
 userRouter.post('/signup', postSignUp);
 userRouter.post('/verify-otp', verifyOTP);
