@@ -1,19 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/tailwindcss/output.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <title>Shop Page</title>
-</head>
-<!DOCTYPE html>
+
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Update the path to match your actual folder structure -->
-    <link rel="stylesheet" href="../user/tailwindcss/output.css" />
+    <link rel="stylesheet" href="/tailwindcss/output.css">
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
@@ -104,6 +95,9 @@
               <div class="mb-4">
                 <label for="category" class="block text-gray-700 font-medium">Category</label>
                 <select id="category" class="w-full px-3 py-2 border rounded-lg">
+                  <script>
+                    console.log("Categories in EJS:", <%- JSON.stringify(categories) %>);
+                  </script>
                   <option value="">All Categories</option>
                   <% if (typeof categories !== "undefined" && categories.length > 0) { %>
                     <% categories.forEach(category => { %>
@@ -137,15 +131,19 @@
 
             <!-- Product Grid -->
             <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              <% if (products && products.length > 0) { %>
+              <% if (typeof products !== 'undefined' && products.length > 0) { %>
+                <script>
+                  console.log("Products in EJS:", <%- JSON.stringify(products) %>);
+              </script>
+              
                   <% products.forEach(product => { %>
                       <a href="/product/<%= product._id %>" 
                          class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
                           <div class="relative aspect-[4/5] overflow-hidden">
-                              <% if (product.imageUrl && product.imageUrl.length > 0) { %>
+                              <% if (product.images && product.images.length > 0) { %>
                                   <img 
-                                      src="<%= product.imageUrl[0] %>" 
-                                      alt="<%= product.productName %>"
+                                      src="<%= product.images[0] %>" 
+                                      alt="<%= product.name %>"
                                       class="w-full h-full object-cover hover:scale-105 transition-transform duration-300 <%= product.stock === 0 ? 'opacity-60' : '' %>"
                                       loading="lazy"
                                   >
@@ -162,7 +160,7 @@
           
                           <div class="p-4">
                               <h2 class="text-gray-800 text-sm font-medium truncate">
-                                  <%= product.productName %>
+                                  <%= product.name %>
                               </h2>
                               <div class="flex items-baseline gap-1 mt-1">
                                   <span class="text-base font-bold text-gray-900">₹<%= product.price %></span>
@@ -207,6 +205,7 @@
           const prevPageBtn = document.getElementById('prevPage');
           const nextPageBtn = document.getElementById('nextPage');
           const currentPageSpan = document.getElementById('currentPage');
+          const categoriesSelect = document.getElementById('category');
           const totalPagesSpan = document.getElementById('totalPages');
       
           // Store original products data
@@ -245,8 +244,8 @@
                      style="animation-delay: ${index * 0.1}s">
                       <div class="relative aspect-[4/5] overflow-hidden">
                           <img
-                              src="${product.imageUrl[0]}"
-                              alt="${product.productName}"
+                              src="${product.images[0]}"
+                              alt="${product.name}"
                               class="w-full h-full object-cover hover:scale-105 transition-transform duration-300 ${product.stock === 0 ? 'opacity-60' : ''}"
                               loading="lazy"
                           >
@@ -265,7 +264,7 @@
                       </div>
                       <div class="p-4">
                           <h2 class="text-gray-800 text-sm font-medium truncate">
-                              ${product.productName}
+                              ${product.name}
                           </h2>
                           <div class="flex items-baseline gap-1 mt-1">
                               <span class="text-base font-bold text-gray-900">₹${product.discountPrice || product.price}</span>
@@ -300,7 +299,8 @@
                       color: colorFilter.value,
                       minPrice: minPriceFilter.value,
                       maxPrice: maxPriceFilter.value,
-                      stock: stockFilter.value
+                      stock: stockFilter.value,
+                      category:categoriesSelect.value
                   });
       
                   const response = await fetch(`/shop?${queryParams.toString()}`, {
@@ -366,7 +366,7 @@
               if (e.key === 'Enter') applyFilters();
           });
           
-          [sortFilter, colorFilter, stockFilter].forEach(filter => {
+          [sortFilter, colorFilter, stockFilter,categoriesSelect].forEach(filter => {
               filter.addEventListener('change', applyFilters);
           });
       

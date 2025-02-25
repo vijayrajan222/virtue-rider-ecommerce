@@ -1,5 +1,6 @@
 import Product from '../../models/productModel.js'; 
 
+
 export const getProductDetails = async (req, res) => {
     try {
         const productId = req.params.id;
@@ -12,7 +13,7 @@ export const getProductDetails = async (req, res) => {
 
       
         const relatedProducts = await Product.find({
-            category: product.category,
+            category: product.categoryId,   ///added by me 
             _id: { $ne: productId }
         }).limit(5);
 
