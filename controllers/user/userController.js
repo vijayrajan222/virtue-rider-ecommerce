@@ -13,6 +13,7 @@ const getloginPage = (req, res)=> {
 }
 
 const gethomePage = async (req, res) => {
+    console.log(req.session.user)
     try {
         // Fetch latest products
         const products = await Product.find({ isHidden: false })

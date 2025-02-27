@@ -68,48 +68,7 @@ export const postSignUp = async (req, res) => {
         });
     }
 };
-const postOtp = async (req, res) => {
-    try {
-        const { userOtp, email } = req.body;
-        const user = await User.findOne({ email, otp: userOtp });
 
-        if (!user) {
-            return res.status(400).json({ success: false, message: 'Invalid OTP' });
-        }
-
-        if (Date.now() > user.otpExpiresAt) {
-            if (user.otpAttempts >= 3) {
-                return res.status(400).json({ error: 'Too many attempts. Please signup again.' });
-            }
-            return res.status(400).json({ error: 'OTP expired' });
-        }
-
-        if (user.otpAttempts >= 3) {
-            return res.status(400).json({ error: 'Too many attempts. Please signup again.' });
-        }
-
-        // If OTP matches, verify user
-        if (user.otp === userOtp) {
-            await User.findByIdAndUpdate(user._id, {
-                $set: { isVerified: true },
-                $unset: { otp: 1, otpExpiresAt: 1, otpAttempts: 1 }
-            });
-
-            req.session.user = user._id;
-            return res.status(200).json({
-                success: true,
-                message: 'OTP verified successfully',
-                redirectUrl: '/login'
-            });
-        } else {
-            return res.status(400).json({ error: 'Invalid OTP' });
-        }
-
-    } catch (error) {
-        console.error('OTP verification error:', error);
-        return res.status(500).json({ error: 'OTP verification failed' });
-    }
-}
 export const login = async (req, res) => {
     try {
         res.render('user/login')
@@ -167,9 +126,11 @@ export const postLogin = async (req, res) => {
 
         // Set session
         req.session.userId = user._id;
+        req.session.user = user;
         req.session.isLoggedIn = true;
 
         res.status(200).json({
+            user : user,
             success: true,
             message: 'Login successful',
             redirectUrl: '/home'

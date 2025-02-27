@@ -1,6 +1,7 @@
 import userModel from "../models/userModel.js"
 
 const checkSession = async (req, res, next) => {
+    
     try {
         // Check if session exists
         if (!req.session.user) {
@@ -33,8 +34,9 @@ const checkSession = async (req, res, next) => {
 }
 
 const isLogin = async (req, res, next) => {
+    console.log('this is logging session', req.session)
     try {
-        if (req.session.user) {
+        if (req.session.userId) {
             return res.redirect('/home');
         }
         // Clear user from response locals
@@ -49,6 +51,6 @@ const isLogin = async (req, res, next) => {
 
 
 export default { 
-    isLogin, 
+        isLogin, 
     checkSession
 }
