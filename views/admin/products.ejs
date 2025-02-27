@@ -599,10 +599,22 @@
 
 
             function closeModal() {
-
                 document.getElementById('productForm').reset();
+                document.getElementById('variantsContainer').innerHTML = ''; // Clear all variants
                 document.getElementById('productModal').classList.add('hidden');
                 document.getElementById('productModal').classList.remove('flex');
+
+                // Reset image previews too
+                const imagePreviews = [
+                    document.getElementById('imagePreview1'),
+                    document.getElementById('imagePreview2'),
+                    document.getElementById('imagePreview3')
+                ];
+
+                imagePreviews.forEach(preview => {
+                    preview.src = '';
+                    preview.classList.add('hidden');
+                });
             }
 
             // Edit product
