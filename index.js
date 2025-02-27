@@ -8,6 +8,8 @@ import { fileURLToPath } from 'url';
 import adminRouter from './routes/adminRouter.js';
 import './utils/googleAuth.js';
 import passport from 'passport';
+import nocache from "nocache"
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,6 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/tailwindcss', express.static(path.join(__dirname, 'public', 'tailwindcss')));
+app.use(nocache())
 
 // Session
 app.use(session({
@@ -41,7 +44,9 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Initialize passport
 app.use(passport.initialize());
+
 app.use(passport.session());
+
 
 // Routes
 app.use('/', userRouter);

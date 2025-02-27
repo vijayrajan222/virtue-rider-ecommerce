@@ -867,6 +867,10 @@ video {
   margin-top: auto;
 }
 
+.mt-12 {
+  margin-top: 3rem;
+}
+
 .line-clamp-2 {
   overflow: hidden;
   display: -webkit-box;
@@ -2273,6 +2277,11 @@ video {
   line-height: 1rem;
 }
 
+.text-5xl {
+  font-size: 3rem;
+  line-height: 1;
+}
+
 .font-bold {
   font-weight: 700;
 }
@@ -2956,6 +2965,11 @@ video {
 .focus\:ring-zinc-600:focus {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(82 82 91 / var(--tw-ring-opacity));
+}
+
+.focus\:ring-gray-500:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(107 114 128 / var(--tw-ring-opacity));
 }
 
 .focus\:ring-offset-2:focus {
