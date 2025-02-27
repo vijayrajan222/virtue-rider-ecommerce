@@ -118,8 +118,8 @@ export const toggleProductVisibility = async (req, res) => {
                 message: 'Product not found'
             });
         }
-
-        product.isHidden = !product.isHidden;
+        
+        product.isActive = !product.isActive;
         await product.save();
 
         res.json({

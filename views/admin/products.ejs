@@ -61,7 +61,7 @@
                                 </thead>
                                 <tbody>
                                     <% products.forEach(product=> { %>
-                                        <tr class="border-b border-gray-700 transition-all duration-200 <%= product.isHidden ? 'opacity-50' : '' %>"
+                                        <tr class="border-b border-gray-700 transition-all duration-200 <%= product.isActive ?  '' : 'opacity-50' %>"
                                             id="product-row-<%= product._id %>">
                                             <td class="p-4">
                                                 <img src="<%= product.images?.[0] || '/images/placeholder.jpg' %>"
@@ -94,10 +94,10 @@
                                                         Edit
                                                     </button>
                                                     <button
-                                                        onclick="toggleHideProduct(`<%= product._id %>`, <%= product.isHidden ? 'true' : 'false' %>)"
-                                                        class="<%= product.isHidden ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' %> text-white px-3 py-1 rounded"
+                                                        onclick="toggleHideProduct(`<%= product._id %>`, <%= product.isActive ? 'true' : 'false' %>)"
+                                                        class="<%= product.isActive ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' %> text-white px-3 py-1 rounded"
                                                         id="hide-button-<%= product._id %>">
-                                                        <%= product.isHidden ? 'Unhide' : 'Hide' %>
+                                                        <%= product.isActive ? 'Hide' : 'Unhide' %>
                                                     </button>
 
                                                 </div>
@@ -812,18 +812,17 @@
 
                         if (currentlyHidden) {
                             // Unhiding
-                            row.classList.remove('opacity-50');
+                            // row.classList.remove('opacity-50');
                             button.textContent = 'Hide';
                             button.classList.remove('bg-green-600', 'hover:bg-green-700');
                             button.classList.add('bg-red-600', 'hover:bg-red-700');
                         } else {
                             // Hiding
-                            row.classList.add('opacity-50');
                             button.textContent = 'Unhide';
                             button.classList.remove('bg-red-600', 'hover:bg-red-700');
                             button.classList.add('bg-green-600', 'hover:bg-green-700');
                         }
-
+                        window.location.reload();
                         // Update the onclick handler with the new state
                         button.setAttribute('onclick', `toggleHideProduct('${productId}', ${!currentlyHidden})`);
                     }
