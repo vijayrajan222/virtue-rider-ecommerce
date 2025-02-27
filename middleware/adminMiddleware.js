@@ -1,4 +1,4 @@
-export const isAdminAuth = (req, res, next) => {
+export const checkSession = (req, res, next) => {
     if (req.session.admin) {  // Changed from isAdminAuth to admin
         next();
     } else {
@@ -17,4 +17,4 @@ const isLogin  = (req, res, next)=>{
 }
 
 
-export default { isLogin, isAdminAuth }
+export default { isLogin, checkSession }

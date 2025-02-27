@@ -1,4 +1,5 @@
-<div class="fixed z-50 top-0 w-full h-14 sm:h-16 flex items-center justify-between px-3 sm:px-6 bg-gray-50/95 backdrop-blur-sm border-b border-gray-200">
+<div
+  class="fixed z-50 top-0 w-full h-14 sm:h-16 flex items-center justify-between px-3 sm:px-6 bg-gray-50/95 backdrop-blur-sm border-b border-gray-200">
   <!-- Mobile Menu Button -->
   <div class="lg:hidden">
     <button id="menu-toggle" class="p-1.5 sm:p-2 rounded-lg text-slate-700 hover:bg-gray-100/80 transition-colors">
@@ -8,18 +9,18 @@
 
   <!-- Left Side (Nav Links) -->
   <nav class="hidden lg:flex items-center space-x-8">
-    <a href="/user/home" class="text-sm font-medium text-slate-700 hover:text-black transition-colors">Home</a>
-    <a href="/user/shop" class="text-sm font-medium text-slate-700 hover:text-black transition-colors">Shop</a>
+    <a href="/home" class="text-sm font-medium text-slate-700 hover:text-black transition-colors">Home</a>
+    <a href="/shop" class="text-sm font-medium text-slate-700 hover:text-black transition-colors">Shop</a>
     <a href="#" class="text-sm font-medium text-slate-700 hover:text-black transition-colors">Contact</a>
     <a href="#" class="text-sm font-medium text-slate-700 hover:text-black transition-colors">About</a>
   </nav>
 
   <!-- Center (Logo) -->
   <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-    <img src="/images/blacklogo.png" alt="logo" class="h-8 sm:h-10"  style="
+    <img src="/images/blacklogo.png" alt="logo" class="h-8 sm:h-10" style="
     width: 80px;
     height: 80px;
-"/>
+" />
   </div>
 
   <!-- Right Side (Icons) -->
@@ -32,83 +33,60 @@
     </a>
     <a href="/cart" class="p-1.5 sm:p-2 text-slate-700 hover:text-black transition-colors relative">
       <i class="fa-solid fa-cart-shopping text-lg sm:text-xl"></i>
-      <% if (locals.cartCount && cartCount > 0) { %>
-        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-          <%= cartCount > 9 ? '9+' : cartCount %>
+      <% if (locals.cartCount && cartCount> 0) { %>
+        <span
+          class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+          <%= cartCount> 9 ? '9+' : cartCount %>
         </span>
-      <% } %>
+        <% } %>
     </a>
   </div>
 </div>
 
 <!-- Mobile Menu Overlay -->
-<div id="mobile-menu" 
-     class="fixed inset-0 bg-black/20 backdrop-blur-sm hidden lg:hidden z-40"
-     aria-hidden="true">
+<div id="mobile-menu" class="fixed inset-0 bg-black/20 backdrop-blur-sm hidden lg:hidden z-40" aria-hidden="true">
   <!-- Mobile Menu Panel -->
-  <div class="fixed top-14 sm:top-16 left-0 w-full max-w-sm bg-white border-r border-gray-200 h-screen transform transition-transform duration-300 ease-in-out">
+  <div
+    class="fixed top-14 sm:top-16 left-0 w-full max-w-sm bg-white border-r border-gray-200 h-screen transform transition-transform duration-300 ease-in-out">
     <nav class="flex flex-col p-4 space-y-2">
-      <a href="/home" class="p-3 text-sm font-medium text-slate-700 hover:bg-gray-50 rounded-lg transition-colors">Home</a>
-      <a href="/shop" class="p-3 text-sm font-medium text-slate-700 hover:bg-gray-50 rounded-lg transition-colors">Shop</a>
-      <a href="#" class="p-3 text-sm font-medium text-slate-700 hover:bg-gray-50 rounded-lg transition-colors">Contact</a>
+      <a href="/home"
+        class="p-3 text-sm font-medium text-slate-700 hover:bg-gray-50 rounded-lg transition-colors">Home</a>
+      <a href="/shop"
+        class="p-3 text-sm font-medium text-slate-700 hover:bg-gray-50 rounded-lg transition-colors">Shop</a>
+      <a href="#"
+        class="p-3 text-sm font-medium text-slate-700 hover:bg-gray-50 rounded-lg transition-colors">Contact</a>
       <a href="#" class="p-3 text-sm font-medium text-slate-700 hover:bg-gray-50 rounded-lg transition-colors">About</a>
     </nav>
   </div>
 </div>
 
-<script>
-  const menuToggle = document.getElementById("menu-toggle");
-  const mobileMenu = document.getElementById("mobile-menu");
-  const menuPanel = mobileMenu.querySelector('div');
-  let isMenuOpen = false;
 
-  menuToggle.addEventListener("click", () => {
-    isMenuOpen = !isMenuOpen;
-    mobileMenu.classList.toggle("hidden");
-    document.body.classList.toggle("overflow-hidden");
-    
-    // Update menu icon
-    const menuIcon = menuToggle.querySelector('i');
-    if (isMenuOpen) {
-      menuIcon.classList.remove('fa-bars');
-      menuIcon.classList.add('fa-xmark');
-    } else {
-      menuIcon.classList.remove('fa-xmark');
-      menuIcon.classList.add('fa-bars');
-    }
-  });
-
-  // Close menu when clicking outside
-  mobileMenu.addEventListener('click', (event) => {
-    if (event.target === mobileMenu) {
-      mobileMenu.classList.add("hidden");
-      document.body.classList.remove("overflow-hidden");
-      isMenuOpen = false;
-      const menuIcon = menuToggle.querySelector('i');
-      menuIcon.classList.remove('fa-xmark');
-      menuIcon.classList.add('fa-bars');
-    }
-  });
-</script>
 
 <nav class="bg-black fixed w-full z-20 top-0 start-0">
-    <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-        <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
-            <span class="self-center text-2xl font-semibold whitespace-nowrap text-white">VR</span>
-        </a>
-        <div class="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
-            <a href="/login" class="text-white bg-transparent hover:bg-white hover:text-black focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center">Login</a>
-            <a href="/signup" class="text-white bg-transparent hover:bg-white hover:text-black focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center">Sign Up</a>
-        </div>
-        <div class="items-center justify-between hidden w-full md:flex md:w-auto md:order-1" id="navbar-sticky">
-            <ul class="flex flex-col p-4 md:p-0 mt-4 font-medium border rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0">
-                <li>
-                    <a href="/home" class="block py-2 px-3 text-white rounded hover:bg-gray-100 hover:text-black md:hover:bg-transparent md:hover:text-white md:p-0">Home</a>
-                </li>
-                <li>
-                    <a href="/about" class="block py-2 px-3 text-white rounded hover:bg-gray-100 hover:text-black md:hover:bg-transparent md:hover:text-white md:p-0">About</a>
-                </li>
-            </ul>
-        </div>
+  <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+    <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
+      <span class="self-center text-2xl font-semibold whitespace-nowrap text-white">VR</span>
+    </a>
+    <div id="auth-buttons" class="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
+      <a href="/login" id="login-btn"
+        class="text-white bg-transparent hover:bg-white hover:text-black focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center">Login</a>
+      <a href="/signup" id="signup-btn"
+        class="text-white bg-transparent hover:bg-white hover:text-black focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center">Sign Up</a>
+      <button id="logout-btn"
+        class="hidden text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-4 py-2 text-center">Logout</button>
     </div>
+    <div class="items-center justify-between hidden w-full md:flex md:w-auto md:order-1" id="navbar-sticky">
+      <ul
+        class="flex flex-col p-4 md:p-0 mt-4 font-medium border rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0">
+        <li>
+          <a href="/home"
+            class="block py-2 px-3 text-white rounded hover:bg-gray-100 hover:text-black md:hover:bg-transparent md:hover:text-white md:p-0">Home</a>
+        </li>
+        <li>
+          <a href="/about"
+            class="block py-2 px-3 text-white rounded hover:bg-gray-100 hover:text-black md:hover:bg-transparent md:hover:text-white md:p-0">About</a>
+        </li>
+      </ul>
+    </div>
+  </div>
 </nav>
