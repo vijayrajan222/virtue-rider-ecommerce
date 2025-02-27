@@ -6,19 +6,22 @@ export const getProductDetails = async (req, res) => {
         const productId = req.params.id;
         const product = await Product.findById(productId);  
         if (!product) {
-            return res.status(404).render('error', {
-                message: 'Product not found'
-            });
+            return res.status(404).render("user/error", { message: "Product not found" }); // This renders the error page
         }
+        
 
       
         const relatedProducts = await Product.find({
-            category: product.categoryId,   ///added by me 
+            categoryId: product.categoryId,  
+            isActive: true,
             _id: { $ne: productId }
         }).limit(5);
 
+        console.log('relatedProducts:', relatedProducts[0]);   
+
+
         res.render('user/productdetails', {
-            title: product.productName,
+            title: product,
             product,
             relatedProducts
         });
@@ -28,4 +31,5 @@ export const getProductDetails = async (req, res) => {
             message: 'Error loading product details'
         });
     }
+
 };
