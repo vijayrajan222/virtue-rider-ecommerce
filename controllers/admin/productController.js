@@ -246,7 +246,7 @@ export const addProduct = async (req, res) => {
         console.log('Received body:', req.body);
 
 
-        const { name, description, categoryId, color, price, brand, variants: variantsJson } = req.body;
+        const { name, description, categoryId, color, price, brand, variants: variantsJson,image1,image2,image3 } = req.body;
 
         // Parse variants
         let variants = [];
@@ -264,11 +264,13 @@ export const addProduct = async (req, res) => {
                 message: 'Invalid variant data'
             });
         }
-
+        // console.log(req.files);
+        
         // Handle image uploads
         const images = [];
         if (req.files) {
             if (req.files.image1) {
+                // console.log('Image 1:', req.files.image1[0].filename);
                 images.push('/uploads/products/' + req.files.image1[0].filename);
             }
             if (req.files.image2) {

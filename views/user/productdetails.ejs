@@ -57,189 +57,221 @@
 <body class="bg-gray-100">
     <%- include("../partials/nav") %>
 
-    <main class="min-h-screen pt-20 pb-12">
-        <!-- Breadcrumb -->
-        <nav class="max-w-7xl mx-auto px-4 py-4">
-            <ol class="flex items-center space-x-2 text-sm">
-                <li><a href="/" class="text-gray-500 hover:text-gray-900">Home</a></li>
-                <li><span class="text-gray-400">/</span></li>
-                <li><a href="/shop" class="text-gray-500 hover:text-gray-900">Shop</a></li>
-                <li><span class="text-gray-400">/</span></li>
-                <li class="text-gray-900 font-medium">
-                    <%= product.name %>
-                </li>
-            </ol>
-        </nav>
+        <main class="min-h-screen pt-20 pb-12">
+            <!-- Breadcrumb -->
+            <nav class="max-w-7xl mx-auto px-4 py-4">
+                <ol class="flex items-center space-x-2 text-sm">
+                    <li><a href="/" class="text-gray-500 hover:text-gray-900">Home</a></li>
+                    <li><span class="text-gray-400">/</span></li>
+                    <li><a href="/shop" class="text-gray-500 hover:text-gray-900">Shop</a></li>
+                    <li><span class="text-gray-400">/</span></li>
+                    <li class="text-gray-900 font-medium">
+                        <%= product.name %>
+                    </li>
+                </ol>
+            </nav>
 
-        <!-- Product Details -->
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Left: Image Gallery -->
-                    <div class="space-y-4">
-                        <!-- Main Image -->
-                        <div class="main-image-container">
-                            <img id="mainImage"
-                                src="<%= product.images.length > 0 ? product.images[0] : '/images/placeholder.jpg' %>"
-                                alt="<%= product.name %>" />
-                        </div>
+            <!-- Product Details -->
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Left: Image Gallery -->
+                        <div class="space-y-4">
+                            <!-- Main Image -->
+                            <div class="main-image-container">
+                                <img id="mainImage"
+                                    src="<%= product.images.length > 0 ? product.images[0] : '/images/placeholder.jpg' %>"
+                                    alt="<%= product.name %>" />
+                            </div>
 
-                        <!-- Thumbnails -->
-                        <div class="thumbnail-scroll flex space-x-4 overflow-x-auto py-2">
-                            <% product.images.forEach((image, index) => { %>
-                                <button onclick="updateMainImage('<%= image %>', this)" class="thumbnail-btn flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 
+                            <!-- Thumbnails -->
+                            <div class="thumbnail-scroll flex space-x-4 overflow-x-auto py-2">
+                                <% product.images.forEach((image, index)=> { %>
+                                    <button onclick="updateMainImage('<%= image %>', this)" class="thumbnail-btn flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 
                                        <%= index === 0 ? 'border-gray-900' : 'border-transparent' %> 
                                        hover:border-gray-900 transition-all">
-                                    <img src="<%= image %>" alt="Product view <%= index + 1 %>"
-                                        class="w-full h-full object-cover" />
-                                </button>
-                            <% }) %>
-                        </div>
-                    </div>
-
-                    <!-- Right: Product Info -->
-                    <div class="space-y-6">
-                        <div>
-                            <h1 class="text-3xl font-bold text-gray-900">
-                                <%= product.name %>
-                            </h1>
-                            <p class="text-gray-500 mt-2">
-                                <%= product.description %>
-                            </p>
-                        </div>
-
-                        <!-- Price -->
-                        <div class="space-y-2">
-                            <div class="flex items-baseline gap-3">
-                                <span class="text-4xl font-bold text-gray-900">
-                                    ₹<%= product.price.toLocaleString('en-IN') %>
-                                </span>
+                                        <img src="<%= image %>" alt="Product view <%= index + 1 %>"
+                                            class="w-full h-full object-cover" />
+                                    </button>
+                                    <% }) %>
                             </div>
                         </div>
 
-                        <!-- Stock & Variants -->
-                        <div>
-                            <label for="variantSelect" class="text-sm font-medium text-gray-900">Choose
-                                Size:</label>
-                            <select id="variantSelect"
-                                class="w-full px-4 py-2 border rounded-md focus:outline-none">
-                                <% product.variants.forEach(variant => { %>
-                                    <option value="<%= variant.size %>" <%= variant.stock > 0 ? '' : 'disabled' %>>
-                                        <%= variant.size %> (<%= variant.stock > 0 ? variant.stock + ' available' :
-                                            'Out of Stock' %>)
-                                    </option>
-                                <% }) %>
-                            </select>
-                        </div>
+                        <!-- Right: Product Info -->
+                        <div class="space-y-6">
+                            <div>
+                                <h1 class="text-3xl font-bold text-gray-900">
+                                    <%= product.name %>
+                                </h1>
+                                <p class="text-gray-500 mt-2">
+                                    <%= product.description %>
+                                </p>
+                            </div>
 
-                        <!-- Actions -->
-                        <div class="space-y-4 pt-6">
-                            <% if (product.variants.some(variant => variant.stock > 0)) { %>
-                                <button onclick="addToCart('<%= product._id %>')"
-                                    class="w-full py-4 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
-                                    <i class="fas fa-shopping-cart"></i>
-                                    Add to Cart
-                                </button>
-                                <button onclick="buyNow('<%= product._id %>')"
-                                    class="w-full py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
-                                    <i class="fas fa-bolt"></i>
-                                    Buy Now
-                                </button>
-                            <% } %>
-                            <button onclick="toggleWishlist('<%= product._id %>')"
-                                class="w-full py-4 bg-white text-gray-900 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-                                <i class="far fa-heart"></i>
-                                Add to Wishlist
-                            </button>
+                            <!-- Price -->
+                            <div class="space-y-2">
+                                <div class="flex items-baseline gap-3">
+                                    <span class="text-4xl font-bold text-gray-900">
+                                        ₹<%= product.price.toLocaleString('en-IN') %>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Stock & Variants -->
+                            <div>
+                                <label for="variantSelect" class="text-sm font-medium text-gray-900">Choose
+                                    Size:</label>
+                                <select id="variantSelect"
+                                    class="w-full px-4 py-2 border rounded-md focus:outline-none">
+                                    <% product.variants.forEach(variant=> { %>
+                                        <option value="<%= variant.size %>" <%=variant.stock> 0 ? '' : 'disabled' %>>
+                                            <%= variant.size %> (<%= variant.stock> 0 ? variant.stock + ' available' :
+                                                    'Out of Stock' %>)
+                                        </option>
+                                        <% }) %>
+                                </select>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="space-y-4 pt-6">
+                                <% if (product.variants.some(variant=> variant.stock > 0)) { %>
+                                    <button onclick="addToCart('<%= product._id %>')"
+                                        class="w-full py-4 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
+                                        <i class="fas fa-shopping-cart"></i>
+                                        Add to Cart
+                                    </button>
+                                    <button onclick="buyNow('<%= product._id %>')"
+                                        class="w-full py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                                        <i class="fas fa-bolt"></i>
+                                        Buy Now
+                                    </button>
+                                    <% } %>
+                                        <button onclick="toggleWishlist('<%= product._id %>')"
+                                            class="w-full py-4 bg-white text-gray-900 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                                            <i class="far fa-heart"></i>
+                                            Add to Wishlist
+                                        </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Related Products Section -->
-        <div class="max-w-7xl mx-auto px-4 mt-12">
-            <div class="text-sm text-gray-500 font-medium mb-4">RELATED PRODUCTS</div>
-            <div class="flex overflow-x-auto gap-4 sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 sm:gap-6 pb-4 sm:pb-0">
-                <% relatedProducts.forEach(product => { %>
-                    <a href="/product/<%= product._id %>" class="group min-w-[240px] sm:min-w-0">
-                        <div class="bg-white rounded-2xl overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300">
-                            <!-- Product Image -->
-                            <div class="relative aspect-square overflow-hidden bg-gray-100">
-                                <img src="<%= product.images[0] %>" alt="<%= product.name %>"
-                                    class="w-full h-full object-cover transform transition-all duration-500 group-hover:scale-105"
-                                    loading="lazy" />
-                                <% if (product.discountPrice < product.originalPrice) { %>
-                                    <div
-                                        class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-gray-900 px-3 py-1 rounded-full text-xs font-medium">
-                                        -<%= Math.round((product.originalPrice - product.discountPrice) /
-                                            product.originalPrice * 100) %>%
-                                    </div>
-                                <% } %>
-                            </div>
-
-                            <!-- Product Info -->
-                            <div class="p-5">
-                                <!-- Brand & Rating -->
-                                <div class="flex justify-between items-center mb-2">
-                                    <div class="text-sm text-gray-500 font-medium">
-                                        <%= product.brand %>
-                                    </div>
-                                    <div class="flex items-center gap-1">
-                                        <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                        <span class="text-sm text-gray-500">
-                                            <%= product.rating %>
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <!-- Product Name -->
-                                <h3
-                                    class="text-gray-900 font-medium mb-2 truncate group-hover:text-gray-700 transition-colors">
-                                    <%= product.name %>
-                                </h3>
-
-                                <!-- Price -->
-                                <div class="flex items-baseline gap-2">
-                                    <span class="text-lg font-bold text-gray-900">₹<%= product.price %></span>
+            <!-- Related Products Section -->
+            <div class="max-w-7xl mx-auto px-4 mt-12">
+                <div class="text-sm text-gray-500 font-medium mb-4">RELATED PRODUCTS</div>
+                <div
+                    class="flex overflow-x-auto gap-4 sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 sm:gap-6 pb-4 sm:pb-0">
+                    <% relatedProducts.forEach(product=> { %>
+                        <a href="/product/<%= product._id %>" class="group min-w-[240px] sm:min-w-0">
+                            <div
+                                class="bg-white rounded-2xl overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300">
+                                <!-- Product Image -->
+                                <div class="relative aspect-square overflow-hidden bg-gray-100">
+                                    <img src="<%= product.images[0] %>" alt="<%= product.name %>"
+                                        class="w-full h-full object-cover transform transition-all duration-500 group-hover:scale-105"
+                                        loading="lazy" />
                                     <% if (product.discountPrice < product.originalPrice) { %>
-                                        <span class="text-sm text-gray-400 line-through">₹<%= product.originalPrice %></span>
-                                    <% } %>
+                                        <div
+                                            class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-gray-900 px-3 py-1 rounded-full text-xs font-medium">
+                                            -<%= Math.round((product.originalPrice - product.discountPrice) /
+                                                product.originalPrice * 100) %>%
+                                        </div>
+                                        <% } %>
+                                </div>
+
+                                <!-- Product Info -->
+                                <div class="p-5">
+                                    <!-- Brand & Rating -->
+                                    <div class="flex justify-between items-center mb-2">
+                                        <div class="text-sm text-gray-500 font-medium">
+                                            <%= product.brand %>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                            <span class="text-sm text-gray-500">
+                                                <%= product.rating %>
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Product Name -->
+                                    <h3
+                                        class="text-gray-900 font-medium mb-2 truncate group-hover:text-gray-700 transition-colors">
+                                        <%= product.name %>
+                                    </h3>
+
+                                    <!-- Price -->
+                                    <div class="flex items-baseline gap-2">
+                                        <span class="text-lg font-bold text-gray-900">₹<%= product.price %></span>
+                                        <% if (product.discountPrice < product.originalPrice) { %>
+                                            <span class="text-sm text-gray-400 line-through">₹<%= product.originalPrice
+                                                    %></span>
+                                            <% } %>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </a>
-                <% }) %>
+                        </a>
+                        <% }) %>
+                </div>
             </div>
-        </div>
-    </main>
+        </main>
 
-    <%- include("../partials/footer") %>
+        <%- include("../partials/footer") %>
 
-    <script>
-        function updateMainImage(images, thumbnailBtn) {
-            document.getElementById('mainImage').src = images;
-            document.querySelectorAll('.thumbnail-btn').forEach(btn => {
-                btn.classList.remove('border-gray-900');
-                btn.classList.add('border-transparent');
-            });
-            thumbnailBtn.classList.remove('border-transparent');
-            thumbnailBtn.classList.add('border-gray-900');
-        }
+            <script>
+                function updateMainImage(images, thumbnailBtn) {
+                    document.getElementById('mainImage').src = images;
+                    document.querySelectorAll('.thumbnail-btn').forEach(btn => {
+                        btn.classList.remove('border-gray-900');
+                        btn.classList.add('border-transparent');
+                    });
+                    thumbnailBtn.classList.remove('border-transparent');
+                    thumbnailBtn.classList.add('border-gray-900');
+                }
+                function initializeZoom() {
+                    const mainImage = document.getElementById('mainImage');
+                    if (mainImage) {
+                        mainImage.addEventListener('mousemove', handleZoom);
+                        mainImage.addEventListener('mouseleave', resetZoom);
+                        mainImage.style.transition = 'transform 0.2s ease-out';
+                    }
+                }
 
-        async function addToCart(productId) {
-            // Implement add to cart logic
-        }
+                function handleZoom(e) {
 
-        async function buyNow(productId) {
-            await addToCart(productId);
-            window.location.href = '/checkout';
-        }
+                    const image = e.target;
+                    const rect = image.getBoundingClientRect();
+                    const x = (e.clientX - rect.left) / rect.width * 100;
+                    const y = (e.clientY - rect.top) / rect.height * 100;
 
-        async function toggleWishlist(productId) {
-            // Implement wishlist logic
-        }
-    </script>
+                    // Correctly set the transform origin and scale
+                    image.style.transformOrigin = `${x}% ${y}%`;
+                    image.style.transform = 'scale(2.5)';
+                }
+
+                function resetZoom(e) {
+                    const image = e.target;
+                    image.style.transformOrigin = 'center';
+                    image.style.transform = 'scale(1)';
+                }
+
+                // Call initializeZoom after the DOM is fully loaded
+                document.addEventListener('DOMContentLoaded', initializeZoom);
+
+                async function addToCart(productId) {
+                    // Implement add to cart logic
+                }
+
+                async function buyNow(productId) {
+                    await addToCart(productId);
+                    window.location.href = '/checkout';
+                }
+
+                async function toggleWishlist(productId) {
+                    // Implement wishlist logic
+                }
+            </script>
 </body>
 
 </html>

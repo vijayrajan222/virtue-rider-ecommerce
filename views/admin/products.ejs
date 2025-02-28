@@ -221,13 +221,13 @@
                                 <div>
                                     <label class="text-xs text-gray-500">Additional Image</label>
                                     <input type="file" name="image2" accept="image/*"
-                                        class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
+                                        class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200" >
                                     <img class="image-preview w-24 h-24 mt-2 rounded-lg object-cover hidden">
                                 </div>
                                 <div>
                                     <label class="text-xs text-gray-500">Additional Image</label>
                                     <input type="file" name="image3" accept="image/*"
-                                        class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
+                                        class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200" >
                                     <img class="image-preview w-24 h-24 mt-2 rounded-lg object-cover hidden">
                                 </div>
                             </div>
@@ -335,7 +335,7 @@
                                         onchange="handleImageChange(1, this)"
                                         class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
                                     <img class="image-preview w-24 h-24 mt-2 rounded-lg object-cover hidden"
-                                        id="imagePreview2" src="" alt="Main Image Preview">
+                                        id="imagePreview2" src="" alt="Additional Image Preview">
                                 </div>
                                 <div>
                                     <label class="text-xs text-gray-500">Additional Image</label>
@@ -343,7 +343,7 @@
                                         onchange="handleImageChange(2, this)"
                                         class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
                                     <img class="image-preview w-24 h-24 mt-2 rounded-lg object-cover hidden"
-                                        id="imagePreview3" src="" alt="Main Image Preview">
+                                        id="imagePreview3" src="" alt="Additional Image Preview">
                                 </div>
                             </div>
                         </div>
@@ -447,6 +447,7 @@
                     formData.append('price', document.getElementById('price').value);
                     formData.append('categoryId', document.getElementById('categoryId').value);
                     formData.append('description', document.getElementById('description').value);
+                    
 
                     // Add variants
                     const variants = [];
@@ -463,13 +464,14 @@
                     const image2 = document.querySelector('input[name="image2"]').files[0];
                     const image3 = document.querySelector('input[name="image3"]').files[0];
 
-                    if (!image1) {
-                        throw new Error('Main image is required');
+                    if (!image1 && !image3 && !image2) {
+
+                        throw new Error('Three images are required');
                     }
 
                     formData.append('image1', image1);
-                    if (image2) formData.append('image2', image2);
-                    if (image3) formData.append('image3', image3);
+                    formData.append('image2', image2);
+                    formData.append('image3', image3);
 
                     const response = await fetch('/admin/products', {
                         method: 'POST',
