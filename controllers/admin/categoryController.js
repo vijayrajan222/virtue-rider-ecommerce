@@ -1,8 +1,7 @@
 import Category from '../../models/categoryModel.js'
 import mongoose from 'mongoose'
 
-// const categoryController = {
-    // Render category management page
+
     const categoryController ={
     getCategories: async (req, res) => {
         try {
@@ -153,12 +152,7 @@ import mongoose from 'mongoose'
     
 };
 
-
-
-// const categoryController ={
-
-
-//  // Category Controllers
+ // Category Controllers
 export const getCategories = async (req, res) => {
     try {
         const categories = await Category.find();

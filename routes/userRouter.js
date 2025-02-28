@@ -32,7 +32,7 @@ userRouter.get('/about', getAboutPage);
 userRouter.get('/home', gethomePage);
 userRouter.get('/forgotPassword',userMiddlewares.isLogin, getforgotPasswordPage);
 userRouter.get('/shop', getShop);
-userRouter.get('/product/:id',getProductDetails)
+userRouter.get('/product/:id',userMiddlewares.checkSession,getProductDetails)
 // Auth routes
 userRouter.post('/signup', postSignUp);
 userRouter.post('/verify-otp', verifyOTP);

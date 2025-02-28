@@ -9,7 +9,7 @@ export const getShop = async (req, res) => {
         const skip = (page - 1) * limit;
 
          const categories = await Category.find();
-         console.log("Categories fetched:", categories); // Debugging log
+        //  console.log("Categories fetched:", categories); // Debugging log
 
 
         // Build filter query
@@ -27,15 +27,17 @@ export const getShop = async (req, res) => {
                 ]
             }
         };
-        console.log("Categories sent to frontend:", categories);
+        // console.log("Categories sent to frontend:", categories);
 
-
-        // Add search filter
+console.log("search",req.query.search)
+        let searchQuery = {};
         if (req.query.search) {
-            filter.$or = [
-                { productName: { $regex: req.query.search, $options: 'i' } },
-                { brand: { $regex: req.query.search, $options: 'i' } }
-            ];
+            searchQuery = {
+                $or: [
+                    { name: { $regex: req.query.search, $options: 'i' } },
+                    { brand: { $regex: req.query.search, $options: 'i' } }
+                ]
+            };
         }
 
         // Add color filter
@@ -73,10 +75,16 @@ export const getShop = async (req, res) => {
             case 'newArrivals':
                 sortQuery = { createdAt: -1 };
                 break;
+            case 'nameAZ':
+                sortQuery = { name: 1 };
+                break;
+            case 'nameZA':
+                sortQuery = { name: -1 };
+                break;
             default:
                 sortQuery = { createdAt: -1 };
         }
-        console.log("filters",filter)
+        // console.log("filters",filter)
 
         //color filter
         if(req.query.color){
@@ -93,19 +101,19 @@ export const getShop = async (req, res) => {
          
          //stock filter
 
-    console.log("categoryQuery",req.query.category)
+    // console.log("categoryQuery",req.query.category)
     if(req.query.category){
         var categoryQuery = {categoryId: req.query.category}
     }else{
         var categoryQuery = {} 
     }
 // console.log(filter.$expr)
-        const products = await Product.find({isActive:true,...colorQuery,...priceFilters,...categoryQuery})
+        const products = await Product.find({isActive:true,...colorQuery,...priceFilters,...categoryQuery,...searchQuery})
         .populate('categoryId')  // Ensure categories are populated
         .sort({ ...sortQuery })
         .skip(skip)
         .limit(limit);
-        console.log("Fetched Products:", products); // Debugging log
+        // console.log("Fetched Products:", products); // Debugging log
        
         // Filter out products where category wasn't populated
         const filteredProducts = products.filter(product => product.categoryId);
@@ -134,7 +142,7 @@ export const getShop = async (req, res) => {
                 }
             });
         }
-         console.log("categories",categories)
+        //  console.log("categories",categories)
         res.render('user/shop', {
             products: processedProducts,
             categories,   // ✅ Ensure categories is passed to EJS
@@ -146,7 +154,7 @@ export const getShop = async (req, res) => {
             },
             title: 'Shop'
         });
-        console.log("products",products)
+        // console.log("products",products)
     } catch (error) {
         console.error('Error in getShop:', error);
         if (req.xhr) {

@@ -17,8 +17,7 @@ const checkSession = async (req, res, next) => {
             return res.redirect('/login?message=Account+not+found&alertType=error');
         }
 
-        if (user.blocked) {
-            // User is blocked
+        if (user.isBlocked) {            // User is blocked
             req.session.destroy();
             return res.redirect('/login?message=Your+account+has+been+blocked&alertType=error');
         }

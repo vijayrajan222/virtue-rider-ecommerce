@@ -110,7 +110,12 @@ export const postLogin = async (req, res) => {
                 message: 'Please verify your email first'
             });
         }
-
+        if (user.isBlocked) {
+            return res.status(401).json({
+                success: false,
+                message: 'Your account has been blocked'
+            });
+        }
         // Check password
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
