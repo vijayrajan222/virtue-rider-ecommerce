@@ -1,6 +1,5 @@
 import User from "../../models/userModel.js";
 import bcrypt from 'bcryptjs';
-import { generateTokenAndSetCookies } from "../../utils/genarateTokenAndSetCookie.js";
 import { generateOTP, sendOTPEmail } from '../../utils/sendOTP.js'
 import passport from 'passport';
 

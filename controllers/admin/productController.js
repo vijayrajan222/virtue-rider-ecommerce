@@ -252,12 +252,6 @@ export const addProduct = async (req, res) => {
         let variants = [];
         try {
             variants = JSON.parse(variantsJson);
-            // // Add color and price to each variant
-            // variants = variants.map(variant => ({
-            //     ...variant,
-            //     color: color,  // Add color to each variant
-            //     price: parseFloat(price)  // Add price to each variant
-            // }));
         } catch (error) {
             return res.status(400).json({
                 success: false,

@@ -1,22 +1,8 @@
 import express from 'express';
-import { 
-    
-   
-    getCategories,
-    createCategory,
-    getCategoryById,
-    updateCategory,
-    deleteCategory,
-    
-   
-    
-} from '../controllers/admin/categoryController.js';
-
-
+import {getCategories,createCategory,getCategoryById,updateCategory,deleteCategory} from '../controllers/admin/categoryController.js';
 import { getProducts, getProductById, addProduct, updateProduct, deleteProduct, removeProductImage, toggleProductVisibility} from '../controllers/admin/productController.js'
 import {getDashboard} from '../controllers/admin/dashboardController.js';
 import {getAdminLogin, postAdminLogin, logout} from '../controllers/admin/adminauthController.js';
-
 import upload from '../utils/multer.js';
 import { getUsers, toggleUserStatus } from '../controllers/admin/userController.js';
 import adminMiddleware from '../middleware/adminMiddleware.js';

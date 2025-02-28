@@ -126,13 +126,13 @@ console.log("search",req.query.search)
         const processedProducts = filteredProducts.map(product => ({
             ...product.toObject(),
             price: product.price,
-            discountPrice: product.price // Set discount price same as regular price for now
+            discountPrice: product.price 
         }));
 
         if (req.xhr) {
             return res.json({
                 products: processedProducts,
-                categories,   // ✅ Ensure categories is passed to EJS
+                categories,   
 
                 pagination: {
                     currentPage: page,
@@ -145,7 +145,7 @@ console.log("search",req.query.search)
         //  console.log("categories",categories)
         res.render('user/shop', {
             products: processedProducts,
-            categories,   // ✅ Ensure categories is passed to EJS
+            categories,  
             pagination: {
                 currentPage: page,
                 totalPages,

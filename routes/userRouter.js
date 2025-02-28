@@ -49,8 +49,7 @@ userRouter.post('/forgot-password/reset', resetPassword);
 
 
 userRouter.get('/logout', userMiddlewares.checkSession, logout);
-// We'll add OTP verification route later
-// userRouter.post('/validate-otp', postOtp);
+
 
 export default userRouter;
 
