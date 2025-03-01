@@ -21,6 +21,7 @@ import {
 import { getShop } from '../controllers/user/shopController.js';  
 import{getProductDetails} from '../controllers/user/productviewController.js'
 import userMiddlewares from '../middleware/userMiddleware.js'
+import { getProfilePage, updateProfile } from '../controllers/user/profileController.js'; // Ensure you import the correct functions
 
 const userRouter = express.Router();
 
@@ -33,7 +34,8 @@ userRouter.get('/home', gethomePage);
 userRouter.get('/forgotPassword',userMiddlewares.isLogin, getforgotPasswordPage);
 userRouter.get('/shop', getShop);
 userRouter.get('/product/:id',userMiddlewares.checkSession,getProductDetails)
-// Auth routes
+userRouter.get('/profile', userMiddlewares.checkSession, getProfilePage); // Get profile page
+userRouter.post('/profile/update', userMiddlewares.checkSession, updateProfile); // Get profile update page
 userRouter.post('/signup', postSignUp);
 userRouter.post('/verify-otp', verifyOTP);
 userRouter.post('/resend-otp', resendOTP);
