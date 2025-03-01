@@ -21,6 +21,7 @@ import {
 import { getShop } from '../controllers/user/shopController.js';  
 import{getProductDetails} from '../controllers/user/productviewController.js'
 import userMiddlewares from '../middleware/userMiddleware.js'
+import { getAddress, addAddress, deleteAddress, editAddress } from '../controllers/user/addressController.js';
 import { getProfilePage, updateProfile } from '../controllers/user/profileController.js'; // Ensure you import the correct functions
 
 const userRouter = express.Router();
@@ -44,6 +45,8 @@ userRouter.get('/auth/google/callback', getGoogleCallback);
 userRouter.get('/auth/google', getGoogle);
 
 
+
+
 // Forgot password routes
 userRouter.post('/forgot-password/send-otp', sendForgotPasswordOTP);
 userRouter.post('/forgot-password/verify-otp', verifyForgotPasswordOTP);
@@ -51,6 +54,17 @@ userRouter.post('/forgot-password/reset', resetPassword);
 
 
 userRouter.get('/logout', userMiddlewares.checkSession, logout);
+
+
+userRouter.get('/address', userMiddlewares.checkSession, getAddress);
+
+userRouter.post('/address/add', userMiddlewares.checkSession, addAddress);
+
+userRouter.delete('/address/:id', userMiddlewares.checkSession, deleteAddress);
+
+userRouter.put('/address/:id', userMiddlewares.checkSession, editAddress);
+
+
 
 
 export default userRouter;
