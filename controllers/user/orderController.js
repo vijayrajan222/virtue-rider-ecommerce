@@ -1,9 +1,8 @@
-import orderSchema from '../../model/orderModel.js';
+import Order from '../../models/orderModel.js';
 import Product from '../../models/productModel.js'; 
 import User from "../../models/userModel.js";
 
-
-const userOrderController = {
+export const userOrderController = {
     getOrders: async (req, res) => {
         try {
             const user = await User.findById(req.session.user);
@@ -11,14 +10,14 @@ const userOrderController = {
             const page = parseInt(req.query.page) || 1;
             const limit = 5;
             
-            const totalOrders = await orderSchema.countDocuments({ userId });
+            const totalOrders = await Order.countDocuments({ user: userId });
             const totalPages = Math.ceil(totalOrders / limit);
             
-            const orders = await orderSchema.find({ userId })
+            const orders = await Order.find({ user: userId })
                 .sort({ createdAt: -1 })
                 .skip((page - 1) * limit)
                 .limit(limit)
-                .populate('items.product');
+                .populate('products.product');
 
             res.render('user/viewOrder', { 
                 orders,
@@ -30,8 +29,10 @@ const userOrderController = {
             });
         } catch (error) {
             console.error('Get orders error:', error);
-            res.status(500).render('error', { message: 'Error fetching orders' });
+            // Instead of rendering an error view, send a JSON response
+            res.status(500).json({ message: 'Error fetching orders', error: error.message });
         }
     }
 }
-export default userOrderController; 
+
+export default userOrderController;
