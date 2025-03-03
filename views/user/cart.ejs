@@ -41,7 +41,7 @@
               <div class="bg-white p-4 rounded-xl shadow-md" id="cart-item-<%= item.product._id %>">
                 <div class="flex gap-4">
                   <img
-                    src="<%= item.product.imageUrl[0] %>"
+                    src="<%= item.product.imageUrl %>"
                     alt="<%= item.product.productName %>"
                     class="w-24 h-24 object-cover rounded-lg"
                   />
@@ -107,7 +107,7 @@
                 <% cartItems.forEach(item => { %>
                   <div class="flex items-center border-b pb-6" id="cart-item-<%= item.product._id %>">
                     <img
-                      src="<%= item.product.imageUrl[0] %>"
+                      src="<%= item.product.imageUrl %>"
                       alt="<%= item.product.productName %>"
                       class="w-32 h-32 object-cover rounded-xl"
                     />
