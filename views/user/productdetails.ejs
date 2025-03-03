@@ -260,17 +260,30 @@
                 document.addEventListener('DOMContentLoaded', initializeZoom);
 
                 async function addToCart(productId) {
-                    // Implement add to cart logic
-                }
+        console.log('Adding product with ID:', productId); // Log the productId
+        const stock = 1;
 
-                async function buyNow(productId) {
-                    await addToCart(productId);
-                    window.location.href = '/checkout';
-                }
+        try {
+            const response = await fetch('/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ productId, stock })
+            });
 
-                async function toggleWishlist(productId) {
-                    // Implement wishlist logic
-                }
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(data.message);
+            } else {
+                alert(data.message || 'Failed to add product to cart');
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            alert('An error occurred while adding the product to the cart');
+        }
+    }
             </script>
 </body>
 

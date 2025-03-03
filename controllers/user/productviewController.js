@@ -4,7 +4,7 @@ import Product from '../../models/productModel.js';
 export const getProductDetails = async (req, res) => {
     try {
         const productId = req.params.id;
-        const product = await Product.findById(productId);  
+        const product = await Product.findById(productId).populate('categoryId'); // Corrected here
         if (!product) {
             return res.status(404).render("user/error", { message: "Product not found" }); // This renders the error page
         }
