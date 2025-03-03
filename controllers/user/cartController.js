@@ -27,19 +27,19 @@ export const getCart = async (req, res) => {
         }
 
        // Filter out items with inactive categories or products
-        const validItems = cart.items.filter(item => 
-            item.productId && 
-            item.productId.categoryId && 
-            item.productId.isActive &&
-            activeCategories.some(catId => catId.equals(item.productId.categoryId))
-        );
-        console.log("validItems:"+ validItems)
-        // Update cart if invalid items were removed
-        if (validItems.length !== cart.items.length) {
-            cart.items = validItems;
-            await cart.save();
-        }
-
+        // const validItems = cart.items.filter(item => 
+        //     item.productId && 
+        //     item.productId.categoryId && 
+        //     item.productId.isActive &&
+        //     activeCategories.some(catId => catId.equals(item.productId.categoryId))
+        // );
+        // console.log("validItems:"+ validItems)
+        // // Update cart if invalid items were removed
+        // if (validItems.length !== cart.items.length) {
+        //     cart.items = validItems;
+        //     await cart.save();
+        // }
+        let validItems = cart.items;
         // Process remaining items with current offers
         const updatedItems = await Promise.all(validItems.map(async item => {
             const product = item.productId;
@@ -75,9 +75,9 @@ export const getCart = async (req, res) => {
             return {
                 product: {
                     _id: product._id,
-                    productName: product.productName,
-                    imageUrl: product.imageUrl,
-                    stock: product.stock,
+                    productName: product.name,
+                    imageUrl: product.images[0],
+                    stock: product.variants.stock,
                     color: product.color
                 },
                 quantity: quantity,
@@ -112,6 +112,19 @@ export const getCart = async (req, res) => {
             error: 'Failed to load cart'
         });
     }
+};
+
+
+
+const calculateFinalPrice = (product) => {
+    let finalPrice = product.price;
+
+    // Example: Apply a discount if applicable
+    if (product.discount) {
+        finalPrice -= (finalPrice * product.discount / 100);
+    }
+
+    return finalPrice;
 };
 
 // export const addToCart = async (req, res) => {
@@ -272,7 +285,7 @@ export const addToCart = async (req, res) => {
         }
 
         // Check stock availability
-        if (product.stock < quantity) {
+        if (product.variants.stock < quantity) {
             return res.status(400).json({ message: "Not enough stock available" });
         }
 
@@ -343,7 +356,7 @@ export const updateQuantity = async (req, res) => {
             return res.status(400).json({ message: 'Product is not available' });
         }
 
-        if (product.stock < quantity) {
+        if (product.variants.stock < quantity) {
             return res.status(400).json({ message: 'Not enough stock available' });
         }
 
