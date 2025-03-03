@@ -99,7 +99,8 @@ export const getCart = async (req, res) => {
         }));
         cart.total = total;
         await cart.save();
-
+       
+        console.log(updatedItems)
         res.render('user/cart', { 
             cartItems: updatedItems,
             total: total
