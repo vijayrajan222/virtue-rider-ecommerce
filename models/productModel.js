@@ -15,6 +15,10 @@ const variantSchema = new mongoose.Schema({
     },
 });
 
+const Variant =mongoose.model('Variant', variantSchema); 
+export {Variant}
+
+
 const productSchema = new mongoose.Schema({
     name: {
         type: String,

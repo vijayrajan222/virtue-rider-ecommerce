@@ -124,7 +124,7 @@
                                 <select id="variantSelect"
                                     class="w-full px-4 py-2 border rounded-md focus:outline-none">
                                     <% product.variants.forEach(variant=> { %>
-                                        <option value="<%= variant.size %>" <%=variant.stock> 0 ? '' : 'disabled' %>>
+                                        <option value="<%= variant._id %>" <%=variant.stock> 0 ? '' : 'disabled' %>>
                                             <%= variant.size %> (<%= variant.stock> 0 ? variant.stock + ' available' :
                                                     'Out of Stock' %>)
                                         </option>
@@ -259,17 +259,18 @@
                 // Call initializeZoom after the DOM is fully loaded
                 document.addEventListener('DOMContentLoaded', initializeZoom);
 
-                async function addToCart(productId) {
+                async function addToCart(productId,variantId) {
         console.log('Adding product with ID:', productId); // Log the productId
         const stock = 1;
-
+ const selectedVariant = document.getElementById('variantSelect').value;
+ console.log("selectedVariant",selectedVariant);
         try {
             const response = await fetch('/cart/add', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ productId, stock })
+                body: JSON.stringify({ productId,variantId:selectedVariant })
             });
 
             const data = await response.json();

@@ -56,7 +56,7 @@
                       </button>
                     </div>
                     <p class="text-sm text-gray-500">Color: <%= item.product.color %></p>
-                    <p class="text-sm text-green-500"><%= item.product.stock > 0 ? 'In Stock' : 'Out of Stock' %></p>
+                    <p class="text-sm text-green-500"><%= item.product.stock> 0 ? 'In Stock' : 'Out of Stock' %></p>
                     <div class="mt-2 flex justify-between items-center">
                       <div class="flex items-center bg-gray-100 rounded-lg">
                         <button 
@@ -121,7 +121,7 @@
                             Color: <%= item.product.color %>
                           </p>
                           <p class="text-green-500 text-sm mt-1">
-                            <%= item.product.stock > 0 ? 'In Stock' : 'Out of Stock' %>
+                            <%= item.variant.stock > 0 ? 'In Stock' : 'Out of Stock' %>
                           </p>
                         </div>
                         <button 

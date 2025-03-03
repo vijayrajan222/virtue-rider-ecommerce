@@ -10,13 +10,15 @@ export const getCart = async (req, res) => {
         // Get active categories
         const activeCategories = await Category.find({ isActive: true }).distinct('_id');
         
-        const cart = await cartSchema.findOne({ userId }).populate({
+        const cart = await cartSchema.findOne({ userId })
+        .populate({
             path: 'items.productId',
-            populate: {
+            populate: { 
                 path: 'categoryId',
                 match: { isActive: true }
             }
         });
+        // console.log("carttgttttt",cart)
 
 
         if (!cart) {
@@ -40,52 +42,75 @@ export const getCart = async (req, res) => {
         //     await cart.save();
         // }
         let validItems = cart.items;
+        //console.log("validItems:"+ validItems)
         // Process remaining items with current offers
-        const updatedItems = await Promise.all(validItems.map(async item => {
+        // const updatedItems = await Promise.all(validItems.map(async item => {
+        //     const product = item.productId;
+            
+        //     // // Get active offers
+        //     // const offers = await Offer.find({
+        //     //     status: 'active',
+        //     //     startDate: { $lte: new Date() },
+        //     //     endDate: { $gte: new Date() },
+        //     //     $or: [
+        //     //         { productIds: product._id },
+        //     //         { categoryId: product.categoriesId._id }
+        //     //     ]
+        //     // });
+
+        //     // const productOffer = offers.find(offer => 
+        //     //     offer.productIds && offer.productIds.some(id => id.equals(product._id))
+        //     // );
+            
+        //     // const categoryOffer = offers.find(offer => 
+        //     //     offer.categoryId && offer.categoryId.equals(product.categoriesId._id)
+        //     // );
+
+        //     // Calculate current price
+        //     const currentPrice = calculateFinalPrice(product);
+        //     const quantity = parseInt(item.quantity) || 1;
+        //     const subtotal = currentPrice * quantity;
+
+        //     // Update item in cart
+        //     item.price = currentPrice;
+        //     item.subtotal = subtotal;
+
+        //     return {
+        //         product: {
+        //             _id: product._id,
+        //             productName: product.name,
+        //             imageUrl: product.images[0],
+        //             variants:product.variants,
+        //             color: product.color
+        //         },
+        //         quantity: quantity,
+        //         price: currentPrice,
+        //         subtotal: subtotal
+        //     };
+        // }));
+
+        const updatedItems = cart.items.map(item => {
             const product = item.productId;
-            
-            // // Get active offers
-            // const offers = await Offer.find({
-            //     status: 'active',
-            //     startDate: { $lte: new Date() },
-            //     endDate: { $gte: new Date() },
-            //     $or: [
-            //         { productIds: product._id },
-            //         { categoryId: product.categoriesId._id }
-            //     ]
-            // });
-
-            // const productOffer = offers.find(offer => 
-            //     offer.productIds && offer.productIds.some(id => id.equals(product._id))
-            // );
-            
-            // const categoryOffer = offers.find(offer => 
-            //     offer.categoryId && offer.categoryId.equals(product.categoriesId._id)
-            // );
-
-            // Calculate current price
-            const currentPrice = calculateFinalPrice(product);
-            const quantity = parseInt(item.quantity) || 1;
-            const subtotal = currentPrice * quantity;
-
-            // Update item in cart
-            item.price = currentPrice;
-            item.subtotal = subtotal;
-
+        
+            const variant = product.variants.find(v => v._id.equals(item.variantId));
+        console.log("Variant information "+variant)
             return {
                 product: {
                     _id: product._id,
                     productName: product.name,
                     imageUrl: product.images[0],
-                    stock: product.variants.stock,
                     color: product.color
                 },
-                quantity: quantity,
-                price: currentPrice,
-                subtotal: subtotal
+                variant: variant ? { 
+                    size: variant.size, 
+                    stock: variant.stock 
+                } : null, // If variant is not found, return null
+                quantity: item.quantity,
+                price: item.price,
+                subtotal: item.quantity * item.price
             };
-        }));
-
+        });
+        console.log("UpdatedItems"+ JSON.stringify(updatedItems))
         // Calculate total
         const total = updatedItems.reduce((sum, item) => {
             return sum + (parseFloat(item.subtotal) || 0);
@@ -100,7 +125,7 @@ export const getCart = async (req, res) => {
         cart.total = total;
         await cart.save();
        
-        console.log(updatedItems)
+        //console.log(updatedItems)
         res.render('user/cart', { 
             cartItems: updatedItems,
             total: total
@@ -272,71 +297,116 @@ const calculateFinalPrice = (product) => {
 //     }
 //   };
   
+// export const addToCart = async (req, res) => {
+//     try {
+//         const { productId, quantity = 1 } = req.body;
+//         const userId = req.session.user;
+//         console.log("Starting addToCart with:", { productId, quantity, userId });
+        
+//         const product = await productSchema.findById(productId);
+//         console.log("Found product:", product ? "Yes" : "No", product?._id);
+
+//         if (!product || !product.isActive) {
+//             return res.status(404).json({ message: "Product not found or inactive" });
+//         }
+
+//         // Check stock availability
+//         if (product.variants.stock < quantity) {
+//             return res.status(400).json({ message: "Not enough stock available" });
+//         }
+
+//         let cart = await cartSchema.findOne({ userId });
+//         console.log("Initial cart:", cart ? "Found" : "Not found");
+        
+//         // If cart doesn't exist, create a new one
+//         if (!cart) {
+//             cart = new cartSchema({ userId, items: [] });
+//             console.log("Created new cart");
+//         }
+
+//         // Check if the product is already in the cart
+//         const existingItem = cart.items.find(item => item.productId.toString() === productId);
+//         console.log("Existing item in cart:", existingItem ? "Yes" : "No");
+
+//         if (existingItem) {
+//             // If it exists, update the quantity
+//             existingItem.quantity += quantity;
+//             console.log("Updated existing item quantity to:", existingItem.quantity);
+//         } else {
+//             // Add price from the product model
+//             const newItem = { 
+//                 productId, 
+//                 quantity, 
+//                 price: product.price 
+//             };
+//             cart.items.push(newItem);
+//             console.log("Added new item to cart:", newItem);
+//         }
+
+//         const savedCart = await cart.save();
+//         console.log("Cart saved successfully:", savedCart ? "Yes" : "No");
+//         console.log("Items in saved cart:", savedCart.items.length);
+
+//         res.status(200).json({ 
+//             message: "Product added to cart successfully", 
+//             cart: savedCart,
+//             itemCount: savedCart.items.length
+//         });
+
+//     } catch (error) {
+//         console.error("Error adding to cart:", error);
+//         res.status(500).json({ 
+//             message: "Failed to add product to cart",
+//             error: error.message 
+//         });
+//     }
+// };
 export const addToCart = async (req, res) => {
     try {
-        const { productId, quantity = 1 } = req.body;
+        console.log('hereeeee')
+        const { productId, variantId, quantity = 1 } = req.body; // Ensure variantId is included
+        console.log("Variant Id"+variantId)
         const userId = req.session.user;
-        console.log("Starting addToCart with:", { productId, quantity, userId });
-        
         const product = await productSchema.findById(productId);
-        console.log("Found product:", product ? "Yes" : "No", product?._id);
-
         if (!product || !product.isActive) {
             return res.status(404).json({ message: "Product not found or inactive" });
         }
-
-        // Check stock availability
-        if (product.variants.stock < quantity) {
+console.log("productssssss:",product)
+        // Find the specific variant
+        const variant = product.variants.find(variant => variant._id.toString() === variantId); 
+          console.log(variant)
+        if (!variant || variant.stock < quantity) {
             return res.status(400).json({ message: "Not enough stock available" });
         }
 
         let cart = await cartSchema.findOne({ userId });
-        console.log("Initial cart:", cart ? "Found" : "Not found");
-        
-        // If cart doesn't exist, create a new one
         if (!cart) {
             cart = new cartSchema({ userId, items: [] });
-            console.log("Created new cart");
         }
 
-        // Check if the product is already in the cart
-        const existingItem = cart.items.find(item => item.productId.toString() === productId);
-        console.log("Existing item in cart:", existingItem ? "Yes" : "No");
+        const existingItem = cart.items.find(item => 
+            item.productId.toString() === productId && item.variantId.toString() === variantId
+        );
 
         if (existingItem) {
-            // If it exists, update the quantity
             existingItem.quantity += quantity;
-            console.log("Updated existing item quantity to:", existingItem.quantity);
         } else {
-            // Add price from the product model
             const newItem = { 
                 productId, 
+                variantId, 
                 quantity, 
-                price: product.price 
+                price: product.price*quantity// Assuming you want to use the variant's price
             };
             cart.items.push(newItem);
-            console.log("Added new item to cart:", newItem);
         }
 
-        const savedCart = await cart.save();
-        console.log("Cart saved successfully:", savedCart ? "Yes" : "No");
-        console.log("Items in saved cart:", savedCart.items.length);
-
-        res.status(200).json({ 
-            message: "Product added to cart successfully", 
-            cart: savedCart,
-            itemCount: savedCart.items.length
-        });
-
+        await cart.save();
+        res.status(200).json({ message: "Product added to cart successfully", cart });
     } catch (error) {
         console.error("Error adding to cart:", error);
-        res.status(500).json({ 
-            message: "Failed to add product to cart",
-            error: error.message 
-        });
+        res.status(500).json({ message: "Failed to add product to cart" });
     }
 };
-
 
 export const updateQuantity = async (req, res) => {
     try {
@@ -356,6 +426,7 @@ export const updateQuantity = async (req, res) => {
         if (!product || !product.isActive || !product.categoryId) {
             return res.status(400).json({ message: 'Product is not available' });
         }
+        
 
         if (product.variants.stock < quantity) {
             return res.status(400).json({ message: 'Not enough stock available' });
