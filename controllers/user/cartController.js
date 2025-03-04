@@ -424,7 +424,7 @@ export const updateQuantity = async (req, res) => {
         });
         console.log("Product:  "+ product)
         
-        if (!product || !product.isActive) {
+        if (!product) {
             return res.status(400).json({ message: 'Product is not available' });
         }
         
