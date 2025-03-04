@@ -69,7 +69,6 @@ userRouter.get('/orders', userMiddlewares.checkSession, userOrderController.getO
 
 userRouter.get('/checkout', userMiddlewares.checkSession, userCheckoutController.getCheckoutPage);
 
-userRouter.post('/checkout/place-order', userMiddlewares.checkSession, userCheckoutController.placeOrder);
 
 
 userRouter.get('/cart', userMiddlewares.checkSession, getCart);

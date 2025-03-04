@@ -91,32 +91,6 @@
             <div class="space-y-4">
               <!-- Payment Options -->
               <div class="grid gap-4">
-                <!-- Wallet Payment -->
-                <label
-                  id="walletOption"
-                  class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all duration-300 <%= wallet.balance < total ? 'opacity-60' : 'hover:bg-gray-50' %>"
-                  data-balance="<%= wallet.balance %>"
-                >
-                  <input type="radio" name="paymentMethod" value="wallet"
-                  id="walletPayment" <%= wallet.balance < total ? 'disabled' :
-                  '' %>>
-                  <div class="flex flex-col">
-                    <span class="flex items-center gap-2">
-                      <i class="fas fa-wallet"></i> Wallet
-                      <span
-                        id="walletAvailability"
-                        class="text-xs px-2 py-1 rounded <%= wallet.balance >= total ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>"
-                      >
-                        <%= wallet.balance >= total ? 'Available' :
-                        'Insufficient Balance' %>
-                      </span>
-                    </span>
-                    <span class="text-sm text-gray-500">
-                      Available balance: ₹<%= wallet.balance.toFixed(2) %>
-                    </span>
-                  </div>
-                </label>
-
                 <!-- COD Payment Option -->
                 <label
                   id="codOption"
@@ -147,15 +121,7 @@
                 <label
                   class="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50"
                 >
-                  <input type="radio" name="paymentMethod" value="online" />
-                  <div class="flex flex-col">
-                    <span class="flex items-center gap-2">
-                      <i class="fas fa-credit-card"></i> Online Payment
-                    </span>
-                    <span class="text-sm text-gray-500"
-                      >Pay using Card/UPI/Netbanking</span
-                    >
-                  </div>
+    
                 </label>
               </div>
             </div>
@@ -174,13 +140,13 @@
                 class="flex gap-4 p-2 hover:bg-gray-50 rounded-lg transition-colors"
               >
                 <img
-                  src="<%= item.product.imageUrl[0] %>"
-                  alt="<%= item.product.productName %>"
+                  src="<%= item.product.imageUrl %>"
+                  alt="<%= item.product.name %>"
                   class="w-20 h-20 object-cover rounded-lg"
                 />
                 <div class="flex-1 min-w-0">
                   <h4 class="font-medium truncate">
-                    <%= item.product.productName %>
+                    <%= item.product.name %>
                   </h4>
                   <p class="text-sm text-gray-500">Qty: <%= item.quantity %></p>
                   <div class="flex items-baseline gap-2 flex-wrap">
@@ -593,7 +559,7 @@
                       walletAvailability.classList.add('bg-green-100', 'text-green-800');
                   }
                   
-                  if (newTotal <= 1000) {
+                  if (newTotal <= 1000000) {
                       // Enable COD
                       codOption.classList.remove('opacity-60');
                       codOption.classList.add('hover:bg-gray-50');
@@ -798,7 +764,7 @@
               const finalAmount = parseFloat(document.getElementById('finalTotal').textContent);
 
               // Validate COD payment method
-              if (paymentMethod === 'cod' && finalAmount > 1000) {
+              if (paymentMethod === 'cod' && finalAmount > 1000000) {
                   await showAlert('error', 'Cash on Delivery is not available for orders above ₹1,000. Please choose a different payment method.');
                   return;
               }
@@ -958,7 +924,7 @@
           const codAvailability = document.getElementById('codAvailability');
           const codMessage = document.getElementById('codMessage');
 
-          if (finalAmount > 1000) {
+          if (finalAmount > 1000000) {
               codOption.classList.add('opacity-60');
               codOption.classList.remove('hover:bg-gray-50');
               codPayment.disabled = true;
