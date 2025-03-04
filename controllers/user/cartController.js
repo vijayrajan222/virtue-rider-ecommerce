@@ -422,8 +422,9 @@ export const updateQuantity = async (req, res) => {
             path: 'categoryId',
             match: { isActive: true }
         });
-
-        if (!product || !product.isActive || !product.categoryId) {
+        console.log("Product:  "+ product)
+        
+        if (!product || !product.isActive) {
             return res.status(400).json({ message: 'Product is not available' });
         }
         
