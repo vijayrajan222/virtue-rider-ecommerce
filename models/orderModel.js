@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-export const Order = new mongoose.Schema({
+const Order = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -20,16 +20,17 @@ export const Order = new mongoose.Schema({
         price: {
             type: Number,
             required: true
+        },
+        status: {
+            type: String,
+            enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+            default: 'pending'
         }
+
     }],
     totalAmount: {
         type: Number,
         required: true
-    },
-    status: {
-        type: String,
-        enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
-        default: 'pending'
     },
     shippingAddress: {
         address: String,
@@ -50,6 +51,5 @@ export const Order = new mongoose.Schema({
     timestamps: true
 });
 
-// Export the model
- Order : mongoose.model('Order', Order);
-export default Order;
+export default mongoose.model('Order', Order);
+

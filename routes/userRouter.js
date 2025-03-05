@@ -60,6 +60,8 @@ userRouter.post('/forgot-password/verify-otp', verifyForgotPasswordOTP);
 userRouter.post('/forgot-password/reset', resetPassword);
 userRouter.get('/logout', userMiddlewares.checkSession, logout);
 
+userRouter.post('/checkout/place-order', userMiddlewares.checkSession, userCheckoutController.placeOrder);
+
 
 userRouter.get('/orders', userMiddlewares.checkSession, userOrderController.getOrders); // Use the correct function
 

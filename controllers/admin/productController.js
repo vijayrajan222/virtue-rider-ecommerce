@@ -4,6 +4,8 @@ import path from 'path';  // Add this import
 import fs from 'fs';      // Add this import
 import { fileURLToPath } from 'url';  // Add this import
 import { dirname } from 'path';    
+import mongoose from "mongoose";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -11,18 +13,16 @@ const __dirname = dirname(__filename);
 
 export const updateProduct = async (req, res) => {
     try {
-
         console.log('update product')
-
         console.log('Received files:', req.files);
         console.log('Received body:', req.body);
 
         const { name, description, categoryId, price, color, brand, variants: variantsJson } = req.body;
 
         // Parse variants
-        let variants = [];
+        let newVariants = [];
         try {
-            variants = JSON.parse(variantsJson);
+            newVariants = JSON.parse(variantsJson);
         } catch (error) {
             return res.status(400).json({
                 success: false,
@@ -45,7 +45,7 @@ export const updateProduct = async (req, res) => {
             if (imagePath) {
                 const fullPath = path.join(__dirname, '../../public', imagePath);
                 if (fs.existsSync(fullPath)) {
-                    fs.unlinkSync(fullPath); // Delete the file
+                    fs.unlinkSync(fullPath); 
                 }
             }
         };
@@ -86,11 +86,24 @@ export const updateProduct = async (req, res) => {
         product.color = color;
         product.price = Number(price);
         product.brand = brand || 'VR';
-        product.variants = variants.map(variant => ({
-            size: variant.size,
-            stock: parseInt(variant.stock),
-        }));
         product.images = images;
+        newVariants.forEach((newVariant, index) => {
+            if (index < product.variants.length) {
+                product.variants[index].size = newVariant.size;
+                product.variants[index].stock = parseInt(newVariant.stock);
+            } else {
+                // Add new variant
+                product.variants.push({
+                    size: newVariant.size,
+                    stock: parseInt(newVariant.stock)
+                });
+            }
+        });
+
+        // Remove extra variants if new variants array is shorter
+        if (newVariants.length < product.variants.length) {
+            product.variants = product.variants.slice(0, newVariants.length);
+        }
 
         console.log('Updated product:', product);
         await product.save();
@@ -108,6 +121,7 @@ export const updateProduct = async (req, res) => {
         });
     }
 };
+
 
 export const toggleProductVisibility = async (req, res) => {
     try {
@@ -195,7 +209,7 @@ export const editProduct = async (req, res) => {
         // Update basic product info
         product.productName = productName;
         product.brand = brand;
-        product.categoriesId = categoriesId;
+        product.categoryId = categoriesId;
         product.color = color;
         product.description = description;
         product.price = price;
