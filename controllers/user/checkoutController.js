@@ -106,12 +106,12 @@ const userCheckoutController = {
             const finalAmount = cart.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
             
             // Remove or adjust the COD payment method validation
-            // if (paymentMethod === 'cod' && finalAmount > 1000) {
-            //     return res.status(400).json({
-            //         success: false,
-            //         message: 'Cash on Delivery is not available for orders above ₹1000. Please choose a different payment method.'
-            //     });
-            // }
+            if (paymentMethod === 'cod' && finalAmount > 100000000) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cash on Delivery is not available for orders above ₹1000. Please choose a different payment method.'
+                });
+            }
     
             const orderItems = cart.items.map(item => ({
                 product: item.productId._id,
