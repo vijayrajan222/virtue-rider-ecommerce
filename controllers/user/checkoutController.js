@@ -2,7 +2,7 @@ import cartSchema from '../../models/cartModel.js';
 import Order from '../../models/orderModel.js';
 import addressSchema from '../../models/addressModel.js';
 import productSchema from '../../models/productModel.js';
-import crypto from 'crypto';
+import mongoose from 'mongoose';
 
 const userCheckoutController = {
     getCheckoutPage: async (req, res) => {
@@ -77,8 +77,25 @@ const userCheckoutController = {
     placeOrder: async (req, res) => {
         try {
             const { addressId, paymentMethod } = req.body;
-            const userId = req.session.user;
-    
+            // Validate user ID format
+            console.log('payment method ', paymentMethod)
+            console.log('User id ', req.session.userId)
+            if (!mongoose.Types.ObjectId.isValid(req.session.userId)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid user ID format'
+                });
+            }
+
+            if (!mongoose.Types.ObjectId.isValid(addressId)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid address ID format'
+                });
+            }
+            const userId = new mongoose.Types.ObjectId(req.session.userId); // Use 'new' keyword
+
+            console.log('User id ', userId)
             // Validate inputs
             if (!addressId || !paymentMethod) {
                 return res.status(400).json({
@@ -86,7 +103,7 @@ const userCheckoutController = {
                     message: 'Missing required fields'
                 });
             }
-    
+
             // Get cart and validate
             const cart = await cartSchema.findOne({ userId })
                 .populate({
@@ -94,31 +111,38 @@ const userCheckoutController = {
                     model: 'Product',
                     select: 'productName price'
                 });
-    
+
+                for (const item of cart.items) {
+                    if (!mongoose.Types.ObjectId.isValid(item.productId?._id)) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Invalid product ID in cart'
+                        });
+                    }
+                }
             if (!cart || cart.items.length === 0) {
                 return res.status(400).json({
                     success: false,
                     message: 'Cart is empty'
                 });
             }
-    
+
             // Calculate the total amount
             const finalAmount = cart.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-            
-            // Remove or adjust the COD payment method validation
-            if (paymentMethod === 'cod' && finalAmount > 100000000) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Cash on Delivery is not available for orders above ₹1000. Please choose a different payment method.'
-                });
-            }
-    
+
+            // Validate COD payment method
+            // if (paymentMethod === 'cod' && finalAmount > 1000) { // Adjusted to 1000 for consistency
+            //     return res.status(400).json({
+            //         success: false,
+            //         message: 'Cash on Delivery is not available for orders above ₹1000. Please choose a different payment method.'
+            //     });
+            // }
+
             const orderItems = cart.items.map(item => ({
                 product: item.productId._id,
                 quantity: item.quantity,
                 price: item.price,
                 subtotal: item.quantity * item.price,
-        
                 return: {
                     isReturnRequested: false,
                     reason: null,
@@ -128,40 +152,41 @@ const userCheckoutController = {
                     isReturnAccepted: false
                 }
             }));
-    
+
             // Get address 
             const address = await addressSchema.findOne({
                 _id: addressId,
                 userId
             });
-    
+
             if (!address) {
                 return res.status(400).json({
                     success: false,
                     message: 'Delivery address not found'
                 });
             }
-    
+
             const order = new Order({
                 user: userId,
                 items: orderItems,
                 totalAmount: finalAmount,
+                paymentMethod: paymentMethod,
+                paymentStatus: paymentMethod === 'cod' ? 'processing' : 'completed',
                 shippingAddress: {
-                    fullName: address.fullName,
+                    name: address.fullName,
                     mobileNumber: address.mobileNumber,
                     shippingAddress: address.addressLine1,
                     addressLine2: address.addressLine2,
                     city: address.city,
                     state: address.state,
                     pincode: address.pincode,
-                    paymentMethod: paymentMethod,
-                    paymentStatus: paymentMethod === 'cod' ? 'processing' : 'completed'
+
                 },
                 orderCode: `ORD-${Date.now()}` // Generate a simple order code
             });
 
-            await order.save()
-    
+            await order.save();
+
             // Update product stock
             for (const item of orderItems) {
                 await productSchema.findOneAndUpdate(
@@ -176,19 +201,19 @@ const userCheckoutController = {
                     }
                 );
             }
-    
+
             // Clear cart 
             await cartSchema.findByIdAndUpdate(cart._id, {
                 items: [],
                 totalAmount: 0
             });
-    
+
             res.json({
                 success: true,
                 message: 'Order placed successfully',
                 orderId: order.orderCode
             });
-    
+
         } catch (error) {
             console.error('Place order error:', error);
             res.status(500).json({

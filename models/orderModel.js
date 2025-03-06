@@ -33,6 +33,7 @@ const Order = new mongoose.Schema({
         required: true
     },
     shippingAddress: {
+        
         address: String,
         city: String,
         state: String,
@@ -44,7 +45,7 @@ const Order = new mongoose.Schema({
     },
     paymentStatus: {
         type: String,
-        enum: ['pending', 'completed', 'failed'],
+        enum: ['pending','processing', 'completed', 'failed'],
         default: 'pending'
     }
 }, {

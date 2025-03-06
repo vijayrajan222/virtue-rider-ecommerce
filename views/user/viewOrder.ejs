@@ -49,9 +49,9 @@
                                     <div>
                                         <p class="text-sm text-gray-500">Status</p>
                                         <% 
-                                            // Get the most common status among items
-                                            const statusCounts = order.items.reduce((acc, item) => {
-                                                acc[item.order.status] = (acc[item.order.status] || 0) + 1;
+                                            // Get the most common status among products
+                                            const statusCounts = order.products.reduce((acc, item) => { // Changed 'items' to 'products'
+                                                acc[item.status] = (acc[item.status] || 0) + 1; // Changed 'item.order.status' to 'item.status'
                                                 return acc;
                                             }, {});
                                             
@@ -109,7 +109,7 @@
                                 <div class="p-6 border-b">
                                     <h3 class="text-lg font-semibold mb-4">Order Items</h3>
                                     <div class="space-y-4">
-                                        <% order.items.forEach(item => { %>
+                                        <% order.products.forEach(item => { %> <!-- Changed 'items' to 'products' -->
                                             <div class="flex items-center gap-4 p-4 border rounded-lg" data-order="<%= order._id %>">
                                                 <img src="<%= item.product.imageUrl[0] %>" 
                                                      alt="<%= item.product.productName %>"
@@ -135,26 +135,26 @@
                                                 <div class="flex flex-col gap-2 w-full sm:w-auto sm:items-end">
                                                     <!-- Status Badge -->
                                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                                        <%= item.order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                                                            item.order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                                            item.order.status === 'returned' ? 'bg-orange-100 text-orange-800' :
-                                                            item.order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                                                        <%= item.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                                                            item.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                                            item.status === 'returned' ? 'bg-orange-100 text-orange-800' :
+                                                            item.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
                                                             'bg-yellow-100 text-yellow-800'
                                                         %>">
-                                                        <%= item.order.status.charAt(0).toUpperCase() + item.order.status.slice(1) %>
+                                                        <%= item.status.charAt(0).toUpperCase() + item.status.slice(1) %>
                                                     </span>
 
                                                     <!-- Action Buttons -->
                                                     <div class="flex flex-col sm:flex-row gap-2">
                                                         <!-- Timeline Button -->
-                                                        <button onclick="showTimelineModal('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.productName %>', <%= JSON.stringify(item.order.statusHistory) %>)"
+                                                        <button onclick="showTimelineModal('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.productName %>', <%= JSON.stringify(item.statusHistory) %>)"
                                                                 class="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors">
                                                             <i class="fas fa-history mr-1"></i>
                                                             Timeline
                                                         </button>
 
                                                         <!-- Cancel/Return Button (if applicable) -->
-                                                        <% if (item.order.status === 'pending' || item.order.status === 'processing') { %>
+                                                        <% if (item.status === 'pending' || item.status === 'processing') { %>
                                                             <% if (order.payment.paymentStatus !== 'failed') { %>
                                                                 <button onclick="cancelOrderItem('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.productName %>')"
                                                                     class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
@@ -163,7 +163,7 @@
                                                             <% } %>
                                                         <% } %>
 
-                                                        <% if (item.order.status === 'delivered' && !item.return.isReturnRequested) { %>
+                                                        <% if (item.status === 'delivered' && !item.return.isReturnRequested) { %>
                                                             <button onclick="requestReturnForItem('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.productName %>')"
                                                                     class="px-3 py-1 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors">
                                                                 Return
@@ -178,7 +178,7 @@
 
                                 <!-- Action Buttons -->
                                 <div class="p-6 flex justify-end gap-4">
-                                    <% if (order.items.every(item => ['delivered', 'returned', 'refund processing'].includes(item.order.status))) { %>
+                                    <% if (order.products.every(item => ['delivered', 'returned', 'refund processing'].includes(item.status))) { %>
                                         <button onclick="downloadInvoice('<%= order._id %>')"
                                                 class="px-4 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors">
                                             <i class="fas fa-file-pdf mr-2"></i>Download Invoice
@@ -248,7 +248,6 @@
             <% } %>
         </section>
     </main>
-
 
     <!-- First add the alert modal HTML structure -->
     <div id="alertModal" class="fixed inset-0 bg-black/50 z-50 hidden">
@@ -891,4 +890,4 @@
         });
     </script>
 </body>
-</html> 
+</html>

@@ -759,8 +759,9 @@
             return;
         }
 
-        const paymentMethod = selectedPayment.value;
+        const paymentMethod = selectedPayment.value; 
         const finalAmount = parseFloat(document.getElementById('finalTotal').textContent);
+
 
         // Validate COD payment method
         if (paymentMethod === 'cod' && finalAmount > 1000000000) { // Adjusted to 1000 for consistency
