@@ -777,54 +777,7 @@
         }
 
         async function cancelOrderItem(orderId, productId, productName) {
-            // Show confirm dialog with select input
-//             const select = document.createElement('select');
-//             select.className = 'mt-4 w-full rounded border-gray-300';
-//             select.innerHTML = `
-//                 <option value="">Select a reason</option>
-//                 <option value="Changed my mind">Changed my mind</option>
-//                 <option value="Found better price elsewhere">Found better price elsewhere</option>
-//                 <option value="Ordered by mistake">Ordered by mistake</option>
-//                 <option value="Other">Other</option>
-//             `;
-
-//             const confirmMessage = document.getElementById('confirmMessage');
-//             confirmMessage.textContent = 'Please select a reason for cancellation';
-//             confirmMessage.appendChild(select);
-
-//             showAlert('confirm', '', `Cancel ${productName}`);
-
-//             document.getElementById('confirmAction').onclick = async () => {
-//                 const reason = select.value;
-//                 if (!reason) {
-//                     showAlert('error', 'Please select a reason');
-//                     return;
-//                 }
-// console.log(reason)
-//                 try {
-//                     hideAlert();
-//                     showAlert('loading');
-
-//                     const response = await fetch(`/orders/${orderId}/items/${productId}/cancel`, {
-//                         method: 'POST',
-//                         headers: { 'Content-Type': 'application/json' },
-//                         body: JSON.stringify({ reason })
-//                     });
-
-//                     const data = await response.json();
-//                     hideAlert();
-
-//                     if (response.ok) {
-//                         updateOrderUI(orderId, 'cancelled', reason);
-//                         showAlert('success', data.message);
-//                     } else {
-//                         throw new Error(data.message);
-//                     }
-//                 } catch (error) {
-//                     hideAlert();
-//                     showAlert('error', error.message || 'Failed to cancel item');
-//                 }
-//             };
+         
 
 const select = document.createElement('select');
     select.className = 'mt-4 w-full rounded border-gray-300';
@@ -853,8 +806,8 @@ const select = document.createElement('select');
             hideAlert();
             showAlert('loading');
 
-            const response = await fetch(`/orders/${orderId}/cancel`, {
-                method: 'POST',
+            const response = await fetch(`/orders/${orderId}/items/${productId}/cancel`, {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ reason })
             });
