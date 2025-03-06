@@ -56,10 +56,7 @@ const userSchema = new mongoose.Schema({
         default: 0 
     },
     
-    // _id: {
-    //     type: String,
-    //     default: () => crypto.randomUUID()
-    // }
+  
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);

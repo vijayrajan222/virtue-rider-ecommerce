@@ -12,6 +12,11 @@ const Order = new mongoose.Schema({
             ref: 'Product',
             required: true
         },
+        variant: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Variant',
+            required: true
+        },
         quantity: {
             type: Number,
             required: true,
@@ -25,6 +30,9 @@ const Order = new mongoose.Schema({
             type: String,
             enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
             default: 'pending'
+        },
+        cancelReason:{
+            type: String
         }
 
     }],
@@ -33,8 +41,10 @@ const Order = new mongoose.Schema({
         required: true
     },
     shippingAddress: {
-        
-        address: String,
+        fullName: String,
+        mobileNumber: String,
+        addressLine1: String,
+        addressLine2: String,
         city: String,
         state: String,
         pincode: String
@@ -45,7 +55,7 @@ const Order = new mongoose.Schema({
     },
     paymentStatus: {
         type: String,
-        enum: ['pending','processing', 'completed', 'failed'],
+        enum: ['pending', 'processing', 'completed', 'failed'],
         default: 'pending'
     }
 }, {

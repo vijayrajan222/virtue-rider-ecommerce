@@ -89,6 +89,7 @@ export const updateProduct = async (req, res) => {
         product.images = images;
         newVariants.forEach((newVariant, index) => {
             if (index < product.variants.length) {
+                // Update existing variant
                 product.variants[index].size = newVariant.size;
                 product.variants[index].stock = parseInt(newVariant.stock);
             } else {

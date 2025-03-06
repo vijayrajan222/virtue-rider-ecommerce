@@ -31,6 +31,7 @@ import {
 import { getAddress, addAddress, deleteAddress, editAddress } from '../controllers/user/addressController.js';
 import { getProfilePage, updateProfile } from '../controllers/user/profileController.js'; // Ensure you import the correct functions
 import userOrderController from '../controllers/user/orderController.js'; // Import the entire controller
+
 const userRouter = express.Router();
 
 // Page routes
@@ -64,6 +65,9 @@ userRouter.post('/checkout/place-order', userMiddlewares.checkSession, userCheck
 
 
 userRouter.get('/orders', userMiddlewares.checkSession, userOrderController.getOrders); // Use the correct function
+
+userRouter.patch("/orders/:orderId/items/:productId/cancel", userMiddlewares.checkSession ,userOrderController.cancelOrder)
+
 
 // userRouter.post('/orders/:orderId/retry-payment', userMiddlewares.checkSession, userOrderController.retryPayment);
 

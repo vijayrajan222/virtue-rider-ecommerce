@@ -30,12 +30,13 @@
                                 <div class="flex flex-wrap justify-between items-center gap-4">
                                     <div>
                                         <p class="text-sm text-gray-500">Order ID</p>
-                                        <p class="font-medium">#<%= order.orderCode %></p>
+                                        <p class="font-medium">#<%= order._id %></p>
                                     </div>
+
                                     <div>
                                         <p class="text-sm text-gray-500">Order Date</p>
                                         <p class="font-medium">
-                                            <%= new Date(order.orderDate).toLocaleDateString('en-US', {
+                                            <%= new Date(order.createdAt).toLocaleDateString('en-US', {
                                                 day: 'numeric',
                                                 month: 'short',
                                                 year: 'numeric'
@@ -49,17 +50,17 @@
                                     <div>
                                         <p class="text-sm text-gray-500">Status</p>
                                         <% 
-                                            // Get the most common status among products
-                                            const statusCounts = order.products.reduce((acc, item) => { // Changed 'items' to 'products'
-                                                acc[item.status] = (acc[item.status] || 0) + 1; // Changed 'item.order.status' to 'item.status'
+                                            // Check if there are products in the order
+                                            const statusCounts = order.products.length > 0 ? order.products.reduce((acc, item) => {
+                                                acc[item.status] = (acc[item.status] || 0) + 1;
                                                 return acc;
-                                            }, {});
-                                            
+                                            }, {}) : {}; // Default to an empty object if no products
+
+                                            // Determine the most common status
                                             const mostCommonStatus = Object.entries(statusCounts)
-                                                .reduce((a, b) => a[1] > b[1] ? a : b)[0];
-                                                
-                                            const statusText = mostCommonStatus.charAt(0).toUpperCase() + 
-                                              mostCommonStatus.slice(1);
+                                                .reduce((a, b) => a[1] > b[1] ? a : b, [null, 0])[0] || 'No Status'; // Default to 'No Status' if no products
+
+                                            const statusText = mostCommonStatus.charAt(0).toUpperCase() + mostCommonStatus.slice(1);
                                         %>
                                         <span class="
                                             inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
@@ -98,9 +99,9 @@
                                         </div>
                                         <div>
                                             <p class="text-sm text-gray-500">Payment Method</p>
-                                            <p class="font-medium"><%= order.payment.method.toUpperCase() %></p>
+                                            <p class="font-medium"><%= order.paymentMethod.toUpperCase() %></p>
                                             <p class="text-sm text-gray-500 mt-2">Payment Status</p>
-                                            <p class="font-medium"><%= order.payment.paymentStatus.charAt(0).toUpperCase() + order.payment.paymentStatus.slice(1) %></p>
+                                            <p class="font-medium"><%= order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1) %></p>
                                         </div>
                                     </div>
                                 </div>
@@ -111,23 +112,23 @@
                                     <div class="space-y-4">
                                         <% order.products.forEach(item => { %> <!-- Changed 'items' to 'products' -->
                                             <div class="flex items-center gap-4 p-4 border rounded-lg" data-order="<%= order._id %>">
-                                                <img src="<%= item.product.imageUrl[0] %>" 
-                                                     alt="<%= item.product.productName %>"
+                                                <img src="<%= item.product.images[0] %>" 
+                                                     alt="<%= item.product.name %>"
                                                      class="w-16 h-16 object-cover rounded">
                                                  
                                                 <div class="flex-1">
-                                                    <p class="font-medium"><%= item.product.productName %></p>
+                                                    <p class="font-medium"><%= item.product.name %></p>
                                                     <div class="text-sm text-gray-500">
                                                         <p>Quantity: <%= item.quantity %></p>
                                                         <p>Price: ₹<%= item.price %></p>
-                                                        <% if (item.discountedPrice && item.price !== item.discountedPrice) { %>
+                                                        <!-- <% if (item.discountedPrice && item.price !== item.discountedPrice) { %>
                                                             <p class="text-green-600">
                                                                 Discounted Price: ₹<%= item.discountedPrice %>
                                                                 <span class="text-xs">
                                                                     (Save ₹<%= (item.price - item.discountedPrice).toFixed(2) %>)
                                                                 </span>
                                                             </p>
-                                                        <% } %>
+                                                        <% } %> -->
                                                     </div>
                                                 </div>
 
@@ -147,7 +148,7 @@
                                                     <!-- Action Buttons -->
                                                     <div class="flex flex-col sm:flex-row gap-2">
                                                         <!-- Timeline Button -->
-                                                        <button onclick="showTimelineModal('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.productName %>', <%= JSON.stringify(item.statusHistory) %>)"
+                                                        <button onclick="showTimelineModal('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.name %>', <%= JSON.stringify(item.statusHistory) %>)"
                                                                 class="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors">
                                                             <i class="fas fa-history mr-1"></i>
                                                             Timeline
@@ -155,7 +156,7 @@
 
                                                         <!-- Cancel/Return Button (if applicable) -->
                                                         <% if (item.status === 'pending' || item.status === 'processing') { %>
-                                                            <% if (order.payment.paymentStatus !== 'failed') { %>
+                                                            <% if (order.paymentStatus !== 'failed') { %>
                                                                 <button onclick="cancelOrderItem('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.productName %>')"
                                                                     class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
                                                                 Cancel
@@ -185,7 +186,7 @@
                                         </button>
                                     <% } %>
 
-                                    <% if (order.payment.method === 'razorpay' && order.payment.paymentStatus === 'failed') { %>
+                                    <% if (order.paymentMethod === 'razorpay' && order.paymentStatus === 'failed') { %>
                                         <button onclick="retryPayment('<%= order._id %>')"
                                                 class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                                             <i class="fas fa-sync-alt mr-2"></i>Retry Payment
@@ -777,53 +778,103 @@
 
         async function cancelOrderItem(orderId, productId, productName) {
             // Show confirm dialog with select input
-            const select = document.createElement('select');
-            select.className = 'mt-4 w-full rounded border-gray-300';
-            select.innerHTML = `
-                <option value="">Select a reason</option>
-                <option value="Changed my mind">Changed my mind</option>
-                <option value="Found better price elsewhere">Found better price elsewhere</option>
-                <option value="Ordered by mistake">Ordered by mistake</option>
-                <option value="Other">Other</option>
-            `;
+//             const select = document.createElement('select');
+//             select.className = 'mt-4 w-full rounded border-gray-300';
+//             select.innerHTML = `
+//                 <option value="">Select a reason</option>
+//                 <option value="Changed my mind">Changed my mind</option>
+//                 <option value="Found better price elsewhere">Found better price elsewhere</option>
+//                 <option value="Ordered by mistake">Ordered by mistake</option>
+//                 <option value="Other">Other</option>
+//             `;
 
-            const confirmMessage = document.getElementById('confirmMessage');
-            confirmMessage.textContent = 'Please select a reason for cancellation';
-            confirmMessage.appendChild(select);
+//             const confirmMessage = document.getElementById('confirmMessage');
+//             confirmMessage.textContent = 'Please select a reason for cancellation';
+//             confirmMessage.appendChild(select);
 
-            showAlert('confirm', '', `Cancel ${productName}`);
+//             showAlert('confirm', '', `Cancel ${productName}`);
 
-            document.getElementById('confirmAction').onclick = async () => {
-                const reason = select.value;
-                if (!reason) {
-                    showAlert('error', 'Please select a reason');
-                    return;
-                }
+//             document.getElementById('confirmAction').onclick = async () => {
+//                 const reason = select.value;
+//                 if (!reason) {
+//                     showAlert('error', 'Please select a reason');
+//                     return;
+//                 }
+// console.log(reason)
+//                 try {
+//                     hideAlert();
+//                     showAlert('loading');
 
-                try {
-                    hideAlert();
-                    showAlert('loading');
+//                     const response = await fetch(`/orders/${orderId}/items/${productId}/cancel`, {
+//                         method: 'POST',
+//                         headers: { 'Content-Type': 'application/json' },
+//                         body: JSON.stringify({ reason })
+//                     });
 
-                    const response = await fetch(`/orders/${orderId}/items/${productId}/cancel`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ reason })
-                    });
+//                     const data = await response.json();
+//                     hideAlert();
 
-                    const data = await response.json();
-                    hideAlert();
+//                     if (response.ok) {
+//                         updateOrderUI(orderId, 'cancelled', reason);
+//                         showAlert('success', data.message);
+//                     } else {
+//                         throw new Error(data.message);
+//                     }
+//                 } catch (error) {
+//                     hideAlert();
+//                     showAlert('error', error.message || 'Failed to cancel item');
+//                 }
+//             };
 
-                    if (response.ok) {
-                        updateOrderUI(orderId, 'cancelled', reason);
-                        showAlert('success', data.message);
-                    } else {
-                        throw new Error(data.message);
-                    }
-                } catch (error) {
-                    hideAlert();
-                    showAlert('error', error.message || 'Failed to cancel item');
-                }
-            };
+const select = document.createElement('select');
+    select.className = 'mt-4 w-full rounded border-gray-300';
+    select.innerHTML = `
+        <option value="">Select a reason</option>
+        <option value="Changed my mind">Changed my mind</option>
+        <option value="Found better price elsewhere">Found better price elsewhere</option>
+        <option value="Ordered by mistake">Ordered by mistake</option>
+        <option value="Other">Other</option>
+    `;
+
+    const confirmMessage = document.getElementById('confirmMessage');
+    confirmMessage.textContent = 'Please select a reason for cancellation';
+    confirmMessage.appendChild(select);
+
+    showAlert('confirm', '', 'Cancel Order');
+
+    document.getElementById('confirmAction').onclick = async () => {
+        const reason = select.value;
+        if (!reason) {
+            showAlert('error', 'Please select a reason');
+            return;
+        }
+
+        try {
+            hideAlert();
+            showAlert('loading');
+
+            const response = await fetch(`/orders/${orderId}/cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason })
+            });
+
+            // Check if the response is OK (status in the range 200-299)
+            if (!response.ok) {
+                const errorText = await response.text(); // Get the response text
+                throw new Error(errorText); // Throw an error with the response text
+            }
+
+            const data = await response.json(); // Parse the JSON response
+            hideAlert();
+
+            updateOrderUI(orderId, 'cancelled', reason);
+            showAlert('success', data.message);
+        } catch (error) {
+            hideAlert();
+            showAlert('error', error.message || 'Failed to cancel order');
+        }
+    };
         }
 
         function showTimelineModal(orderId, productId, productName, statusHistory) {

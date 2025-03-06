@@ -143,6 +143,8 @@ const userCheckoutController = {
                 quantity: item.quantity,
                 price: item.price,
                 subtotal: item.quantity * item.price,
+                variant: item.variantId, // Ensure to include the variant ID
+
                 return: {
                     isReturnRequested: false,
                     reason: null,
@@ -168,14 +170,14 @@ const userCheckoutController = {
 
             const order = new Order({
                 user: userId,
-                items: orderItems,
+                products: orderItems,
                 totalAmount: finalAmount,
                 paymentMethod: paymentMethod,
                 paymentStatus: paymentMethod === 'cod' ? 'processing' : 'completed',
                 shippingAddress: {
-                    name: address.fullName,
+                    fullname: address.fullName,
                     mobileNumber: address.mobileNumber,
-                    shippingAddress: address.addressLine1,
+                    addressLine1: address.addressLine1,
                     addressLine2: address.addressLine2,
                     city: address.city,
                     state: address.state,
@@ -192,7 +194,7 @@ const userCheckoutController = {
                 await productSchema.findOneAndUpdate(
                     {
                         _id: item.product,
-                        'variants.size': item.variant // Assuming you have a size field in variants
+                        'variants._id': item.variant // Assuming you have a size field in variants
                     },
                     {
                         $inc: {
