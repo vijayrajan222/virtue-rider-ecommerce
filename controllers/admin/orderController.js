@@ -7,11 +7,34 @@ export const getOrders = async (req, res) => {
     try {
         const orders = await Order.find()
             .populate('user')
-            .populate('products.product')
-            .populate('products.variant');
+            .populate({
+                path: 'products.product',
+                select: 'name brand images price variants'
+            })
+            .sort({ createdAt: -1 });
+
+        // Process orders to include variant information
+        const processedOrders = orders.map(order => {
+            const orderObject = order.toObject();
+            orderObject.products = orderObject.products.map(item => {
+                // Find the matching variant from product variants array
+                if (item.product && item.product.variants && item.variant) {
+                    const variant = item.product.variants.find(v => 
+                        v._id.toString() === item.variant.toString()
+                    );
+                    if (variant) {
+                        item.variantInfo = {
+                            size: variant.size
+                        };
+                    }
+                }
+                return item;
+            });
+            return orderObject;
+        });
 
         res.render('admin/orders', {
-            orders,
+            orders: processedOrders,
             path: req.path,
             title: 'Orders'
         });

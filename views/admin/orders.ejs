@@ -31,10 +31,7 @@
                                         Info</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Items
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Payment
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Actions
-                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Payment Method</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-600">
@@ -125,19 +122,9 @@
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4">
-                                                <div class="text-sm text-gray-200">
+                                                <div class="text-sm text-gray-200 pl-0">
                                                     <%= order.paymentMethod.toUpperCase() %>
                                                 </div>
-                                                <div class="text-xs text-gray-400">
-                                                    <%= order.paymentStatus %>
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <button
-                                                    onclick="showOrderHistory('<%= JSON.stringify(order.products).replace(/'/g, '\\\'') %>')"
-                                                    class="px-3 py-1 bg-gray-800 text-white rounded hover:bg-gray-700">
-                                                    View History
-                                                </button>
                                             </td>
                                         </tr>
                                         <% }); %>
@@ -198,21 +185,6 @@
                 </div>
                 <div id="addressModalContent" class="text-gray-300">
                     <!-- Address details will be inserted here -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Order History Modal -->
-        <div id="historyModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div class="bg-zinc-800 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-                <div class="flex justify-between items-start mb-4">
-                    <h3 class="text-lg font-semibold text-white">Order History</h3>
-                    <button onclick="closeHistoryModal()" class="text-gray-400 hover:text-white">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div id="historyModalContent" class="text-gray-300">
-                    <!-- History details will be inserted here -->
                 </div>
             </div>
         </div>
@@ -626,28 +598,77 @@
                 modal.classList.remove('hidden');
             }
 
-            // Show order history
-            function showOrderHistory(itemsJson) {
-                const items = JSON.parse(itemsJson);
-                const modal = document.getElementById('historyModal');
-                const content = document.getElementById('historyModalContent');
+            // Show product details modal
+            function showProductDetails(itemJson, orderJson) {
+                const item = JSON.parse(itemJson);
+                const order = JSON.parse(orderJson);
+                const modal = document.getElementById('productModal');
+                const modalImage = document.getElementById('productModalImage');
+                const modalDetails = document.getElementById('productModalDetails');
+                const modalStatus = document.getElementById('productModalStatus');
 
-                content.innerHTML = items.map(item => `
-                <div class="mb-4 pb-4 border-b border-zinc-700">
-                    <h6 class="font-semibold text-white mb-2">${item.product.productName}</h6>
-                    <div class="space-y-2">
-                        ${item.order.statusHistory.map(history => `
-                            <div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-400">${new Date(history.date).toLocaleString()}</span>
-                                    <span class="text-white">${history.status}</span>
-                                </div>
-                                ${history.comment ? `<p class="text-xs text-gray-400">${history.comment}</p>` : ''}
-                            </div>
-                        `).join('')}
+                // Set product image
+                modalImage.innerHTML = `
+                <img src="${item.product.images[0]}" alt="${item.product.productName}"
+                     class="w-full h-full object-cover">
+            `;
+
+                // Set product details
+                modalDetails.innerHTML = `
+                <h4 class="text-xl font-semibold text-white">${item.product.productName}</h4>
+                <p class="text-gray-400">${item.product.description}</p>
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <p class="text-gray-400">Quantity</p>
+                        <p class="text-white">${item.quantity}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400">Price</p>
+                        <p class="text-white">₹${item.price}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400">Subtotal</p>
+                        <p class="text-white">₹${item.subtotal}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400">Status</p>
+                        <p class="text-white">${item.order.status}</p>
                     </div>
                 </div>
-            `).join('');
+            `;
+
+                // Set status history
+                modalStatus.innerHTML = `
+                <h5 class="text-white font-semibold mb-2">Status History</h5>
+                <div class="space-y-2">
+                    ${item.order.statusHistory.map(history => `
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-400">${new Date(history.date).toLocaleString()}</span>
+                            <span class="text-white">${history.status}</span>
+                        </div>
+                        ${history.comment ? `<p class="text-xs text-gray-400">${history.comment}</p>` : ''}
+                    `).join('')}
+                </div>
+            `;
+
+                modal.classList.remove('hidden');
+            }
+
+            // Show address details
+            function showAddressDetails(addressJson) {
+                const address = JSON.parse(addressJson);
+                const modal = document.getElementById('addressModal');
+                const content = document.getElementById('addressModalContent');
+
+                content.innerHTML = `
+                <div class="space-y-2">
+                    <p><span class="text-gray-400">Name:</span> ${address.fullName}</p>
+                    <p><span class="text-gray-400">Mobile:</span> ${address.mobileNumber}</p>
+                    <p><span class="text-gray-400">Address:</span> ${address.addressLine1}</p>
+                    ${address.addressLine2 ? `<p>${address.addressLine2}</p>` : ''}
+                    <p>${address.city}, ${address.state} - ${address.pincode}</p>
+                </div>
+            `;
 
                 modal.classList.remove('hidden');
             }
@@ -659,10 +680,6 @@
 
             function closeAddressModal() {
                 document.getElementById('addressModal').classList.add('hidden');
-            }
-
-            function closeHistoryModal() {
-                document.getElementById('historyModal').classList.add('hidden');
             }
 
             // Close modals when clicking outside
