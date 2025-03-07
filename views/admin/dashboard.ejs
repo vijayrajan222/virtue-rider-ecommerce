@@ -30,7 +30,8 @@
             <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl group-hover:rotate-12 transition-transform">sports_motorsports</i>
           </div>
           <div class="flex items-baseline">
-            <p class="text-3xl font-bold text-gray-200"><%= data.totalUsers %></p>
+            <p class="text-3xl font-bold text-gray-200">        <%= data && data.totalUsers || 0 %>
+            </p>
           </div>
         </div>
 
@@ -41,7 +42,7 @@
             <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl group-hover:rotate-12 transition-transform">two_wheeler</i>
           </div>
           <div class="flex items-baseline">
-            <p class="text-3xl font-bold text-gray-200"><%= data.totalProducts %></p>
+            <p class="text-3xl font-bold text-gray-200"><%= data.totalProducts || 0 %></p>
           </div>
         </div>
 

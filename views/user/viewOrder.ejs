@@ -164,7 +164,7 @@
                                                             <% } %>
                                                         <% } %>
 
-                                                        <% if (item.status === 'delivered' && !item.return.isReturnRequested) { %>
+                                                        <% if (item.status === 'delivered' && !item.isReturnRequested) { %>
                                                             <button onclick="requestReturnForItem('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.productName %>')"
                                                                     class="px-3 py-1 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors">
                                                                 Return

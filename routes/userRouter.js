@@ -68,6 +68,7 @@ userRouter.get('/orders', userMiddlewares.checkSession, userOrderController.getO
 
 userRouter.patch("/orders/:orderId/items/:productId/cancel", userMiddlewares.checkSession ,userOrderController.cancelOrder)
 
+userRouter.post("/orders/:orderId/items/:productId/return", userMiddlewares.checkSession, userOrderController.requestReturnItem)
 
 // userRouter.post('/orders/:orderId/retry-payment', userMiddlewares.checkSession, userOrderController.retryPayment);
 

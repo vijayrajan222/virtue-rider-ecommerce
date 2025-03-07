@@ -6,6 +6,7 @@ import {getAdminLogin, postAdminLogin, logout} from '../controllers/admin/admina
 import upload from '../utils/multer.js';
 import { getUsers, toggleUserStatus } from '../controllers/admin/userController.js';
 import adminMiddleware from '../middleware/adminMiddleware.js';
+import { getOrders,handleReturnRequest,updateItemStatus } from '../controllers/admin/orderController.js';
 
 const router = express.Router();
 
@@ -45,5 +46,10 @@ router.get('/categories/:id',adminMiddleware.checkSession, getCategoryById);
 router.put('/categories/:id',adminMiddleware.checkSession, updateCategory);
 router.delete('/categories/:id',adminMiddleware.checkSession, deleteCategory);
 
+router.get("/orders",adminMiddleware.checkSession,getOrders)
+
+router.post("/orders/:orderId/items/:productId/status",adminMiddleware.checkSession,updateItemStatus)
+
+router.post("/orders/:orderId/items/:productId/return",adminMiddleware.checkSession,handleReturnRequest)
 
 export default router;

@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
+import { type } from 'os';
 
-const Order = new mongoose.Schema({
+const orderSchema  = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -33,8 +34,20 @@ const Order = new mongoose.Schema({
         },
         cancelReason:{
             type: String
+        }, 
+        isReturnRequested:{
+            type:Boolean, 
+            default:false
+        },
+        returnDetails: {
+            requestDate: Date,
+            reason: String,
+            status: {
+                type: String,
+                enum: ['pending', 'approved', 'rejected'],
+                default: 'pending'
+            }
         }
-
     }],
     totalAmount: {
         type: Number,
@@ -62,5 +75,5 @@ const Order = new mongoose.Schema({
     timestamps: true
 });
 
-export default mongoose.model('Order', Order);
-
+const Order = mongoose.model('Order', orderSchema);
+export default Order;
