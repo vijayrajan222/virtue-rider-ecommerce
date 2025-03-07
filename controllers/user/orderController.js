@@ -9,18 +9,43 @@ export const userOrderController = {
             const userId = req.session.user;
             const page = parseInt(req.query.page) || 1;
             const limit = 5;
-
+    
             const totalOrders = await Order.countDocuments({ user: userId });
             const totalPages = Math.ceil(totalOrders / limit);
-
+    
             const orders = await Order.find({ user: userId })
+                .populate({
+                    path: 'products.product',
+                    select: 'name brand images price variants'
+                })
                 .sort({ createdAt: -1 })
                 .skip((page - 1) * limit)
-                .limit(limit)
-                .populate('products.product');
+                .limit(limit);
+
+            // Process orders to include variant information
+            const processedOrders = orders.map(order => {
+                const orderObject = order.toObject();
+                orderObject.products = orderObject.products.map(item => {
+                    // Find the matching variant from product variants array
+                    if (item.product && item.product.variants && item.variant) {
+                        const variant = item.product.variants.find(v => 
+                            v._id.toString() === item.variant.toString()
+                        );
+                        if (variant) {
+                            item.variantInfo = {
+                                size: variant.size
+                            };
+                        }
+                    }
+                    return item;
+                });
+                return orderObject;
+            });
+
+            console.log("Processed Orders:", JSON.stringify(processedOrders, null, 2));
 
             res.render('user/viewOrder', {
-                orders,
+                orders: processedOrders,
                 currentPage: page,
                 totalPages,
                 hasNextPage: page < totalPages,
@@ -29,22 +54,20 @@ export const userOrderController = {
             });
         } catch (error) {
             console.error('Get orders error:', error);
-            // Instead of rendering an error view, send a JSON response
             res.status(500).json({ message: 'Error fetching orders', error: error.message });
         }
-
     },
     requestReturnItem: async (req, res) => {
         try {
             console.log("Requested Item Route");
-            
+
             const { orderId, productId } = req.params;
             const { reason } = req.body;
             const userId = req.session.user;
 
-            const order = await Order.findOne({ 
-                _id: orderId, 
-                user: userId 
+            const order = await Order.findOne({
+                _id: orderId,
+                user: userId
             }).populate('products.product');
 
             if (!order) {
@@ -75,16 +98,6 @@ export const userOrderController = {
                     message: 'Only delivered items can be returned'
                 });
             }
-
-            // Check if return is already requested
-            if (item.isReturnRequested) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Return already requested for this item'
-                });
-            }
-
-            // Check return window (7 days from order creation)
             const orderDate = order.createdAt;
             const daysSinceOrder = Math.floor(
                 (Date.now() - new Date(orderDate)) / (1000 * 60 * 60 * 24)
@@ -99,8 +112,9 @@ export const userOrderController = {
 
             // Update return status for the item
             item.isReturnRequested = true;
-            item.status = 'processing'; // or create a new status like 'return_pending' in your enum
-            item.cancelReason = reason; // Using cancelReason field for return reason
+            item.status = 'return_pending'; // or create a new status like 'return_pending' in your enum
+            item.returnDetails.reason = reason; // Using cancelReason field for return reason
+            item.returnDetails.requestDate = new Date();
 
             // Update payment status if payment was completed
             if (['wallet', 'online', 'razorpay'].includes(order.paymentMethod) &&
@@ -114,7 +128,7 @@ export const userOrderController = {
 
             await order.save();
             console.log("Return requested:", order);
-            
+
             res.json({
                 success: true,
                 message: 'Return requested successfully'

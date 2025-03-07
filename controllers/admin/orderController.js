@@ -25,17 +25,17 @@ export const updateItemStatus = async (req, res) => {
     try {
         const { orderId, productId } = req.params;
         const { status } = req.body;
-        console.log("Order ID:" , orderId)
+        console.log("Order ID:", orderId)
         console.log("Product ID:", productId)
         console.log("Status:", status)
         const order = await Order.findById(orderId);
-        console.log("Order:",order)
+        console.log("Order:", order)
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
         // Find the specific product in the order
-        const productItem = order.products.find(item => 
+        const productItem = order.products.find(item =>
             item.product.toString() === productId
         );
         console.log("Product Item:", productItem)
@@ -55,7 +55,7 @@ export const updateItemStatus = async (req, res) => {
             }
         } else if (status === 'delivered' && order.paymentMethod === 'cod') {
             // For COD orders, check if all products are either delivered or cancelled
-            const allDelivered = order.products.every(item => 
+            const allDelivered = order.products.every(item =>
                 item.status === 'delivered' || item.status === 'cancelled'
             );
             if (allDelivered) {
@@ -64,8 +64,8 @@ export const updateItemStatus = async (req, res) => {
         }
 
         await order.save();
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             message: 'Product status updated successfully',
             newStatus: status,
             paymentStatus: order.paymentStatus
@@ -91,7 +91,7 @@ export const handleReturnRequest = async (req, res) => {
             });
         }
 
-        const productItem = order.products.find(item => 
+        const productItem = order.products.find(item =>
             item.product.toString() === productId
         );
 
@@ -116,9 +116,9 @@ export const handleReturnRequest = async (req, res) => {
 
     } catch (error) {
         console.error('Error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Server error' 
+        res.status(500).json({
+            success: false,
+            message: 'Server error'
         });
     }
 };

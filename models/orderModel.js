@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { type } from 'os';
 
-const orderSchema  = new mongoose.Schema({
+const orderSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -29,15 +29,15 @@ const orderSchema  = new mongoose.Schema({
         },
         status: {
             type: String,
-            enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+            enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'return_pending', 'return_approved', 'return_rejected', 'returned'],
             default: 'pending'
         },
-        cancelReason:{
+        cancelReason: {
             type: String
-        }, 
-        isReturnRequested:{
-            type:Boolean, 
-            default:false
+        },
+        isReturnRequested: {
+            type: Boolean,
+            default: false
         },
         returnDetails: {
             requestDate: Date,
@@ -47,7 +47,7 @@ const orderSchema  = new mongoose.Schema({
                 enum: ['pending', 'approved', 'rejected'],
                 default: 'pending'
             }
-        }
+            }
     }],
     totalAmount: {
         type: Number,

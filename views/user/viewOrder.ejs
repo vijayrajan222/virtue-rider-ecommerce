@@ -121,14 +121,9 @@
                                                     <div class="text-sm text-gray-500">
                                                         <p>Quantity: <%= item.quantity %></p>
                                                         <p>Price: ₹<%= item.price %></p>
-                                                        <!-- <% if (item.discountedPrice && item.price !== item.discountedPrice) { %>
-                                                            <p class="text-green-600">
-                                                                Discounted Price: ₹<%= item.discountedPrice %>
-                                                                <span class="text-xs">
-                                                                    (Save ₹<%= (item.price - item.discountedPrice).toFixed(2) %>)
-                                                                </span>
-                                                            </p>
-                                                        <% } %> -->
+                                                        <% if (item.variantInfo && item.variantInfo.size) { %>
+                                                            <p>Size: <%= item.variantInfo.size %></p>
+                                                        <% } %>
                                                     </div>
                                                 </div>
 
@@ -777,57 +772,55 @@
         }
 
         async function cancelOrderItem(orderId, productId, productName) {
-         
+            const select = document.createElement('select');
+            select.className = 'mt-4 w-full rounded border-gray-300';
+            select.innerHTML = `
+                <option value="">Select a reason</option>
+                <option value="Changed my mind">Changed my mind</option>
+                <option value="Found better price elsewhere">Found better price elsewhere</option>
+                <option value="Ordered by mistake">Ordered by mistake</option>
+                <option value="Other">Other</option>
+            `;
 
-const select = document.createElement('select');
-    select.className = 'mt-4 w-full rounded border-gray-300';
-    select.innerHTML = `
-        <option value="">Select a reason</option>
-        <option value="Changed my mind">Changed my mind</option>
-        <option value="Found better price elsewhere">Found better price elsewhere</option>
-        <option value="Ordered by mistake">Ordered by mistake</option>
-        <option value="Other">Other</option>
-    `;
+            const confirmMessage = document.getElementById('confirmMessage');
+            confirmMessage.textContent = 'Please select a reason for cancellation';
+            confirmMessage.appendChild(select);
 
-    const confirmMessage = document.getElementById('confirmMessage');
-    confirmMessage.textContent = 'Please select a reason for cancellation';
-    confirmMessage.appendChild(select);
+            showAlert('confirm', '', 'Cancel Order');
 
-    showAlert('confirm', '', 'Cancel Order');
+            document.getElementById('confirmAction').onclick = async () => {
+                const reason = select.value;
+                if (!reason) {
+                    showAlert('error', 'Please select a reason');
+                    return;
+                }
 
-    document.getElementById('confirmAction').onclick = async () => {
-        const reason = select.value;
-        if (!reason) {
-            showAlert('error', 'Please select a reason');
-            return;
-        }
+                try {
+                    hideAlert();
+                    showAlert('loading');
 
-        try {
-            hideAlert();
-            showAlert('loading');
+                    const response = await fetch(`/orders/${orderId}/items/${productId}/cancel`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reason })
+                    });
 
-            const response = await fetch(`/orders/${orderId}/items/${productId}/cancel`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reason })
-            });
+                    // Check if the response is OK (status in the range 200-299)
+                    if (!response.ok) {
+                        const errorText = await response.text(); // Get the response text
+                        throw new Error(errorText); // Throw an error with the response text
+                    }
 
-            // Check if the response is OK (status in the range 200-299)
-            if (!response.ok) {
-                const errorText = await response.text(); // Get the response text
-                throw new Error(errorText); // Throw an error with the response text
-            }
+                    const data = await response.json(); // Parse the JSON response
+                    hideAlert();
 
-            const data = await response.json(); // Parse the JSON response
-            hideAlert();
-
-            updateOrderUI(orderId, 'cancelled', reason);
-            showAlert('success', data.message);
-        } catch (error) {
-            hideAlert();
-            showAlert('error', error.message || 'Failed to cancel order');
-        }
-    };
+                    updateOrderUI(orderId, 'cancelled', reason);
+                    showAlert('success', data.message);
+                } catch (error) {
+                    hideAlert();
+                    showAlert('error', error.message || 'Failed to cancel order');
+                }
+            };
         }
 
         function showTimelineModal(orderId, productId, productName, statusHistory) {
