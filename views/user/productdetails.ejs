@@ -7,8 +7,7 @@
     <title>Virtue Rider - Premium Helmets</title>
     <link rel="stylesheet" href="/tailwindcss/output.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
-
-
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <style>
@@ -261,67 +260,102 @@
                 // Call initializeZoom after the DOM is fully loaded
                 document.addEventListener('DOMContentLoaded', initializeZoom);
 
-                async function addToCart(productId,variantId) {
-        console.log('Adding product with ID:', productId); // Log the productId
-        const stock = 1;
- const selectedVariant = document.getElementById('variantSelect').value;
- console.log("selectedVariant",selectedVariant);
-        try {
-            const response = await fetch('/cart/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ productId,variantId:selectedVariant })
-            });
+                async function addToCart(productId) {
+                    console.log('Adding product with ID:', productId);
+                    const selectedVariant = document.getElementById('variantSelect').value;
+                    console.log("selectedVariant", selectedVariant);
+                    
+                    try {
+                        const response = await fetch('/cart/add', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ productId, variantId: selectedVariant })
+                        });
 
-            const data = await response.json();
+                        const data = await response.json();
 
-            if (response.ok) {
-                alert(data.message);
-            } else {
-                alert(data.message || 'Failed to add product to cart');
-            }
-        } catch (error) {
-            console.error('Error adding to cart:', error);
-            alert('An error occurred while adding the product to the cart');
-        }
-    }
+                        if (response.ok) {
+                            // Success notification
+                            Swal.fire({
+                                title: 'Success!',
+                                text: data.message,
+                                icon: 'success',
+                                showConfirmButton: true,
+                                confirmButtonText: 'Continue Shopping',
+                                showDenyButton: true,
+                                denyButtonText: 'Go to Cart',
+                                customClass: {
+                                    confirmButton: 'bg-gray-800 text-white px-4 py-2 rounded-lg mr-2 hover:bg-gray-700',
+                                    denyButton: 'bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700'
+                                }
+                            }).then((result) => {
+                                if (result.isDenied) {
+                                    window.location.href = '/cart';
+                                }
+                            });
+                        } else {
+                            // Error notification
+                            Swal.fire({
+                                title: 'Error!',
+                                text: data.message || 'Failed to add product to cart',
+                                icon: 'error',
+                                confirmButtonText: 'OK',
+                                customClass: {
+                                    confirmButton: 'bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700'
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error adding to cart:', error);
+                        // Error notification
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'An error occurred while adding the product to the cart',
+                            icon: 'error',
+                            confirmButtonText: 'OK',
+                            customClass: {
+                                confirmButton: 'bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700'
+                            }
+                        });
+                    }
+                }
 
-    async function buyNow(productId) {
-        try {
-            // Get the selected variant
-            const selectedVariant = document.getElementById('variantSelect').value;
-            if (!selectedVariant) {
-                alert('Please select a size');
-                return;
-            }
+                async function buyNow(productId) {
+                    try {
+                        // Get the selected variant
+                        const selectedVariant = document.getElementById('variantSelect').value;
+                        if (!selectedVariant) {
+                            alert('Please select a size');
+                            return;
+                        }
 
-            // First add to cart
-            const response = await fetch('/cart/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ 
-                    productId: productId,
-                    variantId: selectedVariant 
-                })
-            });
+                        // First add to cart
+                        const response = await fetch('/cart/add', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                productId: productId,
+                                variantId: selectedVariant 
+                            })
+                        });
 
-            const data = await response.json();
+                        const data = await response.json();
 
-            if (response.ok) {
-                // Redirect to checkout page
-                window.location.href = '/checkout';
-            } else {
-                alert(data.message || 'Failed to process buy now request');
-            }
-        } catch (error) {
-            console.error('Error in buy now:', error);
-            alert('An error occurred while processing your request');
-        }
-    }
+                        if (response.ok) {
+                            // Redirect to checkout page
+                            window.location.href = '/checkout';
+                        } else {
+                            alert(data.message || 'Failed to process buy now request');
+                        }
+                    } catch (error) {
+                        console.error('Error in buy now:', error);
+                        alert('An error occurred while processing your request');
+                    }
+                }
             </script>
 </body>
 
