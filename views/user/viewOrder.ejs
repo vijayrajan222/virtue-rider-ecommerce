@@ -149,10 +149,19 @@
                                                             Timeline
                                                         </button>
 
+                                                        <!-- Invoice Button (only show for delivered items) -->
+                                                        <% if (item.status === 'delivered') { %>
+                                                            <button onclick="downloadInvoice('<%= order._id %>', '<%= item.product._id %>')"
+                                                                    class="px-3 py-1 text-sm bg-zinc-800 text-white rounded hover:bg-zinc-700 transition-colors">
+                                                                <i class="fas fa-file-pdf mr-1"></i>
+                                                                Invoice
+                                                            </button>
+                                                        <% } %>
+
                                                         <!-- Cancel/Return Button (if applicable) -->
                                                         <% if (item.status === 'pending' || item.status === 'processing') { %>
                                                             <% if (order.paymentStatus !== 'failed') { %>
-                                                                <button onclick="cancelOrderItem('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.productName %>')"
+                                                                <button onclick="cancelOrderItem('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.name %>')"
                                                                     class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
                                                                 Cancel
                                                             </button>
@@ -160,7 +169,7 @@
                                                         <% } %>
 
                                                         <% if (item.status === 'delivered' && !item.isReturnRequested) { %>
-                                                            <button onclick="requestReturnForItem('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.productName %>')"
+                                                            <button onclick="requestReturnForItem('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.name %>')"
                                                                     class="px-3 py-1 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors">
                                                                 Return
                                                             </button>
@@ -518,10 +527,10 @@
             };
         }
 
-        async function downloadInvoice(orderId) {
+        async function downloadInvoice(orderId, productId) {
             try {
                 showAlert('loading');
-                const response = await fetch(`/orders/${orderId}/invoice`, {
+                const response = await fetch(`/orders/${orderId}/items/${productId}/invoice`, {
                     method: 'GET'
                 });
 
@@ -536,7 +545,7 @@
                 // Create a temporary link and trigger download
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `invoice-${orderId}.pdf`;
+                a.download = `invoice-${orderId}-${productId}.pdf`;
                 document.body.appendChild(a);
                 a.click();
                 

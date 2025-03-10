@@ -145,7 +145,7 @@ export const userOrderController = {
     },
     generateInvoice: async (req, res) => {
         try {
-            const orderId = req.params.orderId;
+            const { orderId, productId } = req.params;
             const userId = req.session.user;
 
             // Fetch order with populated products
@@ -157,12 +157,22 @@ export const userOrderController = {
                 return res.status(404).json({ message: 'Order not found' });
             }
 
+            // Find the specific product in the order
+            const orderItem = order.products.find(item => 
+                item.product._id.toString() === productId &&
+                item.status === 'delivered' // Only generate invoice for delivered items
+            );
+
+            if (!orderItem) {
+                return res.status(404).json({ message: 'Product not found or not eligible for invoice' });
+            }
+
             // Create PDF document
             const doc = new PDFDocument({ margin: 50 });
 
             // Set response headers
             res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename=invoice-${orderId}.pdf`);
+            res.setHeader('Content-Disposition', `attachment; filename=invoice-${orderId}-${productId}.pdf`);
 
             // Pipe the PDF directly to the response
             doc.pipe(res);
@@ -181,7 +191,7 @@ export const userOrderController = {
 
             // Add invoice details
             doc.fontSize(12)
-                .text(`Invoice Number: INV-${order._id}`)
+                .text(`Invoice Number: INV-${order._id}-${productId}`)
                 .text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`)
                 .text(`Order ID: ${order._id}`)
                 .moveDown();
@@ -210,17 +220,13 @@ export const userOrderController = {
                 .stroke()
                 .moveDown();
 
-            // Add items
-            let total = 0;
-            order.products.forEach(item => {
-                y = doc.y + 10;
-                doc.text(item.product.name, 50, y)
-                    .text(item.quantity.toString(), 250, y)
-                    .text(`₹${item.price}`, 350, y)
-                    .text(`₹${item.price * item.quantity}`, 450, y)
-                    .moveDown();
-                total += item.price * item.quantity;
-            });
+            // Add single item
+            y = doc.y + 10;
+            doc.text(orderItem.product.name, 50, y)
+                .text(orderItem.quantity.toString(), 250, y)
+                .text(`₹${orderItem.price}`, 350, y)
+                .text(`₹${orderItem.price * orderItem.quantity}`, 450, y)
+                .moveDown();
 
             // Add line
             y = doc.y + 5;
@@ -230,8 +236,9 @@ export const userOrderController = {
                 .moveDown();
 
             // Add totals
-            doc.text(`Subtotal: ₹${total}`, { align: 'right' })
-                .text(`Total Amount: ₹${order.totalAmount}`, { align: 'right' })
+            const itemTotal = orderItem.price * orderItem.quantity;
+            doc.text(`Subtotal: ₹${itemTotal}`, { align: 'right' })
+                .text(`Total Amount: ₹${itemTotal}`, { align: 'right' })
                 .moveDown();
 
             // Add footer

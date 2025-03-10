@@ -77,7 +77,7 @@ userRouter.post("/orders/:orderId/items/:productId/return", userMiddlewares.chec
 
 userRouter.get('/checkout', userMiddlewares.checkSession, userCheckoutController.getCheckoutPage);
 
-
+userRouter.get('/orders/:orderId/items/:productId/invoice', userOrderController.generateInvoice);
 
 userRouter.get('/cart', userMiddlewares.checkSession, getCart);
 
