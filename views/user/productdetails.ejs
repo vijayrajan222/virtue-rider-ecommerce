@@ -99,7 +99,6 @@
                                     <% }) %>
                             </div>
                         </div>
-
                         <!-- Right: Product Info -->
                         <div class="space-y-6">
                             <div>
@@ -286,6 +285,41 @@
         } catch (error) {
             console.error('Error adding to cart:', error);
             alert('An error occurred while adding the product to the cart');
+        }
+    }
+
+    async function buyNow(productId) {
+        try {
+            // Get the selected variant
+            const selectedVariant = document.getElementById('variantSelect').value;
+            if (!selectedVariant) {
+                alert('Please select a size');
+                return;
+            }
+
+            // First add to cart
+            const response = await fetch('/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    productId: productId,
+                    variantId: selectedVariant 
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Redirect to checkout page
+                window.location.href = '/checkout';
+            } else {
+                alert(data.message || 'Failed to process buy now request');
+            }
+        } catch (error) {
+            console.error('Error in buy now:', error);
+            alert('An error occurred while processing your request');
         }
     }
             </script>
