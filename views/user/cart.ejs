@@ -62,16 +62,16 @@
                       <div class="flex items-center bg-gray-100 rounded-lg">
                         <button 
                           class="quantity-btn px-3 py-1 text-gray-600 <%= item.quantity <= 1 ? 'opacity-50' : '' %>"
-                          onclick="updateQuantity(this, '<%= item.product._id %>', 'decrease')"
+                          onclick="updateQuantity(this, '<%= item.product._id %>', '<%= item.variant._id %>', 'decrease')"
                           <%= item.quantity <= 1 ? 'disabled' : '' %>
                         >
                           <i class="fas fa-minus"></i>
                         </button>
                         <span class="quantity-display px-3 font-medium"><%= item.quantity %></span>
                         <button 
-                          class="quantity-btn px-3 py-1 text-gray-600 <%= item.quantity >= 3 ? 'opacity-50' : '' %>"
-                          onclick="updateQuantity(this, '<%= item.product._id %>', 'increase')"
-                          <%= item.quantity >= 3 ? 'disabled' : '' %>
+                          class="quantity-btn px-3 py-1 text-gray-600 <%= item.quantity >= item.variant.stock || item.quantity >= 3 ? 'opacity-50' : '' %>"
+                          onclick="updateQuantity(this, '<%= item.product._id %>', '<%= item.variant._id %>', 'increase')"
+                          <%= item.quantity >= item.variant.stock || item.quantity >= 3 ? 'disabled' : '' %>
                         >
                           <i class="fas fa-plus"></i>
                         </button>
@@ -139,7 +139,7 @@
                         <div class="flex items-center space-x-2">
                           <button 
                             class="quantity-btn bg-gray-200 text-gray-600 w-8 h-8 rounded-full hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                            onclick="updateQuantity(this, '<%= item.product._id %>', 'decrease')"
+                            onclick="updateQuantity(this, '<%= item.product._id %>', '<%= item.variant._id %>', 'decrease')"
                             <%= item.quantity <= 1 ? 'disabled' : '' %>
                           >
                             <i class="fas fa-minus"></i>
@@ -149,8 +149,8 @@
                           </span>
                           <button 
                             class="quantity-btn bg-gray-200 text-gray-600 w-8 h-8 rounded-full hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                            onclick="updateQuantity(this, '<%= item.product._id %>', 'increase')"
-                            <%= item.quantity >= 3 ? 'disabled' : '' %>
+                            onclick="updateQuantity(this, '<%= item.product._id %>', '<%= item.variant._id %>', 'increase')"
+                            <%= item.quantity >= item.variant.stock || item.quantity >= 3 ? 'disabled' : '' %>
                           >
                             <i class="fas fa-plus"></i>
                           </button>
@@ -298,7 +298,7 @@
           return true;
       }
 
-      async function updateQuantity(button, productId, action) {
+      async function updateQuantity(button, productId, variantId, action) {
         const cartItem = button.closest('[id^="cart-item-"]');
         if (!cartItem) return;
 
@@ -326,6 +326,7 @@
                 },
                 body: JSON.stringify({
                     productId,
+                    variantId,
                     quantity: newQuantity
                 })
             });
@@ -352,12 +353,12 @@
                     }
                 });
 
-                // Update button states
+                // Update button states based on stock and quantity
                 const minusBtn = cartItem.querySelector('.quantity-btn:first-child');
                 const plusBtn = cartItem.querySelector('.quantity-btn:last-child');
                 
                 if (minusBtn) minusBtn.disabled = newQuantity <= 1;
-                if (plusBtn) plusBtn.disabled = newQuantity >= 3;
+                if (plusBtn) plusBtn.disabled = newQuantity >= data.stock || newQuantity >= 3;
 
                 // Success feedback
                 button.classList.add('bg-green-200');

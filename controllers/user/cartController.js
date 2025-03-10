@@ -120,60 +120,79 @@ console.log("productssssss:",product)
 
 export const updateQuantity = async (req, res) => {
     try {
-        const { productId, quantity } = req.body;
+        const { productId, variantId, quantity } = req.body;
         const userId = req.session.user;
 
         if (quantity < 1) {
-            return res.status(400).json({ message: 'Quantity must be at least 1' });
+            return res.status(400).json({ 
+                success: false,
+                message: 'Quantity must be at least 1' 
+            });
         }
 
-        // Check product availability and stock
-        const product = await productSchema.findById(productId).populate({
-            path: 'categoryId',
-            match: { isActive: true }
-        });
-        console.log("Product:  "+ product)
-        
-        if (!product) {
-            return res.status(400).json({ message: 'Product is not available' });
-        }
-        
-
-        if (product.variants.stock < quantity) {
-            return res.status(400).json({ message: 'Not enough stock available' });
-        }
-
-        // Find and update cart
+        // Find cart and product
         const cart = await cartSchema.findOne({ userId });
         if (!cart) {
-            return res.status(404).json({ message: 'Cart not found' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'Cart not found' 
+            });
         }
 
-        const cartItem = cart.items.find(item => item.productId.toString() === productId);
+        // Find the cart item with both productId and variantId
+        const cartItem = cart.items.find(item => 
+            item.productId.toString() === productId && 
+            item.variantId.toString() === variantId
+        );
+
         if (!cartItem) {
-            return res.status(404).json({ message: 'Product not found in cart' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'Product not found in cart' 
+            });
         }
 
+        // Get product and check availability
+        const product = await productSchema.findById(productId);
+        if (!product || !product.isActive) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Product is not available' 
+            });
+        }
+
+        // Find the specific variant
+        const variant = product.variants.find(v => v._id.toString() === variantId);
+        if (!variant) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Product variant not found' 
+            });
+        }
+
+        // Check stock availability
+        if (variant.stock < quantity) {
+            return res.status(400).json({ 
+                success: false,
+                message: `Only ${variant.stock} items available in stock` 
+            });
+        }
+
+        // Update quantity
         cartItem.quantity = quantity;
         await cart.save();
 
         // Calculate new totals
-        const updatedCart = await cartSchema.findOne({ userId }).populate('items.productId');
-        const cartItems = updatedCart.items.map(item => ({
-            product: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-            subtotal: item.quantity * item.price
-        }));
-
-        const total = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
+        const subtotal = cartItem.price * quantity;
+        const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
         res.status(200).json({ 
             success: true,
             message: 'Quantity updated successfully',
             quantity: quantity,
-            subtotal: quantity * cartItem.price,
-            total: total
+            subtotal: subtotal,
+            total: total,
+            stock: variant.stock
         });
 
     } catch (error) {
