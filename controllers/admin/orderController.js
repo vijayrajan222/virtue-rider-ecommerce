@@ -1,5 +1,6 @@
 import { config } from 'dotenv';
 import Order from '../../models/orderModel.js';
+import Product from '../../models/productModel.js';
 
 config();
 
@@ -51,8 +52,10 @@ export const updateItemStatus = async (req, res) => {
         console.log("Order ID:", orderId)
         console.log("Product ID:", productId)
         console.log("Status:", status)
+        
         const order = await Order.findById(orderId);
         console.log("Order:", order)
+        
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
@@ -62,8 +65,30 @@ export const updateItemStatus = async (req, res) => {
             item.product.toString() === productId
         );
         console.log("Product Item:", productItem)
+        
         if (!productItem) {
             return res.status(404).json({ success: false, message: 'Product not found in order' });
+        }
+
+        // If status is being changed to cancelled, update the variant stock
+        if (status === 'cancelled') {
+            const product = await Product.findById(productId);
+            if (!product) {
+                return res.status(404).json({ success: false, message: 'Product not found' });
+            }
+
+            // Find the specific variant
+            const variant = product.variants.find(v => 
+                v._id.toString() === productItem.variant.toString()
+            );
+
+            if (!variant) {
+                return res.status(404).json({ success: false, message: 'Variant not found' });
+            }
+
+            // Update the variant stock
+            variant.stock += productItem.quantity;
+            await product.save();
         }
 
         // Update product status

@@ -1,6 +1,7 @@
 import Order from '../../models/orderModel.js';
 import Product from '../../models/productModel.js';
 import User from "../../models/userModel.js";
+import PDFDocument from 'pdfkit';
 
 export const userOrderController = {
     getOrders: async (req, res) => {
@@ -142,6 +143,112 @@ export const userOrderController = {
             });
         }
     },
+    generateInvoice: async (req, res) => {
+        try {
+            const orderId = req.params.orderId;
+            const userId = req.session.user;
+
+            // Fetch order with populated products
+            const order = await Order.findOne({ _id: orderId, user: userId })
+                .populate('products.product')
+                .populate('user', 'name email');
+
+            if (!order) {
+                return res.status(404).json({ message: 'Order not found' });
+            }
+
+            // Create PDF document
+            const doc = new PDFDocument({ margin: 50 });
+
+            // Set response headers
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename=invoice-${orderId}.pdf`);
+
+            // Pipe the PDF directly to the response
+            doc.pipe(res);
+
+            // Add company logo (if you have one)
+            // doc.image('path/to/logo.png', 50, 45, { width: 50 });
+
+            // Add company info
+            doc.fontSize(20)
+                .text('Virtue Rider', { align: 'center' })
+                .fontSize(10)
+                .moveDown()
+                .text('123 Fashion Street, City', { align: 'center' })
+                .text('Phone: +91 1234567890', { align: 'center' })
+                .moveDown(2);
+
+            // Add invoice details
+            doc.fontSize(12)
+                .text(`Invoice Number: INV-${order._id}`)
+                .text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`)
+                .text(`Order ID: ${order._id}`)
+                .moveDown();
+
+            // Add customer details
+            doc.text('Bill To:')
+                .text(`Name: ${order.shippingAddress.fullName}`)
+                .text(`Address: ${order.shippingAddress.addressLine1}`)
+                .text(order.shippingAddress.addressLine2 || '')
+                .text(`${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.pincode}`)
+                .text(`Phone: ${order.shippingAddress.mobileNumber}`)
+                .moveDown();
+
+            // Add table headers
+            let y = doc.y + 20;
+            doc.text('Item', 50, y)
+                .text('Quantity', 250, y)
+                .text('Price', 350, y)
+                .text('Total', 450, y)
+                .moveDown();
+
+            // Add line
+            y = doc.y + 5;
+            doc.moveTo(50, y)
+                .lineTo(550, y)
+                .stroke()
+                .moveDown();
+
+            // Add items
+            let total = 0;
+            order.products.forEach(item => {
+                y = doc.y + 10;
+                doc.text(item.product.name, 50, y)
+                    .text(item.quantity.toString(), 250, y)
+                    .text(`₹${item.price}`, 350, y)
+                    .text(`₹${item.price * item.quantity}`, 450, y)
+                    .moveDown();
+                total += item.price * item.quantity;
+            });
+
+            // Add line
+            y = doc.y + 5;
+            doc.moveTo(50, y)
+                .lineTo(550, y)
+                .stroke()
+                .moveDown();
+
+            // Add totals
+            doc.text(`Subtotal: ₹${total}`, { align: 'right' })
+                .text(`Total Amount: ₹${order.totalAmount}`, { align: 'right' })
+                .moveDown();
+
+            // Add footer
+            doc.fontSize(10)
+                .text('Thank you for shopping with us!', {
+                    align: 'center',
+                    y: doc.page.height - 100
+                });
+
+            // Finalize PDF
+            doc.end();
+
+        } catch (error) {
+            console.error('Invoice generation error:', error);
+            res.status(500).json({ message: 'Failed to generate invoice' });
+        }
+    },
     cancelOrder: async (req, res) => {
         try {
             const { orderId, productId } = req.params;
@@ -158,14 +265,16 @@ export const userOrderController = {
                 });
             }
 
-            const itemIndex = order.products.findIndex(item =>
-                item.product._id.toString() === productId
+            // Find the specific item with matching product ID and variant
+            const itemIndex = order.products.findIndex(item => 
+                item.product._id.toString() === productId && 
+                item.status !== 'cancelled' // Only find non-cancelled items
             );
 
             if (itemIndex === -1) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Item not found in order'
+                    message: 'Item not found in order or already cancelled'
                 });
             }
 
@@ -173,7 +282,7 @@ export const userOrderController = {
 
             // Ensure statusHistory is initialized
             if (!item.statusHistory) {
-                item.statusHistory = []; // Initialize as an empty array if it doesn't exist
+                item.statusHistory = [];
             }
 
             // Check if item.status is defined before accessing it
@@ -191,7 +300,7 @@ export const userOrderController = {
                 });
             }
 
-            // Get the product
+            // Get the product and update stock
             const product = await Product.findById(productId);
             if (!product) {
                 return res.status(404).json({
@@ -200,11 +309,12 @@ export const userOrderController = {
                 });
             }
 
-            // Calculate new stock
-            const quantityToAdd = Number(item.quantity);
-            const newStock = product.stock + quantityToAdd; // Assuming product has a stock field
-            product.stock = newStock; // Update the overall product stock
-            await product.save();
+            // Find the specific variant and update its stock
+            const variant = product.variants.id(item.variant);
+            if (variant) {
+                variant.stock += Number(item.quantity);
+                await product.save();
+            }
 
             // Update item status
             item.status = 'cancelled';

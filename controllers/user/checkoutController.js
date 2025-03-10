@@ -167,7 +167,7 @@ const userCheckoutController = {
                     message: 'Delivery address not found'
                 });
             }
-
+            console.log('fullname', address.fullName);
             const order = new Order({
                 user: userId,
                 products: orderItems,
@@ -175,7 +175,7 @@ const userCheckoutController = {
                 paymentMethod: paymentMethod,
                 paymentStatus: paymentMethod === 'cod' ? 'processing' : 'completed',
                 shippingAddress: {
-                    fullname: address.fullName,
+                    fullName: address.fullName,
                     mobileNumber: address.mobileNumber,
                     addressLine1: address.addressLine1,
                     addressLine2: address.addressLine2,

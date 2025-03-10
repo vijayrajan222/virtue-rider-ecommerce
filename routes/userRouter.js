@@ -63,6 +63,7 @@ userRouter.get('/logout', userMiddlewares.checkSession, logout);
 
 userRouter.post('/checkout/place-order', userMiddlewares.checkSession, userCheckoutController.placeOrder);
 
+userRouter.get('/orders/:orderId/invoice', userOrderController.generateInvoice);
 
 userRouter.get('/orders', userMiddlewares.checkSession, userOrderController.getOrders); // Use the correct function
 
