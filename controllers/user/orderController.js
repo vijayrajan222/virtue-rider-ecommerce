@@ -148,7 +148,6 @@ export const userOrderController = {
             const { orderId, productId } = req.params;
             const userId = req.session.user;
 
-            // Fetch order with populated products
             const order = await Order.findOne({ _id: orderId, user: userId })
                 .populate('products.product')
                 .populate('user', 'name email');
@@ -157,98 +156,187 @@ export const userOrderController = {
                 return res.status(404).json({ message: 'Order not found' });
             }
 
-            // Find the specific product in the order
             const orderItem = order.products.find(item => 
                 item.product._id.toString() === productId &&
-                item.status === 'delivered' // Only generate invoice for delivered items
+                item.status === 'delivered'
             );
 
             if (!orderItem) {
                 return res.status(404).json({ message: 'Product not found or not eligible for invoice' });
             }
 
-            // Create PDF document
-            const doc = new PDFDocument({ margin: 50 });
+            // Create PDF document with better margins
+            const doc = new PDFDocument({
+                margin: 50,
+                size: 'A4',
+                layout: 'portrait'
+            });
 
-            // Set response headers
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=invoice-${orderId}-${productId}.pdf`);
-
-            // Pipe the PDF directly to the response
             doc.pipe(res);
 
-            // Add company logo (if you have one)
-            // doc.image('path/to/logo.png', 50, 45, { width: 50 });
+            // Helper function for drawing lines
+            const drawLine = (y) => {
+                doc.strokeColor('#E5E7EB')
+                   .lineWidth(1)
+                   .moveTo(50, y)
+                   .lineTo(550, y)
+                   .stroke();
+            };
 
-            // Add company info
-            doc.fontSize(20)
-                .text('Virtue Rider', { align: 'center' })
+            // Add header with company logo and info
+            doc.fontSize(24)
+               .font('Helvetica-Bold')
+               .text('VIRTUE RIDER', { align: 'center' })
+               .fontSize(10)
+               .font('Helvetica')
+               .text('Helmet Store', { align: 'center' })
+               .moveDown(0.5);
+
+            // Add divider
+            drawLine(doc.y);
+            doc.moveDown();
+
+            // Create two columns for invoice details and shipping info
+            const leftColumn = {
+                x: 50,
+                width: 250
+            };
+            const rightColumn = {
+                x: 300,
+                width: 250
+            };
+
+            // Invoice details (left column)
+            doc.font('Helvetica-Bold')
+               .fontSize(12)
+               .text('INVOICE DETAILS', leftColumn.x, doc.y)
+               .moveDown(0.5)
+               .font('Helvetica')
+               .fontSize(10)
+               .text(`Invoice Number: INV-${order._id.toString().slice(-6)}-${productId.slice(-4)}`)
+               .text(`Order Date: ${new Date(order.createdAt).toLocaleDateString('en-US', {
+                   day: 'numeric',
+                   month: 'long',
+                   year: 'numeric'
+               })}`)
+               .text(`Order ID: #${order._id.toString().slice(-6)}`);
+
+            // Shipping details (right column)
+            doc.font('Helvetica-Bold')
+               .fontSize(12)
+               .text('SHIPPING DETAILS', rightColumn.x, doc.y - doc.currentLineHeight() * 4)
+               .moveDown(0.5)
+               .font('Helvetica')
                 .fontSize(10)
-                .moveDown()
-                .text('123 Fashion Street, City', { align: 'center' })
-                .text('Phone: +91 1234567890', { align: 'center' })
-                .moveDown(2);
+               .text(`${order.shippingAddress.fullName}`)
+               .text(`${order.shippingAddress.addressLine1}`)
+               .text(`${order.shippingAddress.addressLine2 || ''}`)
+               .text(`${order.shippingAddress.city}, ${order.shippingAddress.state}`)
+               .text(`${order.shippingAddress.pincode}`)
+               .text(`Phone: ${order.shippingAddress.mobileNumber}`);
 
-            // Add invoice details
-            doc.fontSize(12)
-                .text(`Invoice Number: INV-${order._id}-${productId}`)
-                .text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`)
-                .text(`Order ID: ${order._id}`)
-                .moveDown();
+            // Add space and divider
+            doc.moveDown(2);
+            drawLine(doc.y);
+            doc.moveDown();
 
-            // Add customer details
-            doc.text('Bill To:')
-                .text(`Name: ${order.shippingAddress.fullName}`)
-                .text(`Address: ${order.shippingAddress.addressLine1}`)
-                .text(order.shippingAddress.addressLine2 || '')
-                .text(`${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.pincode}`)
-                .text(`Phone: ${order.shippingAddress.mobileNumber}`)
-                .moveDown();
+            // Product details header
+            const tableTop = doc.y;
+            doc.font('Helvetica-Bold')
+               .fontSize(10);
 
-            // Add table headers
-            let y = doc.y + 20;
-            doc.text('Item', 50, y)
-                .text('Quantity', 250, y)
-                .text('Price', 350, y)
-                .text('Total', 450, y)
-                .moveDown();
+            // Table headers with better spacing
+            const tableHeaders = {
+                item: { x: 50, width: 250 },
+                quantity: { x: 300, width: 75 },
+                price: { x: 375, width: 75 },
+                total: { x: 450, width: 100 }
+            };
 
-            // Add line
-            y = doc.y + 5;
-            doc.moveTo(50, y)
-                .lineTo(550, y)
-                .stroke()
-                .moveDown();
+            doc.text('PRODUCT', tableHeaders.item.x, tableTop)
+               .text('QTY', tableHeaders.quantity.x, tableTop)
+               .text('PRICE', tableHeaders.price.x, tableTop)
+               .text('TOTAL', tableHeaders.total.x, tableTop);
 
-            // Add single item
-            y = doc.y + 10;
-            doc.text(orderItem.product.name, 50, y)
-                .text(orderItem.quantity.toString(), 250, y)
-                .text(`₹${orderItem.price}`, 350, y)
-                .text(`₹${orderItem.price * orderItem.quantity}`, 450, y)
-                .moveDown();
+            // Draw header bottom line
+            drawLine(doc.y + 5);
+            doc.moveDown();
 
-            // Add line
-            y = doc.y + 5;
-            doc.moveTo(50, y)
-                .lineTo(550, y)
-                .stroke()
-                .moveDown();
+            // Add product details
+            doc.font('Helvetica')
+               .fontSize(10);
 
-            // Add totals
-            const itemTotal = orderItem.price * orderItem.quantity;
-            doc.text(`Subtotal: ₹${itemTotal}`, { align: 'right' })
-                .text(`Total Amount: ₹${itemTotal}`, { align: 'right' })
-                .moveDown();
+            const productY = doc.y;
+            doc.text(orderItem.product.name, tableHeaders.item.x, productY)
+               .text(orderItem.quantity.toString(), tableHeaders.quantity.x, productY)
+               .text(`₹${orderItem.price.toFixed(2)}`, tableHeaders.price.x, productY)
+               .text(`₹${(orderItem.price * orderItem.quantity).toFixed(2)}`, tableHeaders.total.x, productY);
 
-            // Add footer
-            doc.fontSize(10)
-                .text('Thank you for shopping with us!', {
-                    align: 'center',
-                    y: doc.page.height - 100
-                });
+            // Add variant info if available
+            if (orderItem.variantInfo && orderItem.variantInfo.size) {
+                doc.fontSize(9)
+                   .text(`Size: ${orderItem.variantInfo.size}`, tableHeaders.item.x, doc.y);
+            }
 
-            // Finalize PDF
+            // Draw line after product details
+            doc.moveDown();
+            drawLine(doc.y + 5);
+
+            // Add totals section
+            const totalY = doc.y + 20;
+            doc.font('Helvetica-Bold')
+               .fontSize(10)
+               .text('Subtotal:', tableHeaders.price.x, totalY)
+               .text(`₹${(orderItem.price * orderItem.quantity).toFixed(2)}`, tableHeaders.total.x, totalY);
+
+            // Add some space before thank you message
+            doc.moveDown(4); // Adjust this value to move the message up or down
+
+            // Add "Thank you" message with proper sizing and spacing
+            doc.font('Helvetica-Bold')
+               .fontSize(14) // Reduced font size
+               .fillColor('#1F2937')
+               .text('Thank You For Shopping With Us!', {
+                   align: 'center',
+                   width: 500 // This ensures the text stays centered within this width
+               });
+
+            // Add some space before footer
+            doc.moveDown(2);
+
+            // Footer section
+            doc.font('Helvetica')
+               .fontSize(10)
+               .fillColor('#4B5563')
+               .text('For any queries, please contact:', {
+                   align: 'center'
+               })
+               .fillColor('#000000')
+               .text('support@virturerider.com', {
+                   align: 'center'
+               });
+
+            // Generation timestamp
+            doc.moveDown(0.5)
+               .fontSize(8)
+               .fillColor('#6B7280')
+               .text(`Generated on: ${new Date().toLocaleString('en-US', {
+                   year: 'numeric',
+                   month: 'long',
+                   day: 'numeric',
+                   hour: '2-digit',
+                   minute: '2-digit',
+                   hour12: true
+               })}`, {
+                   align: 'center'
+               });
+
+            // Add a border to the page
+            doc.rect(20, 20, doc.page.width - 40, doc.page.height - 40)
+               .stroke('#E5E7EB');
+
             doc.end();
 
         } catch (error) {
@@ -273,7 +361,7 @@ export const userOrderController = {
             }
 
             // Find the specific item with matching product ID and variant
-            const itemIndex = order.products.findIndex(item => 
+            const itemIndex = order.products.findIndex(item =>
                 item.product._id.toString() === productId && 
                 item.status !== 'cancelled' // Only find non-cancelled items
             );
@@ -320,7 +408,7 @@ export const userOrderController = {
             const variant = product.variants.id(item.variant);
             if (variant) {
                 variant.stock += Number(item.quantity);
-                await product.save();
+            await product.save();
             }
 
             // Update item status
