@@ -60,14 +60,14 @@ export const updateItemStatus = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
-        // Find the specific product in the order
-        const productItem = order.products.find(item =>
-            item.product.toString() === productId
+        // Find the specific product item in the order that hasn't been cancelled yet
+        const productItem = order.products.find(item => 
+            item.product.toString() === productId && 
+            item.status !== 'cancelled'
         );
-        console.log("Product Item:", productItem)
         
         if (!productItem) {
-            return res.status(404).json({ success: false, message: 'Product not found in order' });
+            return res.status(404).json({ success: false, message: 'Product not found in order or already cancelled' });
         }
 
         // If status is being changed to cancelled, update the variant stock
@@ -77,22 +77,27 @@ export const updateItemStatus = async (req, res) => {
                 return res.status(404).json({ success: false, message: 'Product not found' });
             }
 
-            // Find the specific variant
-            const variant = product.variants.find(v => 
-                v._id.toString() === productItem.variant.toString()
-            );
-
+            // Find the specific variant using the variant ID from the order item
+            const variant = product.variants.id(productItem.variant);
             if (!variant) {
                 return res.status(404).json({ success: false, message: 'Variant not found' });
             }
 
-            // Update the variant stock
+            // Update the specific variant's stock
             variant.stock += productItem.quantity;
             await product.save();
         }
 
-        // Update product status
+        // Update product status and add to status history if it exists
         productItem.status = status;
+        if (!productItem.statusHistory) {
+            productItem.statusHistory = [];
+        }
+        productItem.statusHistory.push({
+            status: status,
+            date: new Date(),
+            comment: `Status updated to ${status} by admin`
+        });
 
         // Update payment status based on product status
         if (status === 'cancelled') {
