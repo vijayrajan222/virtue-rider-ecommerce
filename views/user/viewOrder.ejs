@@ -183,7 +183,9 @@
 
                                 <!-- Action Buttons -->
                                 <div class="p-6 flex justify-end gap-4">
-                                  
+                                    <% if (order.products.every(item => ['delivered', 'returned', 'refund processing'].includes(item.status))) { %>
+                                      
+                                    <% } %>
 
                                     <% if (order.paymentMethod === 'razorpay' && order.paymentStatus === 'failed') { %>
                                         <button onclick="retryPayment('<%= order._id %>')"

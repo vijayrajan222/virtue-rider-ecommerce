@@ -4,7 +4,7 @@ import {
     gethomePage, 
     getloginPage, 
     getsignUpPage, 
-    getforgotPasswordPage 
+    getforgotPasswordPage
 } from '../controllers/user/userController.js';
 import { 
     postSignUp, 
@@ -16,7 +16,9 @@ import {
     resetPassword,
     getGoogle,
     logout,
-    getGoogleCallback 
+    getGoogleCallback,
+    getChangePasswordPage,
+    changePassword
 } from '../controllers/user/authController.js';
 import { getShop } from '../controllers/user/shopController.js';  
 import{getProductDetails} from '../controllers/user/productviewController.js'
@@ -86,6 +88,9 @@ userRouter.post('/cart/add', userMiddlewares.checkSession, addToCart);
 userRouter.post('/cart/update-quantity', userMiddlewares.checkSession, updateQuantity);
 
 userRouter.delete('/cart/remove/:productId', userMiddlewares.checkSession, removeFromCart);
+
+userRouter.get('/change-password', userMiddlewares.checkSession, getChangePasswordPage);
+userRouter.post('/change-password', userMiddlewares.checkSession, changePassword);
 
 export default userRouter;
 
