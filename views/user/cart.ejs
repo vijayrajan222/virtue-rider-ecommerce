@@ -49,7 +49,7 @@
                     <div class="flex justify-between">
                       <h3 class="font-semibold text-gray-800"><%= item.product.productName %></h3>
                       <button 
-                        onclick="removeFromCart(this, '<%= item.product._id %>')"
+                        onclick="removeFromCart(this, '<%= item.product._id %>', '<%= item.variant ? item.variant._id : null %>')"
                         class="text-red-500"
                       >
                         <i class="fas fa-trash-alt"></i>
@@ -57,7 +57,7 @@
                     </div>
                     <p class="text-sm text-gray-500">Color: <%= item.product.color %></p>
                     <p class="text-sm text-gray-500">Size: <%= item.variant ? item.variant.size : 'N/A' %></p>
-                    <p class="text-sm text-green-500"><%= item.variant && item.variant.stock > 0 ? 'In Stock' : 'Out of Stock' %></p>
+                    <p class="text-sm text-green-500"><%= item.product.stock> 0 ? 'In Stock' : 'Out of Stock' %></p>
                     <div class="mt-2 flex justify-between items-center">
                       <div class="flex items-center bg-gray-100 rounded-lg">
                         <button 
@@ -125,11 +125,11 @@
                             Size: <%= item.variant ? item.variant.size : 'N/A' %>
                           </p>
                           <p class="text-green-500 text-sm mt-1">
-                            <%= item.variant && item.variant.stock > 0 ? 'In Stock' : 'Out of Stock' %>
+                            <%= item.variant.stock > 0 ? 'In Stock' : 'Out of Stock' %>
                           </p>
                         </div>
                         <button 
-                            onclick="removeFromCart(this, '<%= item.product._id %>')" 
+                            onclick="removeFromCart(this, '<%= item.product._id %>', '<%= item.variant ? item.variant._id : null %>')" 
                             class="text-red-500 hover:text-red-700 transition-colors"
                         >
                             <i class="fas fa-trash-alt"></i>
@@ -439,40 +439,52 @@
         }, 0);
       }
 
-      async function removeFromCart(button, productId) {
-        const confirmed = await showAlert('confirm');
-        
-        if (confirmed) {
-            try {
-                const response = await fetch(`/cart/remove/${productId}`, {
-                    method: 'DELETE'
-                });
+      async function removeFromCart(button, productId, variantId) {
+        try {
+            const confirmed = await showAlert('confirm');
+            
+            if (!confirmed) return;
 
-                const data = await response.json();
+            // Log the request details for debugging
+            console.log('Removing item:', { productId, variantId });
 
-                if (response.ok) {
-                    // Remove the item from the cart UI
-                    const cartItem = document.getElementById(`cart-item-${productId}`);
-                    if (cartItem) {
-                        cartItem.remove();
-                    }
-
-                    // Update totals
-                    updateCartTotals(data.total);
-                    
-                    // Show success message
-                    await showAlert('success', data.message);
-                    
-                    // Reload if cart is empty
-                    if (data.itemCount === 0) {
-                        window.location.reload();
-                    }
-                } else {
-                    throw new Error(data.message);
+            const response = await fetch(`/cart/remove/${productId}/${variantId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-            } catch (error) {
-                showAlert('error', error.message || 'Failed to remove item');
+            });
+
+            // Log the response for debugging
+            console.log('Response status:', response.status);
+
+            // Check if response is ok before trying to parse JSON
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
+
+            const data = await response.json();
+            console.log('Response data:', data);
+
+            // Remove the item from the cart UI
+            const cartItem = document.getElementById(`cart-item-${productId}`);
+            if (cartItem) {
+                cartItem.remove();
+            }
+
+            // Update totals
+            updateCartTotals(data.total);
+            
+            // Show success message
+            await showAlert('success', data.message);
+            
+            // Reload if cart is empty
+            if (data.itemCount === 0) {
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error('Error removing item:', error);
+            showAlert('error', 'Failed to remove item from cart');
         }
       }
 

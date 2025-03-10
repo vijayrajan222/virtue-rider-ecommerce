@@ -87,7 +87,7 @@ userRouter.post('/cart/add', userMiddlewares.checkSession, addToCart);
 
 userRouter.post('/cart/update-quantity', userMiddlewares.checkSession, updateQuantity);
 
-userRouter.delete('/cart/remove/:productId', userMiddlewares.checkSession, removeFromCart);
+userRouter.delete('/cart/remove/:productId/:variantId', userMiddlewares.checkSession, removeFromCart);
 
 userRouter.get('/change-password', userMiddlewares.checkSession, getChangePasswordPage);
 userRouter.post('/change-password', userMiddlewares.checkSession, changePassword);
