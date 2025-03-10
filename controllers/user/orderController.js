@@ -9,7 +9,7 @@ export const userOrderController = {
             const user = await User.findById(req.session.user);
             const userId = req.session.user;
             const page = parseInt(req.query.page) || 1;
-            const limit = 5;
+            const limit = 6;
     
             const totalOrders = await Order.countDocuments({ user: userId });
             const totalPages = Math.ceil(totalOrders / limit);

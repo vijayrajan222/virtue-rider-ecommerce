@@ -40,38 +40,86 @@ import mongoose from 'mongoose'
             
             // Validate inputs
             if (!categoryName.trim() || !categoryDescription.trim()) {
-                return res.status(400).send('Category name and description are required');
+                return res.status(400).json({
+                    success: false,
+                    message: 'Category name and description are required'
+                });
             }
 
-            // Check if category already exists
-            const existingCategory = await Category.findOne({ name: categoryName });
+            // Check if category already exists (case insensitive)
+            const existingCategory = await Category.findOne({
+                name: { $regex: new RegExp(`^${categoryName}$`, 'i') }
+            });
+
             if (existingCategory) {
-                return res.status(400).send('Category already exists');
+                return res.status(400).json({
+                    success: false,
+                    message: 'Category already exists'
+                });
             }
 
-            // Create new category
+            // Create new category with capitalized first letter
+            const formattedName = categoryName.trim()
+                .toLowerCase()
+                .replace(/\b\w/g, char => char.toUpperCase());
+
             const newCategory = new Category({
-                name: categoryName,
-                description: categoryDescription,
+                name: formattedName,
+                description: categoryDescription.trim(),
                 isActive: true
             });
 
             await newCategory.save();
-            res.status(200).send('Category added successfully');
+            
+            res.status(200).json({
+                success: true,
+                message: 'Category added successfully',
+                category: newCategory
+            });
         } catch (error) {
-            res.status(500).send('Failed to add category');
+            console.error('Error adding category:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to add category'
+            });
         }
     },
 
     createCategory : async (req, res) => {
         try {
             const { name, description } = req.body;
-            const category = new Category({
-                name,
-                description
+
+            if (!name.trim() || !description.trim()) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Category name and description are required'
+                });
+            }
+
+            // Check for existing category (case insensitive)
+            const existingCategory = await Category.findOne({
+                name: { $regex: new RegExp(`^${name}$`, 'i') }
             });
+
+            if (existingCategory) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Category already exists'
+                });
+            }
+
+            // Format the category name (capitalize first letter of each word)
+            const formattedName = name.trim()
+                .toLowerCase()
+                .replace(/\b\w/g, char => char.toUpperCase());
+
+            const category = new Category({
+                name: formattedName,
+                description: description.trim()
+            });
+
             await category.save();
-    
+
             res.status(201).json({
                 success: true,
                 message: 'Category created successfully',
@@ -93,25 +141,57 @@ import mongoose from 'mongoose'
 
             // Validate inputs
             if (!categoryName.trim() || !categoryDescription.trim()) {
-                return res.status(400).send('Category name and description are required');
+                return res.status(400).json({
+                    success: false,
+                    message: 'Category name and description are required'
+                });
             }
+
+            // Check if another category with the same name exists (excluding current category)
+            const existingCategory = await Category.findOne({
+                _id: { $ne: categoryId },
+                name: { $regex: new RegExp(`^${categoryName}$`, 'i') }
+            });
+
+            if (existingCategory) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Category name already exists'
+                });
+            }
+
+            // Format the category name
+            const formattedName = categoryName.trim()
+                .toLowerCase()
+                .replace(/\b\w/g, char => char.toUpperCase());
 
             const updatedCategory = await Category.findByIdAndUpdate(
                 categoryId,
                 {
-                    name: categoryName,
-                    description: categoryDescription
+                    name: formattedName,
+                    description: categoryDescription.trim()
                 },
                 { new: true }
             );
 
             if (!updatedCategory) {
-                return res.status(404).send('Category not found');
+                return res.status(404).json({
+                    success: false,
+                    message: 'Category not found'
+                });
             }
 
-            res.status(200).send('Category updated successfully');
+            res.status(200).json({
+                success: true,
+                message: 'Category updated successfully',
+                category: updatedCategory
+            });
         } catch (error) {
-            res.status(500).send('Failed to update category');
+            console.error('Error updating category:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to update category'
+            });
         }
     },
 
