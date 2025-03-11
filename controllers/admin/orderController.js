@@ -14,11 +14,9 @@ export const getOrders = async (req, res) => {
             })
             .sort({ createdAt: -1 });
 
-        // Process orders to include variant information
         const processedOrders = orders.map(order => {
             const orderObject = order.toObject();
             orderObject.products = orderObject.products.map(item => {
-                // Find the matching variant from product variants array
                 if (item.product && item.product.variants && item.variant) {
                     const variant = item.product.variants.find(v => 
                         v._id.toString() === item.variant.toString()
@@ -60,7 +58,6 @@ export const updateItemStatus = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
-        // Find the specific product item in the order that hasn't been cancelled yet
         const productItem = order.products.find(item => 
             item.product.toString() === productId && 
             item.status !== 'cancelled'
@@ -70,14 +67,12 @@ export const updateItemStatus = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Product not found in order or already cancelled' });
         }
 
-        // If status is being changed to cancelled, update the variant stock
         if (status === 'cancelled') {
             const product = await Product.findById(productId);
             if (!product) {
                 return res.status(404).json({ success: false, message: 'Product not found' });
             }
 
-            // Find the specific variant using the variant ID from the order item
             const variant = product.variants.id(productItem.variant);
             if (!variant) {
                 return res.status(404).json({ success: false, message: 'Variant not found' });
@@ -88,7 +83,6 @@ export const updateItemStatus = async (req, res) => {
             await product.save();
         }
 
-        // Update product status and add to status history if it exists
         productItem.status = status;
         if (!productItem.statusHistory) {
             productItem.statusHistory = [];
@@ -99,7 +93,6 @@ export const updateItemStatus = async (req, res) => {
             comment: `Status updated to ${status} by admin`
         });
 
-        // Update payment status based on product status
         if (status === 'cancelled') {
             // Check if all products are cancelled
             const allCancelled = order.products.every(item => item.status === 'cancelled');
@@ -107,7 +100,6 @@ export const updateItemStatus = async (req, res) => {
                 order.paymentStatus = 'failed';
             }
         } else if (status === 'delivered' && order.paymentMethod === 'cod') {
-            // For COD orders, check if all products are either delivered or cancelled
             const allDelivered = order.products.every(item =>
                 item.status === 'delivered' || item.status === 'cancelled'
             );

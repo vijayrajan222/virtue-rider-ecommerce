@@ -17,8 +17,8 @@ const gethomePage = async (req, res) => {
     try {
         // Fetch latest products
         const products = await Product.find({ isHidden: false })
-            .sort({ createdAt: -1 })  // Sort by newest first
-            .limit(10)  // Limit to 10 products
+            .sort({ createdAt: -1 }) 
+            .limit(10)  
             .populate('categoryId');
 
         res.render('user/home', {

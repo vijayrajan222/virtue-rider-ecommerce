@@ -1,8 +1,6 @@
 import User from '../../models/userModel.js';
-// User Management Controllers
 const getUsers = async (req, res) => {
     try {
-        // Pagination parameters
         const page = parseInt(req.query.page) || 1;
         const limit = 10; // Items per page
         const skip = (page - 1) * limit;
@@ -11,14 +9,12 @@ const getUsers = async (req, res) => {
         const totalUsers = await User.countDocuments();
         const totalPages = Math.ceil(totalUsers / limit);
 
-        // Get users for current page with field selection
         const userList = await User.find()
             .select('firstname lastname email isBlocked isVerified')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
-        // Map the users to match the view's expected format
         const mappedUserList = userList.map(user => ({
             _id: user._id,
             firstName: user.firstname,
@@ -28,7 +24,6 @@ const getUsers = async (req, res) => {
             isVerified: user.isVerified
         }));
 
-        // Render the userList view with correct variable name
         res.render('admin/userList', {
             userList: mappedUserList,
             currentPage: page,
@@ -62,7 +57,6 @@ const toggleUserStatus = async (req, res) => {
         user.isBlocked = !user.isBlocked;
         await user.save();
 
-        // Return JSON response for API calls
         if (req.xhr || req.headers.accept.indexOf('json') > -1) {
             return res.json({
                 success: true,
@@ -70,7 +64,6 @@ const toggleUserStatus = async (req, res) => {
             });
         }
 
-        // Fallback to redirect for regular form submissions
         res.redirect('/admin/userList');
     } catch (err) {
         console.error(err);

@@ -96,7 +96,6 @@ import mongoose from 'mongoose'
                 });
             }
 
-            // Check for existing category (case insensitive)
             const existingCategory = await Category.findOne({
                 name: { $regex: new RegExp(`^${name}$`, 'i') }
             });
@@ -108,7 +107,6 @@ import mongoose from 'mongoose'
                 });
             }
 
-            // Format the category name (capitalize first letter of each word)
             const formattedName = name.trim()
                 .toLowerCase()
                 .replace(/\b\w/g, char => char.toUpperCase());
@@ -147,7 +145,6 @@ import mongoose from 'mongoose'
                 });
             }
 
-            // Check if another category with the same name exists (excluding current category)
             const existingCategory = await Category.findOne({
                 _id: { $ne: categoryId },
                 name: { $regex: new RegExp(`^${categoryName}$`, 'i') }
@@ -160,7 +157,6 @@ import mongoose from 'mongoose'
                 });
             }
 
-            // Format the category name
             const formattedName = categoryName.trim()
                 .toLowerCase()
                 .replace(/\b\w/g, char => char.toUpperCase());
@@ -195,7 +191,6 @@ import mongoose from 'mongoose'
         }
     },
 
-    // Toggle category status
     toggleCategory : async (req, res) => {
         try {
             const { id } = req.query;
@@ -330,7 +325,6 @@ export const deleteCategory = async (req, res) => {
             });
         }
 
-        // Optional: Update products that use this category
         await Product.updateMany(
             { categoryId: req.params.id },
             { $unset: { categoryId: 1 } }

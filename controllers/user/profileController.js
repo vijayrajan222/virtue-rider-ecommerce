@@ -14,7 +14,7 @@ export const getProfilePage = async (req, res) => {
 
 export const updateProfile =async (req, res) => {
   try {
-      const { firstName, lastName } = req.body; // Removed email since it's not being updated
+      const { firstName, lastName } = req.body; 
       
       // Validation checks
       const nameRegex = /^[A-Za-z]+$/;
@@ -38,7 +38,6 @@ export const updateProfile =async (req, res) => {
           errors.push('Last name can only contain letters');
       }
 
-      // If there are validation errors, return them
       if (errors.length > 0) {
           return res.status(400).json({ 
               message: errors.join(', ')
@@ -47,7 +46,7 @@ export const updateProfile =async (req, res) => {
       
       // Update user profile if validation passes
       const updatedUser = await User.findByIdAndUpdate(
-          req.session.user, // Use the user ID from the session
+          req.session.user, 
           {
               firstName: firstName.trim(),
               lastName: lastName.trim(),

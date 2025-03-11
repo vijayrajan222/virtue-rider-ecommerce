@@ -1,8 +1,8 @@
 import Category from '../../models/categoryModel.js';
 import Product from '../../models/productModel.js';
-import path from 'path';  // Add this import
-import fs from 'fs';      // Add this import
-import { fileURLToPath } from 'url';  // Add this import
+import path from 'path';  
+import fs from 'fs';      
+import { fileURLToPath } from 'url';  
 import { dirname } from 'path';    
 import mongoose from "mongoose";
 
@@ -54,27 +54,21 @@ export const updateProduct = async (req, res) => {
         // Update images based on uploaded files
         if (req.files) {
             if (req.files.image1) {
-                // Delete old image1 if it exists
                 if (images[0]) {
                     deleteOldImage(images[0]);
                 }
-                // Replace image1 with the new one
                 images[0] = '/uploads/products/' + req.files.image1[0].filename;
             }
             if (req.files.image2) {
-                // Delete old image2 if it exists
                 if (images[1]) {
                     deleteOldImage(images[1]);
                 }
-                // Replace image2 with the new one
                 images[1] = '/uploads/products/' + req.files.image2[0].filename;
             }
             if (req.files.image3) {
-                // Delete old image3 if it exists
                 if (images[2]) {
                     deleteOldImage(images[2]);
                 }
-                // Replace image3 with the new one
                 images[2] = '/uploads/products/' + req.files.image3[0].filename;
             }
         }
@@ -93,7 +87,6 @@ export const updateProduct = async (req, res) => {
                 product.variants[index].size = newVariant.size;
                 product.variants[index].stock = parseInt(newVariant.stock);
             } else {
-                // Add new variant
                 product.variants.push({
                     size: newVariant.size,
                     stock: parseInt(newVariant.stock)
@@ -101,7 +94,6 @@ export const updateProduct = async (req, res) => {
             }
         });
 
-        // Remove extra variants if new variants array is shorter
         if (newVariants.length < product.variants.length) {
             product.variants = product.variants.slice(0, newVariants.length);
         }
@@ -170,7 +162,6 @@ export const removeProductImage = async (req, res) => {
             });
         }
 
-        // Remove the image from the array
         product.variants[variantIndex].images.splice(imageIndex, 1);
         await product.save();
 
@@ -207,7 +198,6 @@ export const editProduct = async (req, res) => {
             return res.status(404).json({ message: 'Product not found' });
         }
 
-        // Update basic product info
         product.productName = productName;
         product.brand = brand;
         product.categoryId = categoriesId;
@@ -216,7 +206,6 @@ export const editProduct = async (req, res) => {
         product.price = price;
         product.stock = stock;
 
-        // Handle image updates if new images are uploaded
         if (req.files && req.files.length > 0) {
             const imageIndexes = req.body.imageIndexes ? req.body.imageIndexes.split(',') : [];
             const newImages = req.files.map(file => file.path);
@@ -236,7 +225,6 @@ export const editProduct = async (req, res) => {
             });
         }
 
-        // Save the updated product
         await product.save();
 
         res.status(200).json({
@@ -275,7 +263,6 @@ export const addProduct = async (req, res) => {
         }
         // console.log(req.files);
         
-        // Handle image uploads
         const images = [];
         if (req.files) {
             if (req.files.image1) {
@@ -298,7 +285,7 @@ export const addProduct = async (req, res) => {
             brand: brand || 'VR',
             variants: variants.map(variant => ({
                 size: variant.size,
-                stock: parseInt(variant.stock), // Assign all images to each variant
+                stock: parseInt(variant.stock), 
             })),
             color,
             price: Number(price),
@@ -351,7 +338,7 @@ export const getProducts = async (req, res) => {
     try {
         // Pagination parameters
         const page = parseInt(req.query.page) || 1;
-        const limit = 10; // Items per page
+        const limit = 10; 
         const skip = (page - 1) * limit;
 
         // Get total count of products
@@ -368,7 +355,6 @@ export const getProducts = async (req, res) => {
         // Get all categories for the form
         const categories = await Category.find().sort({ name: 1 });
 
-        // Render the products page with all necessary data
         res.render('admin/products', {
             products,
             categories,
@@ -409,7 +395,7 @@ export const getProductById = async (req, res) => {
             success: true,
             product: {
                 ...product._doc,
-                images // Updated to full URLs
+                images 
             }
         });
 

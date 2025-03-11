@@ -30,7 +30,7 @@ const userCheckoutController = {
                 const product = item.productId;
                 const variant = product.variants.find(v => v._id.equals(item.variantId)); 
                 if (!variant || variant.stock < item.quantity) {
-                    stockCheck = false; // Insufficient stock
+                    stockCheck = false; 
                 }
 
                 return {
@@ -136,7 +136,7 @@ const userCheckoutController = {
                 quantity: item.quantity,
                 price: item.price,
                 subtotal: item.quantity * item.price,
-                variant: item.variantId, // Ensure to include the variant ID
+                variant: item.variantId, 
 
                 return: {
                     isReturnRequested: false,

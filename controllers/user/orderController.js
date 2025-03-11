@@ -23,7 +23,6 @@ export const userOrderController = {
                 .skip((page - 1) * limit)
                 .limit(limit);
 
-            // Process orders to include variant information
             const processedOrders = orders.map(order => {
                 const orderObject = order.toObject();
                 orderObject.products = orderObject.products.map(item => {
@@ -77,7 +76,6 @@ export const userOrderController = {
                 });
             }
 
-            // Find the specific item
             const itemIndex = order.products.findIndex(item =>
                 item.product._id.toString() === productId
             );
@@ -91,7 +89,6 @@ export const userOrderController = {
 
             const item = order.products[itemIndex];
 
-            // Check if item is delivered
             if (item.status !== 'delivered') {
                 return res.status(400).json({
                     success: false,
@@ -122,7 +119,6 @@ export const userOrderController = {
                 order.paymentStatus = 'processing';
             }
 
-            // Mark the modified paths
             order.markModified('products');
             order.markModified('paymentStatus');
 
@@ -240,7 +236,6 @@ export const userOrderController = {
             doc.font('Helvetica-Bold')
                .fontSize(10);
 
-            // Table headers with better spacing
             const tableHeaders = {
                 item: { x: 50, width: 250 },
                 quantity: { x: 300, width: 75 },
@@ -253,11 +248,9 @@ export const userOrderController = {
                .text('PRICE', tableHeaders.price.x, tableTop)
                .text('TOTAL', tableHeaders.total.x, tableTop);
 
-            // Draw header bottom line
             drawLine(doc.y + 5);
             doc.moveDown();
 
-            // Add product details
             doc.font('Helvetica')
                .fontSize(10);
 
@@ -267,13 +260,11 @@ export const userOrderController = {
                .text(`₹${orderItem.price.toFixed(2)}`, tableHeaders.price.x, productY)
                .text(`₹${(orderItem.price * orderItem.quantity).toFixed(2)}`, tableHeaders.total.x, productY);
 
-            // Add variant info if available
             if (orderItem.variantInfo && orderItem.variantInfo.size) {
                 doc.fontSize(9)
                    .text(`Size: ${orderItem.variantInfo.size}`, tableHeaders.item.x, doc.y);
             }
 
-            // Draw line after product details
             doc.moveDown();
             drawLine(doc.y + 5);
 
@@ -284,19 +275,16 @@ export const userOrderController = {
                .text('Subtotal:', tableHeaders.price.x, totalY)
                .text(`₹${(orderItem.price * orderItem.quantity).toFixed(2)}`, tableHeaders.total.x, totalY);
 
-            // Add some space before thank you message
-            doc.moveDown(4); // Adjust this value to move the message up or down
+            doc.moveDown(4); 
 
-            // Add "Thank you" message with proper sizing and spacing
             doc.font('Helvetica-Bold')
-               .fontSize(14) // Reduced font size
+               .fontSize(14) 
                .fillColor('#1F2937')
                .text('Thank You For Shopping With Us!', {
                    align: 'center',
-                   width: 500 // This ensures the text stays centered within this width
+                   width: 500 
                });
 
-            // Add some space before footer
             doc.moveDown(2);
 
             // Footer section
@@ -353,7 +341,6 @@ export const userOrderController = {
                 });
             }
 
-            // Find the specific item with matching product ID and variant
             const itemIndex = order.products.findIndex(item =>
                 item.product._id.toString() === productId && 
                 item.status !== 'cancelled' // Only find non-cancelled items
@@ -373,7 +360,6 @@ export const userOrderController = {
                 item.statusHistory = [];
             }
 
-            // Check if item.status is defined before accessing it
             if (!item.status) {
                 return res.status(400).json({
                     success: false,
@@ -397,7 +383,6 @@ export const userOrderController = {
                 });
             }
 
-            // Find the specific variant and update its stock
             const variant = product.variants.id(item.variant);
             if (variant) {
                 variant.stock += Number(item.quantity);

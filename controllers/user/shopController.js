@@ -12,7 +12,6 @@ export const getShop = async (req, res) => {
         //  console.log("Categories fetched:", categories); // Debugging log
 
 
-        // Build filter query
         const filter = { 
             isActive: true,
             $expr: {
@@ -115,7 +114,6 @@ console.log("search",req.query.search)
         .limit(limit);
         // console.log("Fetched Products:", products); // Debugging log
        
-        // Filter out products where category wasn't populated
         const filteredProducts = products.filter(product => product.categoryId);
 
         // Get total count for pagination

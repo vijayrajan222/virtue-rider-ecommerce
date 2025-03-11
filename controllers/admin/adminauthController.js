@@ -2,7 +2,6 @@ import { config } from 'dotenv';
 
 config();
 
-// Admin Authentication Controllers
 export const getAdminLogin = async (req, res) => {
     try {
         if (req.session.admin) {

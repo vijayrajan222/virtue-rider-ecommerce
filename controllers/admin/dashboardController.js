@@ -22,7 +22,6 @@ export const getDashboard = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(5);
 
-        // Get top selling products
         const topProducts = await Product.find()
             .sort({ 'sales': -1 })
             .limit(5);
@@ -46,7 +45,6 @@ export const getDashboard = async (req, res) => {
             { $sort: { _id: 1 } }
         ]);
 
-        // Prepare data object
         const data = {
             totalUsers,
             totalProducts,
@@ -69,9 +67,8 @@ export const getDashboard = async (req, res) => {
             })
         };
 
-        // Render dashboard with all data
         res.render('admin/dashboard', {
-            path: '/admin/dashboard', // Use exact path instead of req.path
+            path: '/admin/dashboard', 
             title: 'Dashboard',
             data,
             admin: req.session.admin
