@@ -1,5 +1,5 @@
 export const checkSession = (req, res, next) => {
-    if (req.session.admin) {  // Changed from isAdminAuth to admin
+    if (req.session.admin) {  
         next();
     } else {
         res.redirect('/admin/login');

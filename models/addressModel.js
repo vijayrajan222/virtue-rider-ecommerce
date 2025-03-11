@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const addressSchema = new mongoose.Schema({
     userId: {
-        type: String, // Change this to String to match the UUID format
+        type: String, 
         required: true,
     },
     fullName: {
@@ -12,7 +12,7 @@ const addressSchema = new mongoose.Schema({
         maxlength: 10
     },
     mobileNumber: {
-        type: String, // Change to String to handle leading zeros
+        type: String, 
         required: true
     },
     addressLine1: {
