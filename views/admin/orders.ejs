@@ -65,22 +65,16 @@
                                                     <% order.products.forEach(item=> { %>
                                                         <div class="flex items-center justify-between gap-2 p-2 bg-gray-800 rounded"
                                                             data-order="<%= order._id %>"
-                                                            data-product="<%= item.product._id %>">
+                                                            data-product="<%= item.product._id %>"
+                                                            data-variant="<%= item.variant %>">
                                                             <div class="flex-1">
                                                                 <button onclick="showProductDetails(
-                                                                    '<%= JSON.stringify(item).replace(/'/g, '\\\'') %>', 
-                                                                    '<%= JSON.stringify(order).replace(/'/g, '\\\'') %>'
-                                                                )" class="text-sm text-blue-400 hover:text-blue-300">
+                                                                '<%= JSON.stringify(item).replace(/'/g, '\\\'') %>', 
+                                                                '<%= JSON.stringify(order).replace(/'/g, '\\\'') %>'
+                                                            )" class="text-sm text-blue-400 hover:text-blue-300">
                                                                     <%= item.product.name %> (×<%= item.quantity %>)
                                                                 </button>
-                                                                <div class="text-xs text-gray-400">
-                                                                    ₹<%= item.price %>
-                                                                    <% if (item.variant && item.product.variants) { %>
-                                                                        <% const variant = item.product.variants.find(v => v._id.toString() === item.variant.toString()); %>
-                                                                        <% if (variant) { %>
-                                                                            • Size: <%= variant.size %>
-                                                                        <% } %>
-                                                                    <% } %>
+                                                                <div class="text-xs text-gray-400">₹<%= item.price %>
                                                                 </div>
                                                             </div>
                                                             <!-- Status and Actions -->
@@ -97,7 +91,7 @@
                                                                 <% if (!['delivered', 'cancelled' , 'return_rejected'
                                                                     , 'returned', 'return_pending','return_approved' ].includes(item.status)) { %>
                                                                     <select
-                                                                        onchange="updateItemStatus(event, '<%= order._id %>', '<%= item.product._id %>')"
+                                                                        onchange="updateItemStatus(event, '<%= order._id %>', '<%= item.product._id %>', '<%= item.variant %>')"
                                                                         class="status-select text-xs rounded bg-zinc-600 text-white border-gray-500">
                                                                         <option value="">Update Status</option>
                                                                         <option value="shipped">Ship</option>
@@ -106,7 +100,7 @@
                                                                     </select>
                                                                     <% }else if(item.status=="return_pending" ){ %>
                                                                         <select
-                                                                            onchange="updateItemStatus(event, '<%= order._id %>', '<%= item.product._id %>')"
+                                                                            onchange="updateItemStatus(event, '<%= order._id %>', '<%= item.product._id %>', '<%= item.variant %>')"
                                                                             class="status-select text-xs rounded bg-zinc-600 text-white border-gray-500">
                                                                             <option value="">Update Status</option>
                                                                             <option value="return_approved">Approve Request</option>
@@ -115,7 +109,7 @@
                                                                         </select>
                                                                         <% }else if(item.status=="return_approved" ){ %>
                                                                             <select
-                                                                                onchange="updateItemStatus(event, '<%= order._id %>', '<%= item.product._id %>')"
+                                                                                onchange="updateItemStatus(event, '<%= order._id %>', '<%= item.product._id %>', '<%= item.variant %>')"
                                                                                 class="status-select text-xs rounded bg-zinc-600 text-white border-gray-500">
                                                                                 <option value="">Update Status</option>
                                                                                 <option value="returned">Returned</option>
@@ -357,9 +351,13 @@
             }
 
             // Helper function to update UI for status changes
-            function updateUIStatus(orderId, productId, newStatus) {
-                const statusElement = document.querySelector(`[data-order="${orderId}"][data-product="${productId}"] .status-badge`);
-                const selectElement = document.querySelector(`[data-order="${orderId}"][data-product="${productId}"] .status-select`);
+            function updateUIStatus(orderId, productId, variantId, newStatus) {
+                const statusElement = document.querySelector(
+                    `[data-order="${orderId}"][data-product="${productId}"][data-variant="${variantId}"] .status-badge`
+                );
+                const selectElement = document.querySelector(
+                    `[data-order="${orderId}"][data-product="${productId}"][data-variant="${variantId}"] .status-select`
+                );
                 const paymentStatusElement = document.querySelector(`[data-order="${orderId}"] .payment-status`);
 
                 if (statusElement) {
@@ -405,7 +403,7 @@
                 if (returnActionsDiv) {
                     if (returnStatus === 'approved') {
                         returnActionsDiv.innerHTML = '';
-                        updateUIStatus(orderId, productId, 'returned');
+                        updateUIStatus(orderId, productId, '', 'returned');
 
                         // Update payment status to refunded
                         if (paymentStatusElement) {
@@ -427,7 +425,7 @@
             }
 
             // Updated status update function
-            async function updateItemStatus(event, orderId, productId) {
+            async function updateItemStatus(event, orderId, productId, variantId) {
                 const status = event.target.value;
                 if (!status) return;
 
@@ -438,7 +436,7 @@
                         hideAlert();
                         showAlert('loading');
 
-                        const response = await fetch(`/admin/orders/${orderId}/items/${productId}/status`, {
+                        const response = await fetch(`/admin/orders/${orderId}/items/${productId}/${variantId}/status`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ status })
@@ -448,7 +446,7 @@
 
                         hideAlert();
                         if (response.ok) {
-                            updateUIStatus(orderId, productId, status);
+                            updateUIStatus(orderId, productId, variantId, status);
                             showAlert('success', 'Status updated successfully');
                         } else {
                             throw new Error(data.message || 'Failed to update status');
