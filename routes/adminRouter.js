@@ -45,10 +45,4 @@ router.get("/orders",adminMiddleware.checkSession,getOrders)
 router.post("/orders/:orderId/items/:productId/status",adminMiddleware.checkSession,updateItemStatus)
 router.post("/orders/:orderId/items/:productId/return",adminMiddleware.checkSession,handleReturnRequest)
 
-router.post(
-    '/orders/:orderId/items/:productId/:variantId/status',
-    adminMiddleware.checkSession,
-    updateItemStatus
-);
-
 export default router;

@@ -45,27 +45,26 @@ export const getOrders = async (req, res) => {
 
 export const updateItemStatus = async (req, res) => {
     try {
-        const { orderId, productId, variantId } = req.params;
+        const { orderId, productId } = req.params;
         const { status } = req.body;
+        console.log("Order ID:", orderId)
+        console.log("Product ID:", productId)
+        console.log("Status:", status)
         
         const order = await Order.findById(orderId);
+        console.log("Order:", order)
         
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
-        // Find the specific product item with matching product ID and variant ID
         const productItem = order.products.find(item => 
             item.product.toString() === productId && 
-            item.variant.toString() === variantId &&
             item.status !== 'cancelled'
         );
         
         if (!productItem) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Product not found in order or already cancelled' 
-            });
+            return res.status(404).json({ success: false, message: 'Product not found in order or already cancelled' });
         }
 
         if (status === 'cancelled') {
@@ -74,8 +73,7 @@ export const updateItemStatus = async (req, res) => {
                 return res.status(404).json({ success: false, message: 'Product not found' });
             }
 
-            // Find the specific variant
-            const variant = product.variants.id(variantId);
+            const variant = product.variants.id(productItem.variant);
             if (!variant) {
                 return res.status(404).json({ success: false, message: 'Variant not found' });
             }
@@ -85,7 +83,6 @@ export const updateItemStatus = async (req, res) => {
             await product.save();
         }
 
-        // Update the status
         productItem.status = status;
         if (!productItem.statusHistory) {
             productItem.statusHistory = [];
@@ -96,7 +93,6 @@ export const updateItemStatus = async (req, res) => {
             comment: `Status updated to ${status} by admin`
         });
 
-        // Handle payment status updates
         if (status === 'cancelled') {
             // Check if all products are cancelled
             const allCancelled = order.products.every(item => item.status === 'cancelled');
@@ -113,7 +109,6 @@ export const updateItemStatus = async (req, res) => {
         }
 
         await order.save();
-        
         res.json({
             success: true,
             message: 'Product status updated successfully',
