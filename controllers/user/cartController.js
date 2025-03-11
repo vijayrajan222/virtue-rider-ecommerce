@@ -1,7 +1,6 @@
 import cartSchema from '../../models/cartModel.js';
 import productSchema from '../../models/productModel.js';
-import mongoose from 'mongoose';
-import Category from '../../models/categoryModel.js';
+
 
 export const getCart = async (req, res) => {
     try {
@@ -34,7 +33,7 @@ export const getCart = async (req, res) => {
                     isActive: product.isActive
                 },
                 variant: {
-                    _id: item.variantId,  // Make sure this is populated
+                    _id: item.variantId,
                     size: product.variants.find(v => v._id.equals(item.variantId))?.size,
                     stock: product.variants.find(v => v._id.equals(item.variantId))?.stock
                 },
@@ -63,7 +62,6 @@ export const getCart = async (req, res) => {
 const calculateFinalPrice = (product) => {
     let finalPrice = product.price;
 
-    // Example: Apply a discount if applicable
     if (product.discount) {
         finalPrice -= (finalPrice * product.discount / 100);
     }
@@ -74,7 +72,7 @@ const calculateFinalPrice = (product) => {
 export const addToCart = async (req, res) => {
     try {
         console.log('hereeeee')
-        const { productId, variantId, quantity = 1 } = req.body; // Ensure variantId is included
+        const { productId, variantId, quantity = 1 } = req.body; 
         console.log("Variant Id"+variantId)
         const userId = req.session.user;
         const product = await productSchema.findById(productId);
@@ -82,7 +80,6 @@ export const addToCart = async (req, res) => {
             return res.status(404).json({ message: "Product not found or inactive" });
         }
 console.log("productssssss:",product)
-        // Find the specific variant
         const variant = product.variants.find(variant => variant._id.toString() === variantId); 
           console.log(variant)
         if (!variant || variant.stock < quantity) {
@@ -105,7 +102,7 @@ console.log("productssssss:",product)
                 productId, 
                 variantId, 
                 quantity, 
-                price: product.price*quantity// Assuming you want to use the variant's price
+                price: product.price*quantity
             };
             cart.items.push(newItem);
         }
@@ -209,8 +206,7 @@ export const removeFromCart = async (req, res) => {
         const { productId, variantId } = req.params;
         const userId = req.session.user;
 
-        console.log('Removing item:', { userId, productId, variantId }); // Debug log
-
+        console.log('Removing item:', { userId, productId, variantId }); 
         // Input validation
         if (!productId || !variantId) {
             return res.status(400).json({ 

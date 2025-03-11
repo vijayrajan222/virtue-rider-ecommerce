@@ -10,19 +10,15 @@ import { getOrders,handleReturnRequest,updateItemStatus } from '../controllers/a
 
 const router = express.Router();
 
-// Admin Authentication Routes (Public)
 router.get('/login', getAdminLogin);
 router.post('/login', postAdminLogin);
 router.get('/logout',adminMiddleware.checkSession, logout);
 
-// Dashboard
 router.get('/dashboard',adminMiddleware.checkSession, getDashboard);
 
-// User Management
 router.get('/users',adminMiddleware.checkSession, getUsers);
 router.put('/users/:id/toggle-status',adminMiddleware.checkSession, toggleUserStatus);
 
-// Product Management
 router.get('/products',adminMiddleware.checkSession, getProducts);
 router.get('/products/:id',adminMiddleware.checkSession, getProductById);
 router.post('/products',adminMiddleware.checkSession, upload.fields([
@@ -39,7 +35,6 @@ router.delete('/products/:id',adminMiddleware.checkSession, deleteProduct);
 router.patch('/products/:id/toggle-visibility',adminMiddleware.checkSession, toggleProductVisibility);
 router.post('/products/:id/remove-image',adminMiddleware.checkSession, removeProductImage);
 
-// Category Management
 router.get('/categories',adminMiddleware.checkSession, getCategories);
 router.post('/categories',adminMiddleware.checkSession, createCategory);
 router.get('/categories/:id',adminMiddleware.checkSession, getCategoryById);
@@ -47,9 +42,7 @@ router.put('/categories/:id',adminMiddleware.checkSession, updateCategory);
 router.delete('/categories/:id',adminMiddleware.checkSession, deleteCategory);
 
 router.get("/orders",adminMiddleware.checkSession,getOrders)
-
 router.post("/orders/:orderId/items/:productId/status",adminMiddleware.checkSession,updateItemStatus)
-
 router.post("/orders/:orderId/items/:productId/return",adminMiddleware.checkSession,handleReturnRequest)
 
 export default router;

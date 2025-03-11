@@ -1,11 +1,11 @@
 import addressSchema from '../../models/addressModel.js';
-import User from '../../models/userModel.js'; // Assuming you are using User model for user-related operations
+import User from '../../models/userModel.js'; 
 
 export const getAddress = async (req, res) => {
     try {
-        const userId = req.session.user; // This should be a UUID string
-        const user = await User.findById(userId); // Ensure this is a valid user ID
-        const addresses = await addressSchema.find({ userId: userId }); // userId as string
+        const userId = req.session.user; 
+        const user = await User.findById(userId); 
+        const addresses = await addressSchema.find({ userId: userId }); 
         res.render('user/address', { addresses, user });
     } catch (error) {
         console.error('Error fetching addresses:', error);
@@ -13,11 +13,10 @@ export const getAddress = async (req, res) => {
     }
 };
 
-// Other functions remain unchanged
+
 
 export const addAddress = async (req, res) => {
     try {
-        // Check existing addresses count
         const addressCount = await addressSchema.countDocuments({ userId: req.session.user });
         
         if (addressCount >= 3) {
@@ -49,7 +48,7 @@ export const addAddress = async (req, res) => {
 
 export const deleteAddress = async (req, res) => {
     try {
-        const addressId = req.params.id; // Get address ID from request parameters
+        const addressId = req.params.id; 
         const deletedAddress = await addressSchema.findOneAndDelete({ _id: addressId, userId: req.session.user });
 
         if (!deletedAddress) {
@@ -65,7 +64,7 @@ export const deleteAddress = async (req, res) => {
 
 export const editAddress = async (req, res) => {
     try {
-        const addressId = req.params.id; // Get address ID from request parameters
+        const addressId = req.params.id; 
         const { fullName, mobileNumber, addressLine1, addressLine2, city, state, pincode } = req.body;
         
         // Validate required fields
@@ -74,7 +73,7 @@ export const editAddress = async (req, res) => {
         }
 
         const updatedAddress = await addressSchema.findOneAndUpdate(
-            { _id: addressId, userId: req.session.user }, // Ensure the address belongs to the user
+            { _id: addressId, userId: req.session.user }, 
             {
                 fullName,
                 mobileNumber,

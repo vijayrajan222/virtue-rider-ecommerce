@@ -73,9 +73,9 @@ export const login = async (req, res) => {
         res.render('user/login')
     } catch (error) {
         console.error('Error rendering login page:', error);
-        res.status(500).render('error', { 
+        res.status(500).render('error', {
             message: 'Error loading login page',
-            error: error.message 
+            error: error.message
         });
     }
 }
@@ -134,7 +134,7 @@ export const postLogin = async (req, res) => {
         req.session.isLoggedIn = true;
 
         res.status(200).json({
-            user : user,
+            user: user,
             success: true,
             message: 'Login successful',
             redirectUrl: '/home'
@@ -207,7 +207,7 @@ export const verifyOTP = async (req, res) => {
 export const resendOTP = async (req, res) => {
     try {
         const { email } = req.body;
-        
+
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
             return res.status(400).json({
@@ -256,7 +256,7 @@ export const sendForgotPasswordOTP = async (req, res) => {
 
         // Generate OTP
         const otp = generateOTP();
-        
+
         // Save OTP to user
         user.resetPasswordToken = otp;
         user.resetPasswordExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
@@ -358,7 +358,7 @@ export const resetPassword = async (req, res) => {
 export const getGoogle = (req, res) => {
     // Store the trigger in session before redirecting to Google
     req.session.authTrigger = req.query.trigger;
-    
+
     passport.authenticate("google", {
         scope: ["email", "profile"],
     })(req, res);
@@ -370,13 +370,13 @@ export const getGoogleCallback = (req, res) => {
             if (err || !profile) {
                 return res.redirect("/login?message=Authentication failed&alertType=error");
             }
-            
+
             const existingUser = await User.findOne({ email: profile.email });
 
             const names = profile.displayName.split(' ');
             const firstName = names[0];
             const lastName = names.slice(1).join(' ')
-            
+
             // If user exists, check if blocked before logging in
             if (existingUser) {
                 // Check if user is blocked
@@ -388,11 +388,13 @@ export const getGoogleCallback = (req, res) => {
                 await User.findByIdAndUpdate(existingUser._id, {
                     $set: { googleId: existingUser.googleId || profile.id }
                 });
-                
-                req.session.user = existingUser._id;
-                return res.redirect("/home");
+                console.log('User updated successfully', existingUser);
+
+                req.session.userId = existingUser._id;
+                req.session.isLoggedIn = true;
+                req.session.user = existingUser._id; return res.redirect("/home");
             }
-    
+
 
             // If user doesn't exist, create new account
             const newUser = new User({
@@ -403,7 +405,10 @@ export const getGoogleCallback = (req, res) => {
                 isVerified: true,
             });
             await newUser.save();
-            
+            console.log("new ecisting", newUser)
+
+            req.session.userId = newUser._id;
+            req.session.isLoggedIn = true;
             req.session.user = newUser._id;
             return res.redirect("/home");
 

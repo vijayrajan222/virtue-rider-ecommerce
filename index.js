@@ -23,7 +23,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/tailwindcss', express.static(path.join(__dirname, 'public', 'tailwindcss')));
 app.use(nocache())
 
 // Session
@@ -49,8 +48,9 @@ app.use(passport.session());
 
 
 // Routes
-app.use('/', userRouter);
 app.use('/admin', adminRouter);
+app.use('/', userRouter);
+
 
 // Database connection
 connectDB();

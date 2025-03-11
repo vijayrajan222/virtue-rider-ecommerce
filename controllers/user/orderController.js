@@ -27,7 +27,6 @@ export const userOrderController = {
             const processedOrders = orders.map(order => {
                 const orderObject = order.toObject();
                 orderObject.products = orderObject.products.map(item => {
-                    // Find the matching variant from product variants array
                     if (item.product && item.product.variants && item.variant) {
                         const variant = item.product.variants.find(v => 
                             v._id.toString() === item.variant.toString()
@@ -113,8 +112,8 @@ export const userOrderController = {
 
             // Update return status for the item
             item.isReturnRequested = true;
-            item.status = 'return_pending'; // or create a new status like 'return_pending' in your enum
-            item.returnDetails.reason = reason; // Using cancelReason field for return reason
+            item.status = 'return_pending';
+            item.returnDetails.reason = reason; 
             item.returnDetails.requestDate = new Date();
 
             // Update payment status if payment was completed
@@ -165,7 +164,6 @@ export const userOrderController = {
                 return res.status(404).json({ message: 'Product not found or not eligible for invoice' });
             }
 
-            // Create PDF document with better margins
             const doc = new PDFDocument({
                 margin: 50,
                 size: 'A4',
@@ -176,7 +174,6 @@ export const userOrderController = {
             res.setHeader('Content-Disposition', `attachment; filename=invoice-${orderId}-${productId}.pdf`);
             doc.pipe(res);
 
-            // Helper function for drawing lines
             const drawLine = (y) => {
                 doc.strokeColor('#E5E7EB')
                    .lineWidth(1)
@@ -185,7 +182,6 @@ export const userOrderController = {
                    .stroke();
             };
 
-            // Add header with company logo and info
             doc.fontSize(24)
                .font('Helvetica-Bold')
                .text('VIRTUE RIDER', { align: 'center' })
@@ -194,11 +190,9 @@ export const userOrderController = {
                .text('Helmet Store', { align: 'center' })
                .moveDown(0.5);
 
-            // Add divider
             drawLine(doc.y);
             doc.moveDown();
 
-            // Create two columns for invoice details and shipping info
             const leftColumn = {
                 x: 50,
                 width: 250
@@ -208,7 +202,6 @@ export const userOrderController = {
                 width: 250
             };
 
-            // Invoice details (left column)
             doc.font('Helvetica-Bold')
                .fontSize(12)
                .text('INVOICE DETAILS', leftColumn.x, doc.y)

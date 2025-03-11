@@ -28,8 +28,7 @@ const userCheckoutController = {
             let stockCheck = true;
             const cartItems = populatedCart.items.map(item => {
                 const product = item.productId;
-                const variant = product.variants.find(v => v._id.equals(item.variantId)); // Find correct variant
-
+                const variant = product.variants.find(v => v._id.equals(item.variantId)); 
                 if (!variant || variant.stock < item.quantity) {
                     stockCheck = false; // Insufficient stock
                 }
@@ -38,7 +37,7 @@ const userCheckoutController = {
                     product: {
                         _id: product._id,
                         name: product.name,
-                        imageUrl: product.images[0] || '', // Use first image
+                        imageUrl: product.images[0] || '', 
                     },
                     quantity: item.quantity,
                     price: item.price,
@@ -55,7 +54,7 @@ const userCheckoutController = {
 
             // Calculate total
             const total = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
-            const finalTotal = total; // Modify this if coupons are applied
+            const finalTotal = total;
 
             res.render('user/checkout', {
                 addresses,
@@ -93,7 +92,7 @@ const userCheckoutController = {
                     message: 'Invalid address ID format'
                 });
             }
-            const userId = new mongoose.Types.ObjectId(req.session.userId); // Use 'new' keyword
+            const userId = new mongoose.Types.ObjectId(req.session.userId); 
 
             console.log('User id ', userId)
             // Validate inputs
@@ -130,13 +129,7 @@ const userCheckoutController = {
             // Calculate the total amount
             const finalAmount = cart.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
 
-            // Validate COD payment method
-            // if (paymentMethod === 'cod' && finalAmount > 1000) { // Adjusted to 1000 for consistency
-            //     return res.status(400).json({
-            //         success: false,
-            //         message: 'Cash on Delivery is not available for orders above ₹1000. Please choose a different payment method.'
-            //     });
-            // }
+            
 
             const orderItems = cart.items.map(item => ({
                 product: item.productId._id,
@@ -184,7 +177,7 @@ const userCheckoutController = {
                     pincode: address.pincode,
 
                 },
-                orderCode: `ORD-${Date.now()}` // Generate a simple order code
+                orderCode: `ORD-${Date.now()}` 
             });
 
             await order.save();
@@ -194,7 +187,7 @@ const userCheckoutController = {
                 await productSchema.findOneAndUpdate(
                     {
                         _id: item.product,
-                        'variants._id': item.variant // Assuming you have a size field in variants
+                        'variants._id': item.variant 
                     },
                     {
                         $inc: {
