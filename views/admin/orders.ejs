@@ -68,12 +68,19 @@
                                                             data-product="<%= item.product._id %>">
                                                             <div class="flex-1">
                                                                 <button onclick="showProductDetails(
-                                                                '<%= JSON.stringify(item).replace(/'/g, '\\\'') %>', 
-                                                                '<%= JSON.stringify(order).replace(/'/g, '\\\'') %>'
-                                                            )" class="text-sm text-blue-400 hover:text-blue-300">
+                                                                    '<%= JSON.stringify(item).replace(/'/g, '\\\'') %>', 
+                                                                    '<%= JSON.stringify(order).replace(/'/g, '\\\'') %>'
+                                                                )" class="text-sm text-blue-400 hover:text-blue-300">
                                                                     <%= item.product.name %> (×<%= item.quantity %>)
                                                                 </button>
-                                                                <div class="text-xs text-gray-400">₹<%= item.price %>
+                                                                <div class="text-xs text-gray-400">
+                                                                    ₹<%= item.price %>
+                                                                    <% if (item.variant && item.product.variants) { %>
+                                                                        <% const variant = item.product.variants.find(v => v._id.toString() === item.variant.toString()); %>
+                                                                        <% if (variant) { %>
+                                                                            • Size: <%= variant.size %>
+                                                                        <% } %>
+                                                                    <% } %>
                                                                 </div>
                                                             </div>
                                                             <!-- Status and Actions -->
@@ -522,81 +529,6 @@
                     closeModal();
                 }
             });
-
-            // Show product details modal
-            function showProductDetails(itemJson, orderJson) {
-                const item = JSON.parse(itemJson);
-                const order = JSON.parse(orderJson);
-                const modal = document.getElementById('productModal');
-                const modalImage = document.getElementById('productModalImage');
-                const modalDetails = document.getElementById('productModalDetails');
-                const modalStatus = document.getElementById('productModalStatus');
-
-                // Set product image
-                modalImage.innerHTML = `
-                <img src="${item.product.images[0]}" alt="${item.product.productName}"
-                     class="w-full h-full object-cover">
-            `;
-
-                // Set product details
-                modalDetails.innerHTML = `
-                <h4 class="text-xl font-semibold text-white">${item.product.productName}</h4>
-                <p class="text-gray-400">${item.product.description}</p>
-                <div class="grid grid-cols-2 gap-4 mt-4">
-                    <div>
-                        <p class="text-gray-400">Quantity</p>
-                        <p class="text-white">${item.quantity}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-400">Price</p>
-                        <p class="text-white">₹${item.price}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-400">Subtotal</p>
-                        <p class="text-white">₹${item.subtotal}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-400">Status</p>
-                        <p class="text-white">${item.order.status}</p>
-                    </div>
-                </div>
-            `;
-
-                // Set status history
-                modalStatus.innerHTML = `
-                <h5 class="text-white font-semibold mb-2">Status History</h5>
-                <div class="space-y-2">
-                    ${item.order.statusHistory.map(history => `
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-400">${new Date(history.date).toLocaleString()}</span>
-                            <span class="text-white">${history.status}</span>
-                        </div>
-                        ${history.comment ? `<p class="text-xs text-gray-400">${history.comment}</p>` : ''}
-                    `).join('')}
-                </div>
-            `;
-
-                modal.classList.remove('hidden');
-            }
-
-            // Show address details
-            function showAddressDetails(addressJson) {
-                const address = JSON.parse(addressJson);
-                const modal = document.getElementById('addressModal');
-                const content = document.getElementById('addressModalContent');
-
-                content.innerHTML = `
-                <div class="space-y-2">
-                    <p><span class="text-gray-400">Name:</span> ${address.fullName}</p>
-                    <p><span class="text-gray-400">Mobile:</span> ${address.mobileNumber}</p>
-                    <p><span class="text-gray-400">Address:</span> ${address.addressLine1}</p>
-                    ${address.addressLine2 ? `<p>${address.addressLine2}</p>` : ''}
-                    <p>${address.city}, ${address.state} - ${address.pincode}</p>
-                </div>
-            `;
-
-                modal.classList.remove('hidden');
-            }
 
             // Show product details modal
             function showProductDetails(itemJson, orderJson) {
