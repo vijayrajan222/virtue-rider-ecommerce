@@ -5,43 +5,24 @@ import Category from '../../models/categoryModel.js';
 export const getShop = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = 12;
+        const limit = 9; // Products per page
         const skip = (page - 1) * limit;
 
-         const categories = await Category.find();
-        //  console.log("Categories fetched:", categories); // Debugging log
+        const categories = await Category.find();
 
+        // Build the base filter
+        let filter = { isActive: true };
 
-        const filter = { 
-            isActive: true,
-            $expr: {
-                $and: [
-                    { $eq: ["$isActive", true] },
-                    {
-                        $in: [
-                            "$categoryId",
-                            await Category.find({ isActive: true }).distinct('_id')
-                        ]
-                    }
-                ]
-            }
-        };
-        // console.log("Categories sent to frontend:", categories);
-
-console.log("search",req.query.search)
-        let searchQuery = {};
+        // Add search filter
         if (req.query.search) {
-            searchQuery = {
-                $or: [
-                    { name: { $regex: req.query.search, $options: 'i' } },
-                    { brand: { $regex: req.query.search, $options: 'i' } }
-                ]
-            };
+            filter.$or = [
+                { name: { $regex: req.query.search, $options: 'i' } },
+                { brand: { $regex: req.query.search, $options: 'i' } }
+            ];
         }
 
         // Add color filter
-        if (req.query.color && req.query.color !== '') {
-            // console.log("queryColor",req.query.color);   
+        if (req.query.color) {
             filter.color = { $regex: new RegExp(`^${req.query.color}$`, 'i') };
         }
 
@@ -52,11 +33,9 @@ console.log("search",req.query.search)
             if (req.query.maxPrice) filter.price.$lte = Number(req.query.maxPrice);
         }
 
-        // Add stock filter
-        if (req.query.stock === 'inStock') {
-            filter.stock = { $gt: 0 };
-        } else if (req.query.stock === 'outOfStock') {
-            filter.stock = 0;
+        // Add category filter
+        if (req.query.category) {
+            filter.categoryId = req.query.category;
         }
 
         // Build sort query
@@ -83,89 +62,69 @@ console.log("search",req.query.search)
             default:
                 sortQuery = { createdAt: -1 };
         }
-        // console.log("filters",filter)
 
-        //color filter
-        if(req.query.color){
-            var colorQuery = {color: req.query.color}
-        }else{
-            var colorQuery = {}
-        }
-         //price min max filter
-         if(req.query.minPrice || req.query.maxPrice){
-            var priceFilters = {price:filter.price}
-         }else{
-            var priceFilters = {}
-         }
-         
-         //stock filter
-
-    // console.log("categoryQuery",req.query.category)
-    if(req.query.category){
-        var categoryQuery = {categoryId: req.query.category}
-    }else{
-        var categoryQuery = {} 
-    }
-// console.log(filter.$expr)
-        const products = await Product.find({isActive:true,...colorQuery,...priceFilters,...categoryQuery,...searchQuery})
-        .populate('categoryId')  // Ensure categories are populated
-        .sort({ ...sortQuery })
-        .skip(skip)
-        .limit(limit);
-        // console.log("Fetched Products:", products); // Debugging log
-       
-        const filteredProducts = products.filter(product => product.categoryId);
-
-        // Get total count for pagination
+        // First, get total count of filtered products
         const totalProducts = await Product.countDocuments(filter);
         const totalPages = Math.ceil(totalProducts / limit);
+
+        // Then, get the paginated products
+        const products = await Product.find(filter)
+            .populate('categoryId')
+            .sort(sortQuery)
+            .skip(skip)
+            .limit(limit);
+
+        // Filter out products with invalid categories
+        const filteredProducts = products.filter(product => product.categoryId);
 
         // Process products
         const processedProducts = filteredProducts.map(product => ({
             ...product.toObject(),
             price: product.price,
-            discountPrice: product.price 
+            discountPrice: product.price
         }));
+
+        // Prepare pagination data
+        const paginationData = {
+            currentPage: page,
+            totalPages,
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1,
+            totalProducts // Add total products count
+        };
 
         if (req.xhr) {
             return res.json({
                 products: processedProducts,
-                categories,   
-
-                pagination: {
-                    currentPage: page,
-                    totalPages,
-                    hasNextPage: page < totalPages,
-                    hasPrevPage: page > 1
-                }
+                categories,
+                pagination: paginationData
             });
         }
-        //  console.log("categories",categories)
+
         res.render('user/shop', {
             products: processedProducts,
-            categories,  
-            pagination: {
-                currentPage: page,
-                totalPages,
-                hasNextPage: page < totalPages,
-                hasPrevPage: page > 1
-            },
+            categories,
+            pagination: paginationData,
             title: 'Shop'
         });
-        // console.log("products",products)
+
     } catch (error) {
         console.error('Error in getShop:', error);
         if (req.xhr) {
-            return res.status(500).json({ error: 'Failed to load products' });
+            return res.status(500).json({ 
+                error: 'Failed to load products',
+                message: error.message 
+            });
         }
         res.status(500).render('user/shop', {
             products: [],
-            categories: [],  
+            categories: [],
             pagination: {
                 currentPage: 1,
                 totalPages: 1,
                 hasNextPage: false,
-                hasPrevPage: false
+                hasPrevPage: false,
+                totalProducts: 0
             },
             title: 'Shop',
             error: 'Failed to load products'
