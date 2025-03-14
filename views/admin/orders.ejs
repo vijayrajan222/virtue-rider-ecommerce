@@ -151,7 +151,49 @@
                 </div>
 
                 <!-- Pagination -->
+                <div class="mt-6">
+                    <% if (pagination.totalPages > 1) { %>
+                        <div class="flex items-center justify-between px-4 py-3 bg-gray-800 rounded-lg">
+                            <div class="flex items-center">
+                                <p class="text-sm text-gray-400">
+                                    Showing orders <%= ((pagination.currentPage - 1) * 10) + 1 %> to 
+                                    <%= Math.min(pagination.currentPage * 10, pagination.totalOrders) %> 
+                                    of <%= pagination.totalOrders %> orders
+                                </p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <% if (pagination.hasPrevPage) { %>
+                                    <a href="/admin/orders?page=<%= pagination.prevPage %>" 
+                                       class="px-3 py-1 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 transition-colors">
+                                        Previous
+                                    </a>
+                                <% } %>
 
+                                <% 
+                                let startPage = Math.max(1, pagination.currentPage - 2);
+                                let endPage = Math.min(pagination.totalPages, startPage + 4);
+                                if (endPage - startPage < 4) {
+                                    startPage = Math.max(1, endPage - 4);
+                                }
+                                %>
+
+                                <% for(let i = startPage; i <= endPage; i++) { %>
+                                    <a href="/admin/orders?page=<%= i %>"
+                                       class="px-3 py-1 text-sm rounded <%= i === pagination.currentPage ? 'bg-zinc-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600' %> transition-colors">
+                                        <%= i %>
+                                    </a>
+                                <% } %>
+
+                                <% if (pagination.hasNextPage) { %>
+                                    <a href="/admin/orders?page=<%= pagination.nextPage %>"
+                                       class="px-3 py-1 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 transition-colors">
+                                        Next
+                                    </a>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
             </div>
         </div>
 

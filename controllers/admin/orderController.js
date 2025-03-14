@@ -6,13 +6,25 @@ config();
 
 export const getOrders = async (req, res) => {
     try {
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10; // Orders per page
+        const skip = (page - 1) * limit;
+
+        // Get total count for pagination
+        const totalOrders = await Order.countDocuments();
+        const totalPages = Math.ceil(totalOrders / limit);
+
+        // Fetch paginated orders
         const orders = await Order.find()
             .populate('user')
             .populate({
                 path: 'products.product',
                 select: 'name brand images price variants'
             })
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
 
         const processedOrders = orders.map(order => {
             const orderObject = order.toObject();
@@ -35,7 +47,17 @@ export const getOrders = async (req, res) => {
         res.render('admin/orders', {
             orders: processedOrders,
             path: req.path,
-            title: 'Orders'
+            title: 'Orders',
+            pagination: {
+                currentPage: page,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+                nextPage: page + 1,
+                prevPage: page - 1,
+                lastPage: totalPages,
+                totalOrders
+            }
         });
     } catch (error) {
         console.error('Error:', error);
