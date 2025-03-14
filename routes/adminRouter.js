@@ -3,7 +3,13 @@ import {getCategories,createCategory,getCategoryById,updateCategory,deleteCatego
 import { getProducts, getProductById, addProduct, updateProduct, deleteProduct, removeProductImage, toggleProductVisibility} from '../controllers/admin/productController.js'
 import {getDashboard} from '../controllers/admin/dashboardController.js';
 import {getAdminLogin, postAdminLogin, logout} from '../controllers/admin/adminauthController.js';
+import { getOffers, createOffer, updateOffer, deleteOffer } from '../controllers/admin/offerController.js';
 import upload from '../utils/multer.js';
+import {
+    getCoupons,
+    addCoupons,
+    deleteCoupon
+} from "../controllers/admin/couponController.js";
 import { getUsers, toggleUserStatus } from '../controllers/admin/userController.js';
 import adminMiddleware from '../middleware/adminMiddleware.js';
 import { getOrders,handleReturnRequest,updateItemStatus } from '../controllers/admin/orderController.js';
@@ -44,5 +50,14 @@ router.delete('/categories/:id',adminMiddleware.checkSession, deleteCategory);
 router.get("/orders",adminMiddleware.checkSession,getOrders)
 router.post("/orders/:orderId/items/:productId/status",adminMiddleware.checkSession,updateItemStatus)
 router.post("/orders/:orderId/items/:productId/return",adminMiddleware.checkSession,handleReturnRequest)
+
+router.get('/offers', adminMiddleware.checkSession, getOffers);
+router.post('/offers', adminMiddleware.checkSession, createOffer);
+router.put('/offers/:offerId', adminMiddleware.checkSession, updateOffer);
+router.delete('/offers/:offerId', adminMiddleware.checkSession, deleteOffer);
+
+router.get("/coupons", adminMiddleware.checkSession, getCoupons);
+router.post("/coupons/add", adminMiddleware.checkSession, addCoupons);
+router.delete("/coupons/delete/:id", adminMiddleware.checkSession, deleteCoupon);
 
 export default router;

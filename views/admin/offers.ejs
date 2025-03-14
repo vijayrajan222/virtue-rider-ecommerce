@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offers - Virtue Rider</title>
+    <title>Admin - Offer Management</title>
     <link rel="stylesheet" href="/tailwindcss/output.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -12,64 +13,65 @@
     <%- include('../partials/sidebar') %>
 
     <div class="p-2 sm:ml-64">
-        <header class="flex items-center justify-between mb-8 p-4 lg:p-8 border-b border-gray-800">
-            <h1 class="text-2xl font-semibold text-gray-200">Offer Management</h1>
-            <button onclick="openAddModal()" 
-                    class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                <i class="material-icons mr-2">add</i>
-                Add Offer
+        <header class="flex items-center justify-between mb-8 p-4 lg:p-8 border-b border-gray-700">
+            <h1 class="text-2xl font-semibold text-gray-200">Offers Management</h1>
+            <button onclick="openAddModal()" class="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-500 transition-colors">
+                <i class="material-icons">add</i>
+                <span>Add Offer</span>
             </button>
         </header>
 
-        <!-- Offers Table -->
-        <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden mx-4 border border-gray-700">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-700">
-                    <thead class="bg-gray-900">
+        <div class="p-4 lg:p-8">
+            <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                <table class="w-full text-sm text-left text-gray-400">
+                    <thead class="text-xs uppercase bg-gray-700 text-gray-400">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Offer Name</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Discount</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Valid Until</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Actions</th>
+                            <th scope="col" class="px-6 py-3">Name</th>
+                            <th scope="col" class="px-6 py-3">Type</th>
+                            <th scope="col" class="px-6 py-3">Discount</th>
+                            <th scope="col" class="px-6 py-3">Min. Purchase</th>
+                            <th scope="col" class="px-6 py-3">Start Date</th>
+                            <th scope="col" class="px-6 py-3">End Date</th>
+                            <th scope="col" class="px-6 py-3">Status</th>
+                            <th scope="col" class="px-6 py-3">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-700">
-                        <% offers.forEach(offer => { %>
-                            <tr class="hover:bg-gray-700 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center">
-                                        <div class="text-sm font-medium text-gray-200">
-                                            <%= offer.name %>
+                        <% if (offers && offers.length > 0) { %>
+                            <% offers.forEach(offer => { %>
+                                <tr class="hover:bg-gray-700 transition-colors">
+                                    <td class="px-6 py-4"><%= offer.name %></td>
+                                    <td class="px-6 py-4"><%= offer.type %></td>
+                                    <td class="px-6 py-4">
+                                        <%= offer.discountAmount %><%= offer.discountType === 'percentage' ? '%' : '₹' %>
+                                    </td>
+                                    <td class="px-6 py-4">₹<%= offer.minimumPurchase %></td>
+                                    <td class="px-6 py-4"><%= new Date(offer.startDate).toLocaleDateString() %></td>
+                                    <td class="px-6 py-4"><%= new Date(offer.endDate).toLocaleDateString() %></td>
+                                    <td class="px-6 py-4">
+                                        <span class="<%= new Date() > new Date(offer.endDate) ? 'bg-red-900 text-red-300' : 'bg-green-900 text-green-300' %> px-2 py-1 rounded text-xs">
+                                            <%= new Date() > new Date(offer.endDate) ? 'Expired' : 'Active' %>
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex gap-2">
+                                            <button onclick="openEditModal('<%= JSON.stringify(offer) %>')" 
+                                                    class="text-blue-500 hover:text-blue-400">
+                                                <i class="material-icons">edit</i>
+                                            </button>
+                                            <button onclick="deleteOffer('<%= offer._id %>')" 
+                                                    class="text-red-500 hover:text-red-400">
+                                                <i class="material-icons">delete</i>
+                                            </button>
                                         </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-orange-500 font-semibold">
-                                        <%= offer.discountType === 'percentage' ? offer.discountAmount + '%' : '₹' + offer.discountAmount %>
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-gray-200">
-                                    <%= new Date(offer.validUntil).toLocaleDateString() %>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                        <%= new Date(offer.validUntil) > new Date() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
-                                        <%= new Date(offer.validUntil) > new Date() ? 'Active' : 'Expired' %>
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button onclick="editOffer('<%= offer._id %>')"
-                                            class="text-blue-400 hover:text-blue-300 mr-3">
-                                        <i class="material-icons">edit</i>
-                                    </button>
-                                    <button onclick="deleteOffer('<%= offer._id %>')"
-                                            class="text-red-400 hover:text-red-300">
-                                        <i class="material-icons">delete</i>
-                                    </button>
-                                </td>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="8" class="px-6 py-4 text-center">No offers found</td>
                             </tr>
-                        <% }); %>
+                        <% } %>
                     </tbody>
                 </table>
             </div>
@@ -78,43 +80,92 @@
 
     <!-- Add/Edit Offer Modal -->
     <div id="offerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4">
-            <h2 id="modalTitle" class="text-xl font-semibold text-gray-200 mb-6">Add New Offer</h2>
-            <form id="offerForm" onsubmit="handleSubmit(event)">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold text-gray-200" id="modalTitle">Add New Offer</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-200">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+            <form id="offerForm" class="space-y-4">
                 <input type="hidden" id="offerId">
-                <div class="space-y-4">
+                
+                <!-- Offer Name -->
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-300">Offer Name</label>
+                    <input type="text" id="name" name="name" required
+                        class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-gray-200 focus:border-orange-500 focus:ring-orange-500">
+                </div>
+
+                <!-- Offer Type -->
+                <div>
+                    <label for="type" class="block text-sm font-medium text-gray-300">Offer Type</label>
+                    <select id="type" name="type" required onchange="updateItemsList()"
+                        class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-gray-200 focus:border-orange-500 focus:ring-orange-500">
+                        <option value="">Select Type</option>
+                        <option value="product">Product</option>
+                        <option value="category">Category</option>
+                    </select>
+                </div>
+
+                <!-- Discount Type -->
+                <div>
+                    <label for="discountType" class="block text-sm font-medium text-gray-300">Discount Type</label>
+                    <select id="discountType" name="discountType" required
+                        class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-gray-200 focus:border-orange-500 focus:ring-orange-500">
+                        <option value="percentage">Percentage (%)</option>
+                        <option value="fixed">Fixed Amount (₹)</option>
+                    </select>
+                </div>
+
+                <!-- Discount Amount -->
+                <div>
+                    <label for="discountAmount" class="block text-sm font-medium text-gray-300">
+                        Discount Amount
+                    </label>
+                    <input type="number" id="discountAmount" name="discountAmount" required min="0"
+                        class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-gray-200 focus:border-orange-500 focus:ring-orange-500">
+                </div>
+
+                <!-- Minimum Purchase -->
+                <div>
+                    <label for="minimumPurchase" class="block text-sm font-medium text-gray-300">
+                        Minimum Purchase Amount (₹)
+                    </label>
+                    <input type="number" id="minimumPurchase" name="minimumPurchase" min="0"
+                        class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-gray-200 focus:border-orange-500 focus:ring-orange-500">
+                </div>
+
+                <!-- Items Selection -->
+                <div>
+                    <label for="itemIds" class="block text-sm font-medium text-gray-300">Select Items</label>
+                    <select id="itemIds" name="itemIds" multiple required
+                        class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-gray-200 focus:border-orange-500 focus:ring-orange-500 min-h-[100px]">
+                    </select>
+                </div>
+
+                <!-- Dates -->
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-1">Offer Name</label>
-                        <input type="text" id="offerName" required
-                               class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                        <label for="startDate" class="block text-sm font-medium text-gray-300">Start Date</label>
+                        <input type="datetime-local" id="startDate" name="startDate" required
+                            class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-gray-200 focus:border-orange-500 focus:ring-orange-500">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-1">Discount Type</label>
-                        <select id="discountType" required
-                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
-                            <option value="percentage">Percentage</option>
-                            <option value="fixed">Fixed Amount</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-1">Discount Amount</label>
-                        <input type="number" id="discountAmount" required min="0"
-                               class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-1">Valid Until</label>
-                        <input type="date" id="validUntil" required
-                               class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:outline-none focus:border-orange-500">
+                        <label for="endDate" class="block text-sm font-medium text-gray-300">End Date</label>
+                        <input type="datetime-local" id="endDate" name="endDate" required
+                            class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-gray-200 focus:border-orange-500 focus:ring-orange-500">
                     </div>
                 </div>
-                <div class="mt-6 flex justify-end space-x-3">
+
+                <div class="flex justify-end space-x-3 mt-6">
                     <button type="button" onclick="closeModal()"
-                            class="px-4 py-2 bg-gray-600 text-gray-200 rounded-lg hover:bg-gray-700 transition-colors">
+                        class="px-4 py-2 bg-gray-600 text-gray-200 rounded-lg hover:bg-gray-500 transition-colors">
                         Cancel
                     </button>
                     <button type="submit"
-                            class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
-                        Save
+                        class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-500 transition-colors">
+                        Save Offer
                     </button>
                 </div>
             </form>
@@ -122,10 +173,50 @@
     </div>
 
     <script>
+        const products = <%- JSON.stringify(products) %>;
+        const categories = <%- JSON.stringify(categories) %>;
+
+        function updateItemsList() {
+            const type = document.getElementById('type').value;
+            const itemsSelect = document.getElementById('itemIds');
+            itemsSelect.innerHTML = '';
+
+            const items = type === 'product' ? products : categories;
+            items.forEach(item => {
+                const option = new Option(item.name, item._id);
+                itemsSelect.add(option);
+            });
+        }
+
         function openAddModal() {
             document.getElementById('modalTitle').textContent = 'Add New Offer';
             document.getElementById('offerForm').reset();
             document.getElementById('offerId').value = '';
+            showModal();
+        }
+
+        function openEditModal(offerData) {
+            const offer = JSON.parse(offerData);
+            document.getElementById('modalTitle').textContent = 'Edit Offer';
+            document.getElementById('offerId').value = offer._id;
+            document.getElementById('name').value = offer.name;
+            document.getElementById('type').value = offer.type;
+            document.getElementById('discountType').value = offer.discountType;
+            document.getElementById('discountAmount').value = offer.discountAmount;
+            document.getElementById('minimumPurchase').value = offer.minimumPurchase;
+            document.getElementById('startDate').value = new Date(offer.startDate).toISOString().slice(0, 16);
+            document.getElementById('endDate').value = new Date(offer.endDate).toISOString().slice(0, 16);
+            
+            updateItemsList();
+            const itemIds = offer.type === 'product' ? offer.productIds : [offer.categoryId];
+            Array.from(document.getElementById('itemIds').options).forEach(option => {
+                option.selected = itemIds.includes(option.value);
+            });
+            
+            showModal();
+        }
+
+        function showModal() {
             document.getElementById('offerModal').classList.remove('hidden');
             document.getElementById('offerModal').classList.add('flex');
         }
@@ -135,18 +226,94 @@
             document.getElementById('offerModal').classList.remove('flex');
         }
 
-        async function handleSubmit(event) {
-            event.preventDefault();
-            // Add your form submission logic here
-        }
+        document.getElementById('offerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                type: document.getElementById('type').value,
+                discountType: document.getElementById('discountType').value,
+                discountAmount: Number(document.getElementById('discountAmount').value),
+                minimumPurchase: Number(document.getElementById('minimumPurchase').value) || 0,
+                itemIds: Array.from(document.getElementById('itemIds').selectedOptions).map(opt => opt.value),
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value
+            };
 
-        async function editOffer(id) {
-            // Add your edit logic here
-        }
+            const offerId = document.getElementById('offerId').value;
+            const method = offerId ? 'PUT' : 'POST';
+            const url = offerId ? `/admin/offers/${offerId}` : '/admin/offers';
 
-        async function deleteOffer(id) {
-            // Add your delete logic here
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: data.message
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: error.message || 'Something went wrong'
+                });
+            }
+        });
+
+        async function deleteOffer(offerId) {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`/admin/offers/${offerId}`, {
+                        method: 'DELETE'
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        Swal.fire(
+                            'Deleted!',
+                            'Offer has been deleted.',
+                            'success'
+                        ).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    Swal.fire(
+                        'Error!',
+                        error.message || 'Something went wrong',
+                        'error'
+                    );
+                }
+            }
         }
     </script>
 </body>
-</html> 
+</html>
