@@ -81,7 +81,7 @@ export const getShop = async (req, res) => {
         const processedProducts = filteredProducts.map(product => ({
             ...product.toObject(),
             price: product.price,
-            discountPrice: product.price
+            variants: product.variants
         }));
 
         // Prepare pagination data

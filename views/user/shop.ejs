@@ -255,43 +255,61 @@
                   return;
               }
       
-              productGrid.innerHTML = productsToRender.map((product, index) => `
-                  <a href="/product/${product._id}" 
-                     class="product-item bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative"
-                     style="animation-delay: ${index * 0.1}s">
-                      <div class="relative aspect-[4/5] overflow-hidden">
-                          <img
-                              src="${product.images[0]}"
-                              alt="${product.name}"
-                              class="w-full h-full object-cover hover:scale-105 transition-transform duration-300 ${product.stock === 0 ? 'opacity-60' : ''}"
-                              loading="lazy"
-                          >
-                          ${product.discountPrice && product.discountPrice < product.price ? `
-                              <div class="absolute top-2 right-2 bg-red-500 text-white px-2 py-0.5 rounded text-xs font-medium">
-                                  -${Math.round((product.price - product.discountPrice) / product.price * 100)}%
+              productGrid.innerHTML = productsToRender.map(product => {
+                  const hasStock = product.variants && product.variants.some(v => v.stock > 0);
+                  
+                  return `
+                      <div class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
+                          <a href="/product/${product._id}" class="block">
+                              <div class="relative aspect-[4/5] overflow-hidden">
+                                  ${product.images && product.images.length > 0 ? `
+                                      <img 
+                                          src="${product.images[0]}" 
+                                          alt="${product.name}"
+                                          class="w-full h-full object-cover hover:scale-105 transition-transform duration-300 ${!hasStock ? 'opacity-60' : ''}"
+                                          loading="lazy"
+                                      >
+                                  ` : ''}
+                                  
+                                  ${!hasStock ? `
+                                      <div class="absolute inset-0 flex items-center justify-center">
+                                          <span class="bg-black bg-opacity-75 text-white px-3 py-1.5 rounded-full text-sm font-medium">
+                                              Out of Stock
+                                          </span>
+                                      </div>
+                                  ` : ''}
                               </div>
-                          ` : ''}
-                          ${product.stock === 0 ? `
-                              <div class="absolute inset-0 flex items-center justify-center">
-                                  <span class="bg-black bg-opacity-75 text-white px-3 py-1.5 rounded-full text-sm font-medium">
-                                      Out of Stock
-                                  </span>
+                          </a>
+
+                          <div class="p-4">
+                              <h2 class="text-gray-800 text-sm font-medium truncate">
+                                  ${product.name}
+                              </h2>
+                              <div class="flex items-baseline gap-1 mt-1">
+                                  <span class="text-base font-bold text-gray-900">₹${product.price}</span>
                               </div>
-                          ` : ''}
-                      </div>
-                      <div class="p-4">
-                          <h2 class="text-gray-800 text-sm font-medium truncate">
-                              ${product.name}
-                          </h2>
-                          <div class="flex items-baseline gap-1 mt-1">
-                              <span class="text-base font-bold text-gray-900">₹${product.discountPrice || product.price}</span>
-                              ${product.discountPrice && product.discountPrice < product.price ? `
-                                  <span class="text-xs text-gray-500 line-through">₹${product.price}</span>
+                              
+                              ${hasStock && product.variants && product.variants.length > 0 ? `
+                                  <div class="mt-3">
+                                      <select id="variant-${product._id}" class="w-full mb-2 px-2 py-1 border rounded text-sm">
+                                          ${product.variants.map(variant => `
+                                              <option value="${variant._id}" ${variant.stock === 0 ? 'disabled' : ''}>
+                                                  ${variant.size} (${variant.stock} available)
+                                              </option>
+                                          `).join('')}
+                                      </select>
+                                      <button 
+                                          onclick="addToCart('${product._id}')"
+                                          class="w-full py-2 bg-zinc-800 text-white text-sm rounded hover:bg-zinc-700 transition-colors"
+                                      >
+                                          Add to Cart
+                                      </button>
+                                  </div>
                               ` : ''}
                           </div>
                       </div>
-                  </a>
-              `).join('');
+                  `;
+              }).join('');
           }
       
           // Function to update pagination UI
@@ -316,7 +334,7 @@
                       color: colorFilter.value,
                       minPrice: minPriceFilter.value,
                       maxPrice: maxPriceFilter.value,
-                      category:categoriesSelect.value
+                      category: categoriesSelect.value
                   });
       
                   const response = await fetch(`/shop?${queryParams.toString()}`, {
@@ -328,6 +346,7 @@
                   if (!response.ok) throw new Error('Network response was not ok');
                   
                   const data = await response.json();
+                  console.log("Fetched products:", data.products); // Debug log
                   
                   updatePagination(data.pagination);
                   renderProducts(data.products);
@@ -342,9 +361,6 @@
                       }
                   });
                   window.history.pushState({}, '', url);
-      
-                  // Smooth scroll to top of product grid
-                  productGrid.scrollIntoView({ behavior: 'smooth' });
       
               } catch (error) {
                   console.error('Error fetching products:', error);
