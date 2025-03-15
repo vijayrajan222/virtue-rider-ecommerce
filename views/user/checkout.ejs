@@ -373,10 +373,10 @@
 
       async function fetchCoupons() {
           try {
-              const response = await fetch('/admin/active-coupons');
+              const response = await fetch('/admin/coupons/active');
               const data = await response.json();
               
-              console.log('Coupon response:', data); // Debug log
+              console.log('Coupon response:', data);
 
               if (data.success && data.coupons && data.coupons.length > 0) {
                   const couponsHtml = data.coupons.map(coupon => `
@@ -431,17 +431,14 @@
 
               if (data.success) {
                   closeCouponModal();
-                  // Update the total amount and show success message
                   Swal.fire({
                       icon: 'success',
                       title: 'Coupon Applied!',
                       text: `Discount amount: ₹${data.discount}`
                   });
                   
-                  // Update the total amount display
                   const finalAmount = data.finalAmount;
                   document.getElementById('finalTotal').textContent = `₹${finalAmount.toFixed(2)}`;
-                  
               } else {
                   throw new Error(data.message);
               }

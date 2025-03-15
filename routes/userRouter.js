@@ -120,6 +120,8 @@ userRouter.get('/change-password', userMiddlewares.checkSession, getChangePasswo
 
 userRouter.post('/change-password', userMiddlewares.checkSession, changePassword);
 
+userRouter.post('/checkout/validate-coupon', userCheckoutController.validateCoupon);
+
 export default userRouter;
 
 

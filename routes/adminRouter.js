@@ -63,4 +63,6 @@ router.delete("/coupons/delete/:id", adminMiddleware.checkSession, deleteCoupon)
 
 router.get('/active-coupons', getActiveCoupons);
 
+router.get('/coupons/active', getActiveCoupons);
+
 export default router;

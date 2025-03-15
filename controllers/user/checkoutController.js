@@ -2,6 +2,7 @@ import cartSchema from '../../models/cartModel.js';
 import Order from '../../models/orderModel.js';
 import addressSchema from '../../models/addressModel.js';
 import productSchema from '../../models/productModel.js';
+import Coupon from '../../models/couponModel.js';
 import mongoose from 'mongoose';
 
 const userCheckoutController = {
@@ -69,6 +70,60 @@ const userCheckoutController = {
             res.status(500).render('error', {
                 message: 'Error loading checkout page',
                 user: req.session.user
+            });
+        }
+    },
+
+    validateCoupon: async (req, res) => {
+        try {
+            const { couponCode } = req.body;
+            const userId = req.session.user;
+
+            // Find the coupon
+            const coupon = await Coupon.findOne({ 
+                code: couponCode,
+                expiryDate: { $gte: new Date() }
+            });
+
+            if (!coupon) {
+                return res.json({
+                    success: false,
+                    message: 'Invalid or expired coupon'
+                });
+            }
+
+            // Get cart total
+            const cart = await cartSchema.findOne({ userId });
+            const cartTotal = cart.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+
+            // Check minimum purchase requirement
+            if (cartTotal < coupon.minimumPurchase) {
+                return res.json({
+                    success: false,
+                    message: `Minimum purchase of ₹${coupon.minimumPurchase} required`
+                });
+            }
+
+            // Calculate discount
+            let discount = (cartTotal * coupon.discountPercentage) / 100;
+            if (discount > coupon.maximumDiscount) {
+                discount = coupon.maximumDiscount;
+            }
+
+            const finalAmount = cartTotal - discount;
+
+            res.json({
+                success: true,
+                discount,
+                finalAmount,
+                message: 'Coupon applied successfully'
+            });
+
+        } catch (error) {
+            console.error('Coupon validation error:', error);
+            res.json({
+                success: false,
+                message: 'Error validating coupon'
             });
         }
     },
