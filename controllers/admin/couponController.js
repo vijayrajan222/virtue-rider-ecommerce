@@ -68,4 +68,26 @@ export const deleteCoupon = async (req, res, next) => {
     }
 };
 
+export const getActiveCoupons = async (req, res) => {
+    try {
+        // Modified query to ensure we get all valid coupons
+        const coupons = await Coupon.find({
+            expiryDate: { $gte: new Date() }
+        }).select('code description discountPercentage minimumPurchase maximumDiscount');
+
+        console.log('Found coupons:', coupons); // Add this for debugging
+
+        res.json({
+            success: true,
+            coupons: coupons
+        });
+    } catch (error) {
+        console.error('Error fetching coupons:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch coupons'
+        });
+    }
+};
+
 

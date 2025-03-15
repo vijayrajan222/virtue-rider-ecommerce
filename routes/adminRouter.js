@@ -8,7 +8,8 @@ import upload from '../utils/multer.js';
 import {
     getCoupons,
     addCoupons,
-    deleteCoupon
+    deleteCoupon,
+    getActiveCoupons
 } from "../controllers/admin/couponController.js";
 import { getUsers, toggleUserStatus } from '../controllers/admin/userController.js';
 import adminMiddleware from '../middleware/adminMiddleware.js';
@@ -59,5 +60,7 @@ router.delete('/offers/:offerId', adminMiddleware.checkSession, deleteOffer);
 router.get("/coupons", adminMiddleware.checkSession, getCoupons);
 router.post("/coupons/add", adminMiddleware.checkSession, addCoupons);
 router.delete("/coupons/delete/:id", adminMiddleware.checkSession, deleteCoupon);
+
+router.get('/active-coupons', getActiveCoupons);
 
 export default router;
