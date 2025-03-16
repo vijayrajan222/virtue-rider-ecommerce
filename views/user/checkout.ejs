@@ -199,31 +199,46 @@
 
             <!-- Price Breakdown -->
             <div class="space-y-3">
-              <div class="flex justify-between">
-                <span>Subtotal:</span>
-                <span>₹<span id="subtotal"><%= total.toFixed(2) %></span></span>
-              </div>
+                <!-- Subtotal -->
+                <div class="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span>₹<span id="subtotal"><%= total.toFixed(2) %></span></span>
+                </div>
 
-              <div
-                id="discountRow"
-                class="flex justify-between <%= locals.discount ? '' : 'hidden' %>"
-              >
-                <span>Discount:</span>
-                <span class="text-green-500"
-                  >-₹<span id="discountAmount"
-                    ><%= (locals.discount || 0).toFixed(2) %></span
-                  ></span
-                >
-              </div>
+                <!-- GST (18%) -->
+                <div class="flex justify-between text-gray-600">
+                    <span>GST (18%):</span>
+                    <span>₹<span id="gstAmount"><%= (total * 0.18).toFixed(2) %></span></span>
+                </div>
 
-              <div class="flex justify-between font-bold">
-                <span>Total Amount:</span>
-                <span
-                  >₹<span id="finalTotal"
-                    ><%= (total - (locals.discount || 0)).toFixed(2) %></span
-                  ></span
-                >
-              </div>
+                <!-- Shipping Charges -->
+                <div class="flex justify-between text-gray-600">
+                    <span>Shipping Charges:</span>
+                    <span>₹<span id="shippingCharges">
+                        <%= total >= 1000 ? '0.00' : '40.00' %>
+                    </span></span>
+                </div>
+
+                <!-- Coupon Discount -->
+                <div id="discountRow" class="flex justify-between text-green-600 hidden">
+                    <span>Coupon Discount:</span>
+                    <span>-₹<span id="discountAmount">0.00</span></span>
+                </div>
+
+                <!-- Divider -->
+                <div class="border-t border-gray-200 my-2"></div>
+
+                <!-- Total -->
+                <div class="flex justify-between font-bold text-lg">
+                    <span>Total Amount:</span>
+                    <span>₹<span id="finalTotal">
+                        <%= (
+                            total + 
+                            (total * 0.18) + 
+                            (total >= 1000 ? 0 : 40)
+                        ).toFixed(2) %>
+                    </span></span>
+                </div>
             </div>
 
             <!-- Place Order Button -->
@@ -360,7 +375,7 @@
     <script>
       let appliedCoupon = null;
       let currentDiscount = 0;
-      const cartTotal =<%= total %>;
+      const cartTotal = <%= total %>;
 
       function openCouponModal() {
           fetchCoupons();
@@ -419,6 +434,10 @@
 
       async function applyCouponCode(code) {
           try {
+              if (appliedCoupon) {
+                  throw new Error('Please remove the existing coupon before applying a new one');
+              }
+
               const response = await fetch('/checkout/validate-coupon', {
                   method: 'POST',
                   headers: {
@@ -430,173 +449,246 @@
               const data = await response.json();
 
               if (data.success) {
+                  appliedCoupon = code;
+                  currentDiscount = data.discount;
+
+                  // Get the current values
+                  const subtotal = parseFloat(document.getElementById('subtotal').textContent);
+                  const gstAmount = subtotal * 0.18; // Calculate GST after discount
+                  const shippingCharges = subtotal >= 1000 ? 0 : 40;
+
+                  // Show discount row
+                  const discountRow = document.getElementById('discountRow');
+                  discountRow.classList.remove('hidden');
+                  document.getElementById('discountAmount').textContent = data.discount.toFixed(2);
+
+                  // Update GST amount (18% of subtotal)
+                  document.getElementById('gstAmount').textContent = gstAmount.toFixed(2);
+
+                  // Calculate final total (subtotal + GST + shipping - discount)
+                  const finalTotal = subtotal + gstAmount + shippingCharges - data.discount;
+                  document.getElementById('finalTotal').textContent = finalTotal.toFixed(2);
+
+                  // Show applied coupon info
+                  const appliedCouponInfo = document.getElementById('appliedCouponInfo');
+                  appliedCouponInfo.classList.remove('hidden');
+                  document.getElementById('appliedCouponCode').textContent = code;
+                  document.getElementById('discountInfo').textContent = 
+                      `You saved ₹${data.discount.toFixed(2)}`;
+
                   closeCouponModal();
-                  Swal.fire({
-                      icon: 'success',
-                      title: 'Coupon Applied!',
-                      text: `Discount amount: ₹${data.discount}`
-                  });
-                  
-                  const finalAmount = data.finalAmount;
-                  document.getElementById('finalTotal').textContent = `₹${finalAmount.toFixed(2)}`;
+                  await showAlert('success', 'Coupon applied successfully!');
+
+                  // Update COD availability with new total
+                  updatePaymentMethodsAfterCoupon(finalTotal);
               } else {
                   throw new Error(data.message);
               }
           } catch (error) {
-              Swal.fire({
-                  icon: 'error',
-                  title: 'Oops...',
-                  text: error.message || 'Failed to apply coupon'
-              });
+              await showAlert('error', error.message || 'Failed to apply coupon');
           }
       }
 
+      async function removeCoupon() {
+          try {
+              // Reset all values
+              appliedCoupon = null;
+              currentDiscount = 0;
+
+              // Get the current subtotal
+              const subtotal = parseFloat(document.getElementById('subtotal').textContent);
+              const gstAmount = subtotal * 0.18;
+              const shippingCharges = subtotal >= 1000 ? 0 : 40;
+
+              // Hide discount row
+              document.getElementById('discountRow').classList.add('hidden');
+              document.getElementById('discountAmount').textContent = '0.00';
+
+              // Update GST amount
+              document.getElementById('gstAmount').textContent = gstAmount.toFixed(2);
+
+              // Calculate final total without discount
+              const finalTotal = subtotal + gstAmount + shippingCharges;
+              document.getElementById('finalTotal').textContent = finalTotal.toFixed(2);
+
+              // Hide applied coupon info
+              document.getElementById('appliedCouponInfo').classList.add('hidden');
+              document.getElementById('appliedCouponCode').textContent = '';
+              document.getElementById('discountInfo').textContent = '';
+
+              // Update COD availability with new total
+              updatePaymentMethodsAfterCoupon(finalTotal);
+
+              await showAlert('success', 'Coupon removed successfully');
+          } catch (error) {
+              await showAlert('error', 'Failed to remove coupon');
+          }
+      }
+
+      // Add this function to calculate and update the total
+      function updateTotalAmount() {
+          const subtotal = parseFloat(document.getElementById('subtotal').textContent);
+          const gstAmount = subtotal * 0.18;
+          const shippingCharges = subtotal >= 1000 ? 0 : 40;
+          const discount = currentDiscount || 0;
+
+          const finalTotal = subtotal + gstAmount + shippingCharges - discount;
+          document.getElementById('finalTotal').textContent = finalTotal.toFixed(2);
+          
+          // Update COD availability
+          updatePaymentMethodsAfterCoupon(finalTotal);
+      }
+
+      // Call this when the page loads
+      document.addEventListener('DOMContentLoaded', function() {
+          updateTotalAmount();
+      });
+
       async function placeOrder() {
-    try {
-        // Check if address is selected
-        const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
-        if (!selectedAddress) {
-            await showAlert('error', 'Please select a delivery address.');
-            return;
-        }
+          try {
+              // Check if address is selected
+              const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+              if (!selectedAddress) {
+                  await showAlert('error', 'Please select a delivery address.');
+                  return;
+              }
 
-        // Check if payment method is selected
-        const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
-        if (!selectedPayment) {
-            await showAlert('error', 'Please select a payment method to proceed with your order.');
-            return;
-        }
+              // Check if payment method is selected
+              const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
+              if (!selectedPayment) {
+                  await showAlert('error', 'Please select a payment method to proceed with your order.');
+                  return;
+              }
 
-        const paymentMethod = selectedPayment.value; 
-        const finalAmount = parseFloat(document.getElementById('finalTotal').textContent);
+              const paymentMethod = selectedPayment.value; 
+              const finalAmount = parseFloat(document.getElementById('finalTotal').textContent);
 
+              // Validate COD payment method
+              if (paymentMethod === 'cod' && finalAmount > 1000000000) { // Adjusted to 1000 for consistency
+                  await showAlert('error', 'Cash on Delivery is not available for orders above ₹1,000. Please choose a different payment method.');
+                  return;
+              }
 
-        // Validate COD payment method
-        if (paymentMethod === 'cod' && finalAmount > 1000000000) { // Adjusted to 1000 for consistency
-            await showAlert('error', 'Cash on Delivery is not available for orders above ₹1,000. Please choose a different payment method.');
-            return;
-        }
+              let response;
 
-        let response;
+              if (paymentMethod === 'wallet') {
+                  response = await processWalletPayment(selectedAddress.value);
+                  if (response.success) {
+                      await showAlert('success', `Order Placed Successfully! Order ID: ${response.orderId}`);
+                      window.location.href = `/orders?success=true&orderId=${response.orderId}`;
+                  } else {
+                      throw new Error(response.message);
+                  }
+              } else if (paymentMethod === 'cod') {
+                  response = await fetch('/checkout/place-order', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                          addressId: selectedAddress.value,
+                          paymentMethod: 'cod',
+                          couponCode: appliedCoupon // Include the applied coupon code
+                      })
+                  });
 
-        if (paymentMethod === 'wallet') {
-            response = await processWalletPayment(selectedAddress.value);
-            if (response.success) {
-                await showAlert('success', `Order Placed Successfully! Order ID: ${response.orderId}`);
-                window.location.href = `/orders?success=true&orderId=${response.orderId}`;
-            } else {
-                throw new Error(response.message);
-            }
-        } else if (paymentMethod === 'cod') {
-            response = await fetch('/checkout/place-order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    addressId: selectedAddress.value,
-                    paymentMethod: 'cod',
-                    couponCode: document.getElementById('appliedCouponCode')?.textContent
-                })
-            });
+                  // Check if response is OK
+                  if (!response.ok) {
+                      const errorText = await response.text(); // Get the response text
+                      throw new Error(`Server error: ${errorText}`); // Throw an error with the response text
+                  }
 
-            // Check if response is OK
-            if (!response.ok) {
-                const errorText = await response.text(); // Get the response text
-                throw new Error(`Server error: ${errorText}`); // Throw an error with the response text
-            }
+                  const data = await response.json();
 
-            const data = await response.json();
+                  if (data.success) {
+                      await showAlert('success', `Order Placed Successfully! Order ID: ${data.orderId}`);
+                      window.location.href = `/orders?success=true&orderId=${data.orderId}`;
+                  } else {
+                      throw new Error(data.message);
+                  }
+              } else if (paymentMethod === 'online') {
+                  const data = await createRazorpayOrder(selectedAddress.value);
+                  if (!data.success) {
+                      throw new Error(data.message);
+                  }
+                  const options = {
+                      key: data.key,
+                      amount: data.order.amount,
+                      currency: "INR",
+                      name: "Virtue Rider",
+                      description: "Order Payment",
+                      order_id: data.order.id,
+                      handler: async function (response) {
+                          try {
+                              const verifyResponse = await fetch('/checkout/verify-payment', {
+                                  method: 'POST',
+                                  headers: {
+                                      'Content-Type': 'application/json'
+                                  },
+                                  body: JSON.stringify({
+                                      razorpay_order_id: response.razorpay_order_id,
+                                      razorpay_payment_id: response.razorpay_payment_id,
+                                      razorpay_signature: response.razorpay_signature
+                                  })
+                              });
 
-            if (data.success) {
-                await showAlert('success', `Order Placed Successfully! Order ID: ${data.orderId}`);
-                window.location.href = `/orders?success=true&orderId=${data.orderId}`;
-            } else {
-                throw new Error(data.message);
-            }
-        } else if (paymentMethod === 'online') {
-            const data = await createRazorpayOrder(selectedAddress.value);
-            if (!data.success) {
-                throw new Error(data.message);
-            }
-            const options = {
-                key: data.key,
-                amount: data.order.amount,
-                currency: "INR",
-                name: "Virtue Rider",
-                description: "Order Payment",
-                order_id: data.order.id,
-                handler: async function (response) {
-                    try {
-                        const verifyResponse = await fetch('/checkout/verify-payment', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature
-                            })
-                        });
+                              const verifyData = await verifyResponse.json();
+                              if (verifyData.success) {
+                                  await showAlert('success', 'Order Placed Successfully!', `Order ID: ${verifyData.orderId}`);
+                                  window.location.href = `/orders?success=true&orderId=${verifyData.orderId}`;
+                              } else {
+                                  throw new Error(verifyData.message);
+                              }
+                          } catch (error) {
+                              await showAlert('error', 'Payment Failed', error.message);
+                          }
+                      },
+                      prefill: {
+                          name: "<%= user.firstName %> <%= user.lastName %>",
+                          email: "<%= user.email %>",
+                          contact: "<%= user.phone %>"
+                      },
+                      theme: {
+                          color: "#000000"
+                      },
+                      modal: {
+                          ondismiss: async function() {
+                              try {
+                                  await fetch('/checkout/payment-failed', {
+                                      method: 'POST',
+                                      headers: {
+                                          'Content-Type': 'application/json'
+                                      },
+                                      body: JSON.stringify({
+                                          error: { description: 'Payment cancelled by user' },
+                                          razorpay_order_id: options.order_id
+                                      })
+                                  });
 
-                        const verifyData = await verifyResponse.json();
-                        if (verifyData.success) {
-                            await showAlert('success', 'Order Placed Successfully!', `Order ID: ${verifyData.orderId}`);
-                            window.location.href = `/orders?success=true&orderId=${verifyData.orderId}`;
-                        } else {
-                            throw new Error(verifyData.message);
-                        }
-                    } catch (error) {
-                        await showAlert('error', 'Payment Failed', error.message);
-                    }
-                },
-                prefill: {
-                    name: "<%= user.firstName %> <%= user.lastName %>",
-                    email: "<%= user.email %>",
-                    contact: "<%= user.phone %>"
-                },
-                theme: {
-                    color: "#000000"
-                },
-                modal: {
-                    ondismiss: async function() {
-                        try {
-                            await fetch('/checkout/payment-failed', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    error: { description: 'Payment cancelled by user' },
-                                    razorpay_order_id: options.order_id
-                                })
-                            });
+                                  showAlert('error', 'Payment cancelled. You can retry the payment from your orders page.')
+                                      .then(() => {
+                                          window.location.href = '/orders';
+                                      });
 
-                            showAlert('error', 'Payment cancelled. You can retry the payment from your orders page.')
-                                .then(() => {
-                                    window.location.href = '/orders';
-                                });
+                              } catch (error) {
+                                  console.error('Error handling payment failure:', error);
+                                  showAlert('error', 'Payment failed. Please check your orders page.')
+                                      .then(() => {
+                                          window.location.href = '/orders';
+                                      });
+                              }
+                          }
+                      }
+                  };
 
-                        } catch (error) {
-                            console.error('Error handling payment failure:', error);
-                            showAlert('error', 'Payment failed. Please check your orders page.')
-                                .then(() => {
-                                    window.location.href = '/orders';
-                                });
-                        }
-                    }
-                }
-            };
-
-            const rzp = new Razorpay(options);
-            rzp.open();
-        }
-    } catch (error) {
-        console.error('Error in placeOrder:', error);
-        await showAlert('error', 'An error occurred while placing the order: ' + error.message);
-    }
-}
+                  const rzp = new Razorpay(options);
+                  rzp.open();
+              }
+          } catch (error) {
+              console.error('Error in placeOrder:', error);
+              await showAlert('error', 'An error occurred while placing the order: ' + error.message);
+          }
+      }
 
       function showInputModal(amountNeeded) {
           const modal = document.getElementById('inputModal');

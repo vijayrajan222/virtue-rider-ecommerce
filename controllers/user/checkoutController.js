@@ -130,61 +130,29 @@ const userCheckoutController = {
 
     placeOrder: async (req, res) => {
         try {
-            const { addressId, paymentMethod } = req.body;
-            // Validate user ID format
-            console.log('payment method ', paymentMethod)
-            console.log('User id ', req.session.userId)
-            if (!mongoose.Types.ObjectId.isValid(req.session.userId)) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Invalid user ID format'
-                });
-            }
+            const { addressId, paymentMethod, couponCode } = req.body;
+            const userId = req.session.userId;
 
-            if (!mongoose.Types.ObjectId.isValid(addressId)) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Invalid address ID format'
-                });
-            }
-            const userId = new mongoose.Types.ObjectId(req.session.userId); 
-
-            console.log('User id ', userId)
-            // Validate inputs
-            if (!addressId || !paymentMethod) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Missing required fields'
-                });
-            }
-
-            // Get cart and validate
-            const cart = await cartSchema.findOne({ userId })
-                .populate({
-                    path: 'items.productId',
-                    model: 'Product',
-                    select: 'productName price'
-                });
-
-                for (const item of cart.items) {
-                    if (!mongoose.Types.ObjectId.isValid(item.productId?._id)) {
-                        return res.status(400).json({
-                            success: false,
-                            message: 'Invalid product ID in cart'
-                        });
-                    }
-                }
-            if (!cart || cart.items.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Cart is empty'
-                });
-            }
-
-            // Calculate the total amount
-            const finalAmount = cart.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-
+            // Get cart and calculate amounts
+            const cart = await cartSchema.findOne({ userId }).populate('items.productId');
+            const subtotal = cart.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+            const gstAmount = subtotal * 0.18;
+            const shippingCharges = subtotal >= 1000 ? 0 : 40;
             
+            // Calculate discount if coupon is applied
+            let discount = 0;
+            if (couponCode) {
+                const coupon = await Coupon.findOne({ code: couponCode });
+                if (coupon) {
+                    discount = Math.min(
+                        (subtotal * coupon.discountPercentage) / 100,
+                        coupon.maximumDiscount
+                    );
+                }
+            }
+
+            // Calculate final amount
+            const finalAmount = subtotal + gstAmount + shippingCharges - discount;
 
             const orderItems = cart.items.map(item => ({
                 product: item.productId._id,
@@ -219,6 +187,10 @@ const userCheckoutController = {
             const order = new Order({
                 user: userId,
                 products: orderItems,
+                subtotal: subtotal,
+                gstAmount: gstAmount,
+                shippingCharges: shippingCharges,
+                couponDiscount: discount,
                 totalAmount: finalAmount,
                 paymentMethod: paymentMethod,
                 paymentStatus: paymentMethod === 'cod' ? 'processing' : 'completed',
