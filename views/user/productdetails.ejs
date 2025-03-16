@@ -112,10 +112,45 @@
                             <!-- Price -->
                             <div class="space-y-2">
                                 <div class="flex items-baseline gap-3">
-                                    <span class="text-4xl font-bold text-gray-900">
-                                        ₹<%= product.price.toLocaleString('en-IN') %>
-                                    </span>
+                                    <% if (offer) { %>
+                                        <span class="text-4xl font-bold text-gray-900">
+                                            ₹<%= Math.floor(discountedPrice).toLocaleString('en-IN') %>
+                                        </span>
+                                        <span class="text-xl text-gray-500 line-through">
+                                            ₹<%= product.price.toLocaleString('en-IN') %>
+                                        </span>
+                                        <span class="text-sm text-green-600 font-medium">
+                                            <%= offer.discountAmount %><%= offer.discountType === 'percentage' ? '%' : '₹' %> off
+                                        </span>
+                                    <% } else { %>
+                                        <span class="text-4xl font-bold text-gray-900">
+                                            ₹<%= product.price.toLocaleString('en-IN') %>
+                                        </span>
+                                    <% } %>
                                 </div>
+
+                                <!-- Offer Details Badge -->
+                                <% if (offer) { %>
+                                    <div class="mt-2">
+                                        <div class="inline-flex items-center bg-red-50 px-3 py-1 rounded-full">
+                                            <span class="text-red-600 text-sm font-medium">
+                                                <%= offer.name %>
+                                            </span>
+                                        </div>
+                                        <% if (offer.minimumPurchase > 0) { %>
+                                            <p class="text-sm text-gray-500 mt-1">
+                                                *Minimum purchase: ₹<%= offer.minimumPurchase.toLocaleString('en-IN') %>
+                                            </p>
+                                        <% } %>
+                                        <p class="text-sm text-gray-500">
+                                            Valid till <%= new Date(offer.endDate).toLocaleDateString('en-IN', { 
+                                                day: 'numeric', 
+                                                month: 'short', 
+                                                year: 'numeric' 
+                                            }) %>
+                                        </p>
+                                    </div>
+                                <% } %>
                             </div>
 
                             <!-- Stock & Variants -->
