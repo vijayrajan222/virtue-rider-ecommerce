@@ -161,7 +161,15 @@
                                 <%= product.name %>
                             </h2>
                             <div class="flex items-baseline gap-1 mt-1">
-                                <span class="text-base font-bold text-gray-900">₹<%= product.price %></span>
+                                <% if (product.offer) { %>
+                                    <span class="text-base font-bold text-gray-900">₹<%= product.offer.discountedPrice.toFixed(2) %></span>
+                                    <span class="text-sm text-gray-500 line-through">₹<%= product.price %></span>
+                                    <span class="text-xs font-medium text-green-600 ml-2">
+                                        <%= product.offer.discountAmount %><%= product.offer.discountType === 'percentage' ? '%' : '₹' %> off
+                                    </span>
+                                <% } else { %>
+                                    <span class="text-base font-bold text-gray-900">₹<%= product.price %></span>
+                                <% } %>
                             </div>
                             
                             <!-- Add to Cart Section -->
@@ -260,6 +268,12 @@
                   
                   return `
                       <div class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
+                          ${product.offer ? `
+                              <div class="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                  ${product.offer.name}
+                              </div>
+                          ` : ''}
+                          
                           <a href="/product/${product._id}" class="block">
                               <div class="relative aspect-[4/5] overflow-hidden">
                                   ${product.images && product.images.length > 0 ? `
@@ -286,7 +300,15 @@
                                   ${product.name}
                               </h2>
                               <div class="flex items-baseline gap-1 mt-1">
-                                  <span class="text-base font-bold text-gray-900">₹${product.price}</span>
+                                  ${product.offer ? `
+                                      <span class="text-base font-bold text-gray-900">₹${product.offer.discountedPrice.toFixed(2)}</span>
+                                      <span class="text-sm text-gray-500 line-through">₹${product.price}</span>
+                                      <span class="text-xs font-medium text-green-600 ml-2">
+                                          ${product.offer.discountAmount}${product.offer.discountType === 'percentage' ? '%' : '₹'} off
+                                      </span>
+                                  ` : `
+                                      <span class="text-base font-bold text-gray-900">₹${product.price}</span>
+                                  `}
                               </div>
                               
                               ${hasStock && product.variants && product.variants.length > 0 ? `

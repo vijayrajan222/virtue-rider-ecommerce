@@ -1,5 +1,6 @@
 import Product from '../../models/productModel.js'
 import Category from '../../models/categoryModel.js';
+import Offer from '../../models/offerModel.js';
 
 
 export const getShop = async (req, res) => {
@@ -74,12 +75,68 @@ export const getShop = async (req, res) => {
             .skip(skip)
             .limit(limit);
 
+        // Fetch active offers
+        const currentDate = new Date();
+        const activeOffers = await Offer.find({
+            isActive: true,
+            startDate: { $lte: currentDate },
+            endDate: { $gte: currentDate }
+        });
+
+        // Map offers to products
+        const productsWithOffers = products.map(product => {
+            const productObj = product.toObject();
+            
+            // Find product-specific offers
+            const productOffers = activeOffers.filter(offer => 
+                offer.type === 'product' && 
+                offer.productIds.some(id => id.toString() === product._id.toString())
+            );
+
+            // Find category offers
+            const categoryOffers = activeOffers.filter(offer => 
+                offer.type === 'category' && 
+                offer.categoryId.toString() === product.categoryId._id.toString()
+            );
+
+            // Combine all applicable offers
+            const applicableOffers = [...productOffers, ...categoryOffers];
+
+            // Find the best discount
+            if (applicableOffers.length > 0) {
+                const bestOffer = applicableOffers.reduce((best, current) => {
+                    const currentDiscount = current.discountType === 'percentage' 
+                        ? (product.price * current.discountAmount / 100)
+                        : current.discountAmount;
+                    
+                    const bestDiscount = best ? (best.discountType === 'percentage'
+                        ? (product.price * best.discountAmount / 100)
+                        : best.discountAmount) : 0;
+
+                    return currentDiscount > bestDiscount ? current : best;
+                }, null);
+
+                if (bestOffer) {
+                    productObj.offer = {
+                        name: bestOffer.name,
+                        discountType: bestOffer.discountType,
+                        discountAmount: bestOffer.discountAmount,
+                        discountedPrice: bestOffer.discountType === 'percentage'
+                            ? product.price - (product.price * bestOffer.discountAmount / 100)
+                            : product.price - bestOffer.discountAmount
+                    };
+                }
+            }
+
+            return productObj;
+        });
+
         // Filter out products with invalid categories
-        const filteredProducts = products.filter(product => product.categoryId);
+        const filteredProducts = productsWithOffers.filter(product => product.categoryId);
 
         // Process products
         const processedProducts = filteredProducts.map(product => ({
-            ...product.toObject(),
+            ...product,
             price: product.price,
             variants: product.variants
         }));
