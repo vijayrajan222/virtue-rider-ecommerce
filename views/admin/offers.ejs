@@ -196,24 +196,42 @@
         }
 
         function openEditModal(offerData) {
-            const offer = JSON.parse(offerData);
-            document.getElementById('modalTitle').textContent = 'Edit Offer';
-            document.getElementById('offerId').value = offer._id;
-            document.getElementById('name').value = offer.name;
-            document.getElementById('type').value = offer.type;
-            document.getElementById('discountType').value = offer.discountType;
-            document.getElementById('discountAmount').value = offer.discountAmount;
-            document.getElementById('minimumPurchase').value = offer.minimumPurchase;
-            document.getElementById('startDate').value = new Date(offer.startDate).toISOString().slice(0, 16);
-            document.getElementById('endDate').value = new Date(offer.endDate).toISOString().slice(0, 16);
-            
-            updateItemsList();
-            const itemIds = offer.type === 'product' ? offer.productIds : [offer.categoryId];
-            Array.from(document.getElementById('itemIds').options).forEach(option => {
-                option.selected = itemIds.includes(option.value);
-            });
-            
-            showModal();
+            try {
+                const offer = JSON.parse(offerData.replace(/&quot;/g, '"'));
+                document.getElementById('modalTitle').textContent = 'Edit Offer';
+                document.getElementById('offerId').value = offer._id;
+                document.getElementById('name').value = offer.name;
+                document.getElementById('type').value = offer.type;
+                document.getElementById('discountType').value = offer.discountType;
+                document.getElementById('discountAmount').value = offer.discountAmount;
+                document.getElementById('minimumPurchase').value = offer.minimumPurchase;
+                
+                // Format dates properly
+                const startDate = new Date(offer.startDate);
+                const endDate = new Date(offer.endDate);
+                document.getElementById('startDate').value = startDate.toISOString().slice(0, 16);
+                document.getElementById('endDate').value = endDate.toISOString().slice(0, 16);
+                
+                // Update items list and set selected values
+                updateItemsList();
+                const itemIds = offer.type === 'product' ? 
+                    (offer.productIds || []).map(p => p._id || p) : 
+                    [offer.categoryId?._id || offer.categoryId];
+                    
+                const itemsSelect = document.getElementById('itemIds');
+                Array.from(itemsSelect.options).forEach(option => {
+                    option.selected = itemIds.includes(option.value);
+                });
+                
+                showModal();
+            } catch (error) {
+                console.error('Error in openEditModal:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to open edit modal'
+                });
+            }
         }
 
         function showModal() {

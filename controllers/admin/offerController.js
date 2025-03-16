@@ -3,7 +3,7 @@ import Product from '../../models/productModel.js';
 import Category from '../../models/categoryModel.js';
 
 // Get all offers
-export const getOffers = async (req, res, next) => {
+export const getOffers = async (req, res) => {
     try {
         const offers = await Offer.find()
             .populate('productIds')
@@ -17,10 +17,18 @@ export const getOffers = async (req, res, next) => {
             offers,
             products,
             categories,
+            title: 'Offers Management',
             path: '/admin/offers'
         });
     } catch (error) {
-        next(error);
+        console.error('Error in getOffers:', error);
+        res.status(500).render('admin/offers', {
+            offers: [],
+            products: [],
+            categories: [],
+            error: 'Failed to load offers',
+            path: '/admin/offers'
+        });
     }
 };
 
