@@ -44,6 +44,9 @@ import { getProfilePage, updateProfile } from '../controllers/user/profileContro
 
 import userOrderController from '../controllers/user/orderController.js'; 
 
+import { getWishlist, addToWishlist, removeFromWishlist, checkWishlistStatus } from '../controllers/user/wishlistController.js';
+
+
 const userRouter = express.Router();
 
 userRouter.get('/', gethomePage);
@@ -122,6 +125,10 @@ userRouter.post('/change-password', userMiddlewares.checkSession, changePassword
 
 userRouter.post('/checkout/validate-coupon', userCheckoutController.validateCoupon);
 
+userRouter.get('/wishlisttttt', userMiddlewares.checkSession, getWishlist);
+userRouter.post('/wishlist/add', userMiddlewares.checkSession, addToWishlist);
+userRouter.delete('/wishlist/remove/:productId', userMiddlewares.checkSession, removeFromWishlist);
+userRouter.get('/wishlist/check/:productId', userMiddlewares.checkSession, checkWishlistStatus);
 export default userRouter;
 
 

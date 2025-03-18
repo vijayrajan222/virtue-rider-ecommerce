@@ -120,13 +120,14 @@
                                             ₹<%= product.price.toLocaleString('en-IN') %>
                                         </span>
                                         <span class="text-sm text-green-600 font-medium">
-                                            <%= offer.discountAmount %><%= offer.discountType === 'percentage' ? '%' : '₹' %> off
+                                            <%= offer.discountAmount %>
+                                                <%= offer.discountType==='percentage' ? '%' : '₹' %> off
                                         </span>
-                                    <% } else { %>
-                                        <span class="text-4xl font-bold text-gray-900">
-                                            ₹<%= product.price.toLocaleString('en-IN') %>
-                                        </span>
-                                    <% } %>
+                                        <% } else { %>
+                                            <span class="text-4xl font-bold text-gray-900">
+                                                ₹<%= product.price.toLocaleString('en-IN') %>
+                                            </span>
+                                            <% } %>
                                 </div>
 
                                 <!-- Offer Details Badge -->
@@ -137,20 +138,19 @@
                                                 <%= offer.name %>
                                             </span>
                                         </div>
-                                        <% if (offer.minimumPurchase > 0) { %>
+                                        <% if (offer.minimumPurchase> 0) { %>
                                             <p class="text-sm text-gray-500 mt-1">
-                                                *Minimum purchase: ₹<%= offer.minimumPurchase.toLocaleString('en-IN') %>
+
+                                                d *Minimum purchase: ₹<%= offer.minimumPurchase.toLocaleString('en-IN')
+                                                    %>
                                             </p>
-                                        <% } %>
-                                        <p class="text-sm text-gray-500">
-                                            Valid till <%= new Date(offer.endDate).toLocaleDateString('en-IN', { 
-                                                day: 'numeric', 
-                                                month: 'short', 
-                                                year: 'numeric' 
-                                            }) %>
-                                        </p>
+                                            <% } %>
+                                                <p class="text-sm text-gray-500">
+                                                    Valid till <%= new Date(offer.endDate).toLocaleDateString('en-IN', {
+                                                        day: 'numeric' , month: 'short' , year: 'numeric' }) %>
+                                                </p>
                                     </div>
-                                <% } %>
+                                    <% } %>
                             </div>
 
                             <!-- Stock & Variants -->
@@ -181,12 +181,13 @@
                                         <i class="fas fa-bolt"></i>
                                         Buy Now
                                     </button> -->
+
+                                    <button onclick="toggleWishlist('<%= product._id %>')"
+                                        class="w-full py-4 bg-white text-gray-900 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                                        <i class="far fa-heart"></i>
+                                        Add to Wishlist
+                                    </button>
                                     <% } %>
-                                        <button onclick="toggleWishlist('<%= product._id %>')"
-                                            class="w-full py-4 bg-white text-gray-900 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-                                            <i class="far fa-heart"></i>
-                                            Add to Wishlist
-                                        </button>
                             </div>
                         </div>
                     </div>
@@ -299,7 +300,7 @@
                     console.log('Adding product with ID:', productId);
                     const selectedVariant = document.getElementById('variantSelect').value;
                     console.log("selectedVariant", selectedVariant);
-                    
+
                     try {
                         const response = await fetch('/cart/add', {
                             method: 'POST',
@@ -356,7 +357,125 @@
                         });
                     }
                 }
+                async function toggleWishlist(productId) {
+                    try {
+                        // First check if the product is already in the wishlist
+                        const checkResponse = await fetch(`/wishlist/check/${productId}`);
+                        const checkData = await checkResponse.json();
 
+                        let response;
+
+                        if (checkData.isInWishlist) {
+                            // Remove from wishlist
+                            response = await fetch(`/wishlist/remove/${productId}`, {
+                                method: 'DELETE'
+                            });
+                        } else {
+                            // Add to wishlist
+                            response = await fetch('/wishlist/add', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ productId })
+                            });
+                        }
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            // Update the wishlist button appearance
+                            const wishlistButton = document.querySelector('button[onclick*="toggleWishlist"]');
+                            const wishlistIcon = wishlistButton.querySelector('i');
+
+                            if (checkData.isInWishlist) {
+                                // Was in wishlist and now removed
+                                wishlistIcon.classList.remove('fas');
+                                wishlistIcon.classList.add('far');
+                                wishlistButton.innerHTML = '<i class="far fa-heart"></i> Add to Wishlist';
+
+                                Swal.fire({
+                                    title: 'Removed!',
+                                    text: 'Product removed from wishlist',
+                                    icon: 'success',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                // Was not in wishlist and now added
+                                wishlistIcon.classList.remove('far');
+                                wishlistIcon.classList.add('fas');
+                                wishlistButton.innerHTML = '<i class="fas fa-heart"></i> Remove from Wishlist';
+
+                                Swal.fire({
+                                    title: 'Added!',
+                                    text: 'Product added to wishlist',
+                                    icon: 'success',
+                                    showConfirmButton: true,
+                                    confirmButtonText: 'Continue Shopping',
+                                    showDenyButton: true,
+                                    denyButtonText: 'View Wishlist',
+                                    customClass: {
+                                        confirmButton: 'bg-gray-800 text-white px-4 py-2 rounded-lg mr-2 hover:bg-gray-700',
+                                        denyButton: 'bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700'
+                                    }
+                                }).then((result) => {
+                                    if (result.isDenied) {
+                                        window.location.href = '/wishlist';
+                                    }
+                                });
+                            }
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: data.message || 'Failed to update wishlist',
+                                icon: 'error',
+                                confirmButtonText: 'OK',
+                                customClass: {
+                                    confirmButton: 'bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700'
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error updating wishlist:', error);
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'An error occurred while updating the wishlist',
+                            icon: 'error',
+                            confirmButtonText: 'OK',
+                            customClass: {
+                                confirmButton: 'bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700'
+                            }
+                        });
+                    }
+                }
+
+                // Check wishlist status on page load to set the correct button state
+                async function checkInitialWishlistStatus() {
+                    try {
+                        const productId = '<%= product._id %>'; // Get the product ID from the template
+                        const response = await fetch(`/wishlist/check/${productId}`);
+                        const data = await response.json();
+
+                        if (response.ok && data.isInWishlist) {
+                            const wishlistButton = document.querySelector('button[onclick*="toggleWishlist"]');
+                            if (wishlistButton) {
+                                const wishlistIcon = wishlistButton.querySelector('i');
+                                wishlistIcon.classList.remove('far');
+                                wishlistIcon.classList.add('fas');
+                                wishlistButton.innerHTML = '<i class="fas fa-heart"></i> Remove from Wishlist';
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error checking wishlist status:', error);
+                    }
+                }
+
+                // Add this to your DOMContentLoaded event
+                document.addEventListener('DOMContentLoaded', function () {
+                    initializeZoom();
+                    checkInitialWishlistStatus();
+                });
                 async function buyNow(productId) {
                     try {
                         // Get the selected variant
@@ -372,9 +491,9 @@
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ 
+                            body: JSON.stringify({
                                 productId: productId,
-                                variantId: selectedVariant 
+                                variantId: selectedVariant
                             })
                         });
 

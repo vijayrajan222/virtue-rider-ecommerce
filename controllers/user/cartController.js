@@ -1,6 +1,51 @@
 import cartSchema from '../../models/cartModel.js';
 import productSchema from '../../models/productModel.js';
+import Offer from '../../models/offerModel.js';
 
+// Helper function to calculate applicable offer
+const getApplicableOffer = async (product, cartItem) => {
+    const now = new Date();
+    
+    // Find all active offers for this product or its category
+    const offers = await Offer.find({
+        $or: [
+            { productIds: product._id },
+            { categoryId: product.categoryId }
+        ],
+        startDate: { $lte: now },
+        endDate: { $gte: now },
+        isActive: true
+    });
+
+    if (!offers.length) return null;
+
+    // Find best offer
+    let bestOffer = null;
+    let maxDiscount = 0;
+
+    for (const offer of offers) {
+        // Check minimum purchase requirement
+        if (cartItem.price * cartItem.quantity >= offer.minimumPurchase) {
+            let discount = 0;
+            if (offer.discountType === 'percentage') {
+                discount = (cartItem.price * offer.discountAmount) / 100;
+            } else {
+                discount = offer.discountAmount;
+            }
+
+            if (discount > maxDiscount) {
+                maxDiscount = discount;
+                bestOffer = {
+                    ...offer.toObject(),
+                    discountedPrice: cartItem.price - discount,
+                    savedAmount: discount
+                };
+            }
+        }
+    }
+
+    return bestOffer;
+};
 
 export const getCart = async (req, res) => {
     try {
@@ -18,12 +63,16 @@ export const getCart = async (req, res) => {
         if (!cart) {
             return res.render('user/cart', { 
                 cartItems: [],
-                total: 0
+                total: 0,
+                savings: 0
             });
         }
 
-        const updatedItems = cart.items.map(item => {
+        // Process each cart item with offers
+        const processedItems = await Promise.all(cart.items.map(async (item) => {
             const product = item.productId;
+            const offer = await getApplicableOffer(product, item);
+            
             return {
                 product: {
                     _id: product._id,
@@ -38,22 +87,35 @@ export const getCart = async (req, res) => {
                     stock: product.variants.find(v => v._id.equals(item.variantId))?.stock
                 },
                 quantity: item.quantity,
-                price: item.price,
-                subtotal: item.quantity * item.price
+                originalPrice: item.price,
+                price: offer ? offer.discountedPrice : item.price,
+                subtotal: item.quantity * (offer ? offer.discountedPrice : item.price),
+                offer: offer ? {
+                    name: offer.name,
+                    discountType: offer.discountType,
+                    discountAmount: offer.discountAmount,
+                    savedAmount: offer.savedAmount * item.quantity
+                } : null
             };
-        });
+        }));
 
-        const total = updatedItems.reduce((sum, item) => sum + item.subtotal, 0);
+        const subtotal = processedItems.reduce((sum, item) => sum + (item.originalPrice * item.quantity), 0);
+        const total = processedItems.reduce((sum, item) => sum + item.subtotal, 0);
+        const totalSavings = subtotal - total;
 
         res.render('user/cart', { 
-            cartItems: updatedItems,
-            total: total
+            cartItems: processedItems,
+            subtotal,
+            total,
+            totalSavings
         });
     } catch (error) {
         console.error('Error fetching cart:', error);
         res.status(500).render('user/cart', { 
             cartItems: [],
             total: 0,
+            subtotal: 0,
+            totalSavings: 0,
             error: 'Failed to load cart'
         });
     }

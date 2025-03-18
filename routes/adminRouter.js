@@ -5,9 +5,7 @@ import {getDashboard} from '../controllers/admin/dashboardController.js';
 import {getAdminLogin, postAdminLogin, logout} from '../controllers/admin/adminauthController.js';
 import { getOffers, createOffer, updateOffer, deleteOffer } from '../controllers/admin/offerController.js';
 import upload from '../utils/multer.js';
-import {
-    getCoupons,
-    addCoupons,
+import {getCoupons,addCoupons,
     deleteCoupon,
     getActiveCoupons
 } from "../controllers/admin/couponController.js";
