@@ -125,10 +125,32 @@
                         </div>
                         
                         <div class="p-2">
-                            <h3 class="text-sm font-medium text-gray-800 truncate">
-                                <%= item.productId.name %>
-                            </h3>
-                            <p class="text-sm text-gray-600 mt-1">₹<%= item.productId.price %></p>
+                            <!-- Inside the product card, update the price section -->
+                            <div class="p-4">
+                                <h3 class="text-gray-800 text-sm font-medium truncate">
+                                    <%= item.productId.name %>
+                                </h3>
+                            
+                                <!-- Price and Offer -->
+                                <div class="flex items-baseline gap-2 mt-1">
+                                    <% if (item.productId.offer) { %>
+                                        <span class="text-base font-bold text-gray-900">₹<%= item.productId.offer.discountedPrice.toFixed(2) %></span>
+                                        <span class="text-sm text-gray-500 line-through">₹<%= item.productId.price %></span>
+                                        <span class="text-xs font-medium text-green-600">
+                                            <%= item.productId.offer.discountAmount %><%= item.productId.offer.discountType === 'percentage' ? '%' : '₹' %> off
+                                        </span>
+                                    <% } else { %>
+                                        <span class="text-base font-bold text-gray-900">₹<%= item.productId.price %></span>
+                                    <% } %>
+                                </div>
+                            
+                                <!-- Add offer badge if exists -->
+                                <% if (item.productId.offer) { %>
+                                    <div class="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                        <%= item.productId.offer.name %>
+                                    </div>
+                                <% } %>
+                            </div>
                         </div>
                     <% if (item.productId.categoryId && item.productId.isActive) { %>
                         </a>

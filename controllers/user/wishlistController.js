@@ -1,36 +1,91 @@
 import Wishlist from '../../models/wishlistModel.js';
 import Product from '../../models/productModel.js';
+import Offer from '../../models/offerModel.js';
+
 export const getWishlist = async (req, res) => {
-    console.log("entered the wishlist page")
     try {
-        console.log(req.session)
         const userId = req.session?.user;
         if (!userId) return res.redirect('/login');
-        console.log("after userID")
 
         const wishlist = await Wishlist.findOne({ userId }).populate({
             path: 'items.productId',
-            select: 'name price images isActive isHidden categoryId variants', // Removed offer if it's missing
+            select: 'name price images isActive isHidden categoryId variants',
             populate: [
-                { path: 'categoryId', select: 'name' }, // Populate category name
+                { path: 'categoryId', select: 'name' },
                 { path: 'variants', select: 'size stock' }
             ]
         });
-        
-           console.log("wishlist",wishlist)
-        console.log("Fetched Wishlist Items:", wishlist?.items); // Debugging
+
+        // Fetch active offers
+        const currentDate = new Date();
+        const activeOffers = await Offer.find({
+            isActive: true,
+            startDate: { $lte: currentDate },
+            endDate: { $gte: currentDate }
+        });
+
+        // Process wishlist items with offers
+        const processedWishlistItems = wishlist?.items.map(item => {
+            const productObj = item.productId.toObject();
+
+            // Find product-specific offers
+            const productOffers = activeOffers.filter(offer => 
+                offer.type === 'product' && 
+                offer.productIds.some(id => id.toString() === productObj._id.toString())
+            );
+
+            // Find category offers
+            const categoryOffers = activeOffers.filter(offer => 
+                offer.type === 'category' && 
+                productObj.categoryId && 
+                offer.categoryId.toString() === productObj.categoryId._id.toString()
+            );
+
+            // Combine all applicable offers
+            const applicableOffers = [...productOffers, ...categoryOffers];
+
+            // Find the best discount
+            if (applicableOffers.length > 0) {
+                const bestOffer = applicableOffers.reduce((best, current) => {
+                    const currentDiscount = current.discountType === 'percentage' 
+                        ? (productObj.price * current.discountAmount / 100)
+                        : current.discountAmount;
+                    
+                    const bestDiscount = best ? (best.discountType === 'percentage'
+                        ? (productObj.price * best.discountAmount / 100)
+                        : best.discountAmount) : 0;
+
+                    return currentDiscount > bestDiscount ? current : best;
+                }, null);
+
+                if (bestOffer) {
+                    productObj.offer = {
+                        name: bestOffer.name,
+                        discountType: bestOffer.discountType,
+                        discountAmount: bestOffer.discountAmount,
+                        discountedPrice: bestOffer.discountType === 'percentage'
+                            ? productObj.price - (productObj.price * bestOffer.discountAmount / 100)
+                            : productObj.price - bestOffer.discountAmount
+                    };
+                }
+            }
+
+            return {
+                ...item.toObject(),
+                productId: productObj
+            };
+        }) || [];
 
         res.render("user/wishlist", {
-            wishlist: wishlist?.items || [],
+            wishlist: processedWishlistItems,
             user: req.session.user
         });
-        // res.json({message:"dataFetched Successfully"})
+
     } catch (error) {
         console.error("Get wishlist error:", error);
         res.status(500).json({ message: "Error loading wishlist", error: error.message });
     }
 };
-
 
 export const addToWishlist = async (req, res) => {
     try {
