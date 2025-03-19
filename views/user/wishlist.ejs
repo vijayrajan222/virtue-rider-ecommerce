@@ -327,63 +327,66 @@
 
         async function addToCart(productId, variantId) {
             try {
-                // First add to cart
-                const response = await fetch('/cart/add', {
+                // Add to cart
+                const cartResponse = await fetch('/cart/add', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        productId: productId,
-                        variantId: variantId,
+                        productId,
+                        variantId,
                         quantity: 1
                     })
                 });
 
-                const data = await response.json();
+                const cartData = await cartResponse.json();
 
-                if (data.success) {
-                    // If successfully added to cart, remove from wishlist
-                    const removeResponse = await fetch(`/wishlist/remove/${productId}`, {
-                        method: 'DELETE'
-                    });
-
-                    const removeData = await removeResponse.json();
-
-                    if (removeData.success) {
-                        // Remove item from UI with animation
-                        const item = document.getElementById(`wishlist-item-${productId}`);
-                        item.style.opacity = '0';
-                        item.style.transform = 'scale(0.95)';
-                        item.style.transition = 'all 0.3s ease';
-                        
-                        setTimeout(() => {
-                            item.remove();
-                            
-                            // Update wishlist count
-                            const wishlistCount = document.getElementById('wishlist-count');
-                            if (wishlistCount) {
-                                const currentCount = parseInt(wishlistCount.textContent);
-                                wishlistCount.textContent = currentCount - 1;
-                            }
-
-                            // Show empty state if no items left
-                            const wishlistGrid = document.getElementById('wishlist-grid');
-                            if (wishlistGrid && wishlistGrid.children.length === 0) {
-                                location.reload(); // Reload to show empty state
-                            }
-                        }, 300);
-
-                        showToast('success', 'Success', 'Product added to cart and removed from wishlist');
-                    } else {
-                        showToast('success', 'Success', 'Product added to cart');
-                    }
-                } else {
-                    showToast('error', 'Error', data.message || 'Failed to add to cart');
+                if (!cartResponse.ok) {
+                    throw new Error(cartData.message || 'Failed to add to cart');
                 }
+
+                // If cart addition successful, remove from wishlist
+                const wishlistResponse = await fetch(`/wishlist/remove/${productId}`, {
+                    method: 'DELETE'
+                });
+
+                const wishlistData = await wishlistResponse.json();
+
+                if (!wishlistResponse.ok) {
+                    throw new Error(wishlistData.message || 'Failed to remove from wishlist');
+                }
+
+                // Remove item from UI
+                const wishlistItem = document.getElementById(`wishlist-item-${productId}`);
+                if (wishlistItem) {
+                    wishlistItem.style.opacity = '0';
+                    wishlistItem.style.transform = 'scale(0.95)';
+                    wishlistItem.style.transition = 'all 0.3s ease';
+
+                    setTimeout(() => {
+                        wishlistItem.remove();
+
+                        // Update wishlist count
+                        const countElements = document.querySelectorAll('#wishlist-count');
+                        countElements.forEach(el => {
+                            el.textContent = parseInt(el.textContent) - 1;
+                        });
+
+                        // Check if wishlist is empty
+                        const remainingItems = document.querySelectorAll('[id^="wishlist-item-"]').length;
+                        if (remainingItems === 0) {
+                            window.location.reload();
+                            return;
+                        }
+                    }, 300);
+                }
+
+                showToast('success', 'Success', 'Product added to cart');
+
             } catch (error) {
-                console.error('Add to cart error:', error);
-                showToast('error', 'Error', 'Failed to add to cart');
+                console.error('Operation error:', error);
+                showToast('error', 'Error', error.message);
             }
         }
 
