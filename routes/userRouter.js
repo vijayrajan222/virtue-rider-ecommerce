@@ -105,7 +105,7 @@ userRouter.get('/orders', userMiddlewares.checkSession, userOrderController.getO
 
 userRouter.patch("/orders/:orderId/items/:productId/cancel", userMiddlewares.checkSession ,userOrderController.cancelOrder)
 
-userRouter.post("/orders/:orderId/items/:productId/return", userMiddlewares.checkSession, userOrderController.requestReturnItem)
+userRouter.post("/orders/:orderId/items/:productId/return", userMiddlewares.checkSession, userOrderController.requestReturnItem);
 
 userRouter.get('/checkout', userMiddlewares.checkSession, userCheckoutController.getCheckoutPage);
 
@@ -129,6 +129,17 @@ userRouter.get('/wishlist', userMiddlewares.checkSession, getWishlist);
 userRouter.post('/wishlist/add', userMiddlewares.checkSession, addToWishlist);
 userRouter.delete('/wishlist/remove/:productId', userMiddlewares.checkSession, removeFromWishlist);
 userRouter.get('/wishlist/check/:productId', userMiddlewares.checkSession, checkWishlistStatus);
+
+userRouter.post('/checkout/create-razorpay-order', 
+    userMiddlewares.checkSession, 
+    userCheckoutController.createRazorpayOrder
+);
+
+userRouter.post('/checkout/verify-payment', 
+    userMiddlewares.checkSession, 
+    userCheckoutController.verifyPayment
+);
+
 export default userRouter;
 
 

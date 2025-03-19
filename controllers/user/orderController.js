@@ -58,8 +58,6 @@ export const userOrderController = {
     },
     requestReturnItem: async (req, res) => {
         try {
-            console.log("Requested Item Route");
-
             const { orderId, productId } = req.params;
             const { reason } = req.body;
             const userId = req.session.user;
@@ -76,18 +74,16 @@ export const userOrderController = {
                 });
             }
 
-            const itemIndex = order.products.findIndex(item =>
+            const item = order.products.find(item => 
                 item.product._id.toString() === productId
             );
 
-            if (itemIndex === -1) {
+            if (!item) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Item not found in order'
+                    message: 'Product not found in order'
                 });
             }
-
-            const item = order.products[itemIndex];
 
             if (item.status !== 'delivered') {
                 return res.status(400).json({
@@ -95,39 +91,20 @@ export const userOrderController = {
                     message: 'Only delivered items can be returned'
                 });
             }
-            const orderDate = order.createdAt;
-            const daysSinceOrder = Math.floor(
-                (Date.now() - new Date(orderDate)) / (1000 * 60 * 60 * 24)
-            );
 
-            if (daysSinceOrder > 7) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Return window has expired (7 days from delivery)'
-                });
-            }
-
-            // Update return status for the item
-            item.isReturnRequested = true;
+            // Update item status
             item.status = 'return_pending';
-            item.returnDetails.reason = reason; 
-            item.returnDetails.requestDate = new Date();
-
-            // Update payment status if payment was completed
-            if (['wallet', 'online', 'razorpay'].includes(order.paymentMethod) &&
-                order.paymentStatus === 'completed') {
-                order.paymentStatus = 'processing';
-            }
-
-            order.markModified('products');
-            order.markModified('paymentStatus');
+            item.returnDetails = {
+                requestDate: new Date(),
+                reason: reason,
+                status: 'pending'
+            };
 
             await order.save();
-            console.log("Return requested:", order);
 
             res.json({
                 success: true,
-                message: 'Return requested successfully'
+                message: 'Return request submitted successfully'
             });
 
         } catch (error) {

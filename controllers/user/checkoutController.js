@@ -4,6 +4,8 @@ import addressSchema from '../../models/addressModel.js';
 import productSchema from '../../models/productModel.js';
 import Coupon from '../../models/couponModel.js';
 import mongoose from 'mongoose';
+import razorpay from '../../utils/razorpay.js';
+import crypto from 'crypto';
 
 const userCheckoutController = {
     getCheckoutPage: async (req, res) => {
@@ -73,7 +75,7 @@ const userCheckoutController = {
             });
         }
     },
-
+    
     validateCoupon: async (req, res) => {
         try {
             const { couponCode } = req.body;
@@ -241,6 +243,176 @@ const userCheckoutController = {
             res.status(500).json({
                 success: false,
                 message: error.message || 'Error placing order'
+            });
+        }
+    },
+
+    createRazorpayOrder: async (req, res) => {
+        try {
+            const userId = req.session.user;
+            const { addressId } = req.body;
+
+            const cart = await cartSchema.findOne({ userId })
+                .populate('items.productId');
+
+            if (!cart || cart.items.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cart is empty'
+                });
+            }
+
+            let amount = cart.items.reduce((total, item) => {
+                return total + (item.quantity * item.price);
+            }, 0);
+
+            const gstAmount = amount * 0.18;
+            const shippingCharges = amount >= 1000 ? 0 : 40;
+            amount = amount + gstAmount + shippingCharges;
+
+            const options = {
+                amount: Math.round(amount * 100),
+                currency: "INR",
+                receipt: `order_rcpt_${Date.now()}`
+            };
+
+            const order = await razorpay.orders.create(options);
+
+            res.status(200).json({
+                success: true,
+                order,
+                key: process.env.RAZORPAY_KEY_ID
+            });
+
+        } catch (error) {
+            console.error('Razorpay order creation error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Payment initiation failed'
+            });
+        }
+    },
+
+    verifyPayment: async (req, res) => {
+        try {
+            const {
+                razorpay_order_id,
+                razorpay_payment_id,
+                razorpay_signature,
+                addressId
+            } = req.body;
+
+            const sign = razorpay_order_id + "|" + razorpay_payment_id;
+            const expectedSign = crypto
+                .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+                .update(sign.toString())
+                .digest("hex");
+
+            if (razorpay_signature !== expectedSign) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid payment signature"
+                });
+            }
+
+            // Instead of using this.placeOrder, use req.body directly
+            const userId = req.session.user;
+            const cart = await cartSchema.findOne({ userId }).populate('items.productId');
+
+            if (!cart || cart.items.length === 0) {
+                throw new Error('Cart is empty');
+            }
+
+            // Calculate amounts
+            const subtotal = cart.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+            const gstAmount = subtotal * 0.18;
+            const shippingCharges = subtotal >= 1000 ? 0 : 40;
+            const totalAmount = subtotal + gstAmount + shippingCharges;
+
+            const orderItems = cart.items.map(item => ({
+                product: item.productId._id,
+                quantity: item.quantity,
+                price: item.price,
+                variant: item.variantId,
+                subtotal: item.quantity * item.price,
+                return: {
+                    isReturnRequested: false,
+                    reason: null,
+                    requestDate: null,
+                    status: null,
+                    adminComment: null,
+                    isReturnAccepted: false
+                }
+            }));
+
+            const address = await addressSchema.findOne({ _id: addressId, userId });
+            if (!address) {
+                throw new Error('Delivery address not found');
+            }
+
+            const order = new Order({
+                user: userId,
+                products: orderItems,
+                subtotal,
+                gstAmount,
+                shippingCharges,
+                totalAmount,
+                paymentMethod: 'online',
+                paymentStatus: 'completed',
+                paymentDetails: {
+                    razorpay_order_id,
+                    razorpay_payment_id,
+                    razorpay_signature
+                },
+                shippingAddress: {
+                    fullName: address.fullName,
+                    mobileNumber: address.mobileNumber,
+                    addressLine1: address.addressLine1,
+                    addressLine2: address.addressLine2,
+                    city: address.city,
+                    state: address.state,
+                    pincode: address.pincode
+                },
+                orderCode: `ORD-${Date.now()}`
+            });
+
+            await order.save();
+
+            // Update product stock
+            for (const item of orderItems) {
+                await productSchema.findOneAndUpdate(
+                    {
+                        _id: item.product,
+                        'variants._id': item.variant
+                    },
+                    {
+                        $inc: {
+                            'variants.$.stock': -item.quantity
+                        }
+                    }
+                );
+            }
+
+            // Clear cart
+            await cartSchema.findOneAndUpdate(
+                { userId },
+                {
+                    items: [],
+                    totalAmount: 0
+                }
+            );
+
+            return res.json({
+                success: true,
+                message: 'Payment verified and order placed successfully',
+                orderId: order.orderCode
+            });
+
+        } catch (error) {
+            console.error("Payment verification error:", error);
+            return res.status(500).json({
+                success: false,
+                message: "Payment verification failed"
             });
         }
     }

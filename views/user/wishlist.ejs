@@ -78,7 +78,7 @@
                                     Unavailable
                                 </button>
                             <% } else if (item.productId.variants && item.productId.variants.length > 0 && item.productId.variants.some(v => v.stock > 0)) { %>
-                                <button onclick="addToCart('<%= item.productId._id %>')"
+                                <button onclick="addToCart('<%= item.productId._id %>', '<%= item.productId.variants[0]._id %>')"
                                         class="flex-1 bg-black text-white px-3 py-1.5 rounded text-xs">
                                     Add to Cart
                                 </button>
@@ -169,7 +169,7 @@
                                 </button>
                             <% } else if (item.productId.variants && item.productId.variants.length > 0 && item.productId.variants.some(v => v.stock > 0)) { %>
                                 <button 
-                                    onclick="addToCart('<%= item.productId._id %>')"
+                                    onclick="addToCart('<%= item.productId._id %>', '<%= item.productId.variants[0]._id %>')"
                                     class="bg-black text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-gray-800 transition-colors flex-1"
                                 >
                                     Add to Cart
@@ -325,33 +325,65 @@
             }
         }
 
-        async function addToCart(productId) {
+        async function addToCart(productId, variantId) {
             try {
+                // First add to cart
                 const response = await fetch('/cart/add', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ productId, quantity: 1 })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        productId: productId,
+                        variantId: variantId,
+                        quantity: 1
+                    })
                 });
 
                 const data = await response.json();
 
-                if (response.status === 400 && data.message.includes('not available')) {
-                    showToast('error', 'Product Unavailable');
-                    // Reload page to update product status
-                    setTimeout(() => window.location.reload(), 1500);
-                    return;
-                }
+                if (data.success) {
+                    // If successfully added to cart, remove from wishlist
+                    const removeResponse = await fetch(`/wishlist/remove/${productId}`, {
+                        method: 'DELETE'
+                    });
 
-                if (data.message && data.message.includes('added to cart')) {
-                    showToast('success', 'Success', data.message);
-                } else if (data.message && data.message.includes('Maximum limit')) {
-                    showToast('warning', 'Quantity Limit Reached', data.message);
+                    const removeData = await removeResponse.json();
+
+                    if (removeData.success) {
+                        // Remove item from UI with animation
+                        const item = document.getElementById(`wishlist-item-${productId}`);
+                        item.style.opacity = '0';
+                        item.style.transform = 'scale(0.95)';
+                        item.style.transition = 'all 0.3s ease';
+                        
+                        setTimeout(() => {
+                            item.remove();
+                            
+                            // Update wishlist count
+                            const wishlistCount = document.getElementById('wishlist-count');
+                            if (wishlistCount) {
+                                const currentCount = parseInt(wishlistCount.textContent);
+                                wishlistCount.textContent = currentCount - 1;
+                            }
+
+                            // Show empty state if no items left
+                            const wishlistGrid = document.getElementById('wishlist-grid');
+                            if (wishlistGrid && wishlistGrid.children.length === 0) {
+                                location.reload(); // Reload to show empty state
+                            }
+                        }, 300);
+
+                        showToast('success', 'Success', 'Product added to cart and removed from wishlist');
+                    } else {
+                        showToast('success', 'Success', 'Product added to cart');
+                    }
                 } else {
-                    throw new Error(data.message || 'Failed to add to cart');
+                    showToast('error', 'Error', data.message || 'Failed to add to cart');
                 }
             } catch (error) {
-                console.error('Cart error:', error);
-                showToast('error', 'Error', error.message || 'Error adding to cart');
+                console.error('Add to cart error:', error);
+                showToast('error', 'Error', 'Failed to add to cart');
             }
         }
 

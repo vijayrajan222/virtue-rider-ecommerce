@@ -160,7 +160,7 @@
                                                         <% } %>
 
                                                         <% if (item.status === 'delivered' && !item.isReturnRequested) { %>
-                                                            <button onclick="requestReturnForItem('<%= order._id %>', '<%= item.product._id %>', '<%= item.variant %>', '<%= item.product.name %>')"
+                                                            <button onclick="requestReturnForItem('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.name %>')"
                                                                     class="px-3 py-1 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors">
                                                                 Return
                                                             </button>
@@ -686,17 +686,15 @@
             document.getElementById('alertModal').classList.add('hidden');
         }
 
-        async function requestReturnForItem(orderId, productId, variantId, productName) {
+        async function requestReturnForItem(orderId, productId, productName) {
             const reasons = {
-                'Product damaged': 'Product damaged',
-                'Wrong product received': 'Wrong product received',
-                'Product not as described': 'Product not as described',
-                'Size/fit issue': 'Size/fit issue',
-                'Quality not as expected': 'Quality not as expected',
-                'Other': 'Other'
+                'defective': 'Product is defective',
+                'wrong_item': 'Received wrong item',
+                'not_as_described': 'Item not as described',
+                'size_issue': 'Size/fit issue',
+                'other': 'Other reason'
             };
 
-            // Show confirm dialog with select input
             const select = document.createElement('select');
             select.className = 'mt-4 w-full rounded border-gray-300';
             select.innerHTML = `
@@ -723,25 +721,22 @@
                     hideAlert();
                     showAlert('loading');
 
-                    const response = await fetch(`/orders/${orderId}/items/${productId}/${variantId}/return`, {
+                    const response = await fetch(`/orders/${orderId}/items/${productId}/return`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ reason })
                     });
 
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Failed to submit return request');
+                    }
+
                     const data = await response.json();
                     hideAlert();
+                    showAlert('success', 'Return request submitted successfully');
+                    setTimeout(() => window.location.reload(), 2000);
 
-                    if (response.ok) {
-                        showAlert('success', data.message || 'Return request submitted successfully');
-                        // Add reload after success alert is closed
-                        document.querySelector('#successAlert button').onclick = () => {
-                            hideAlert();
-                            window.location.reload();
-                        };
-                    } else {
-                        throw new Error(data.message || 'Failed to submit return request');
-                    }
                 } catch (error) {
                     hideAlert();
                     showAlert('error', error.message || 'Failed to request return');
