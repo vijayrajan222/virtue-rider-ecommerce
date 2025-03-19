@@ -6,6 +6,7 @@ import Coupon from '../../models/couponModel.js';
 import mongoose from 'mongoose';
 import razorpay from '../../utils/razorpay.js';
 import crypto from 'crypto';
+import Offer from '../../models/offerModel.js';
 
 const userCheckoutController = {
     getCheckoutPage: async (req, res) => {
@@ -24,29 +25,80 @@ const userCheckoutController = {
                 .populate({
                     path: 'items.productId',
                     model: 'Product',
-                    select: 'name images price variants' // Fetch variants array
+                    select: 'name images price variants'
                 });
 
-            // Check stock availability & prepare cart items
+            // Fetch active offers
+            const currentDate = new Date();
+            const activeOffers = await Offer.find({
+                isActive: true,
+                startDate: { $lte: currentDate },
+                endDate: { $gte: currentDate }
+            });
+
+            // Check stock availability & prepare cart items with offers
             let stockCheck = true;
             const cartItems = populatedCart.items.map(item => {
                 const product = item.productId;
-                const variant = product.variants.find(v => v._id.equals(item.variantId)); 
+                const variant = product.variants.find(v => v._id.equals(item.variantId));
                 if (!variant || variant.stock < item.quantity) {
-                    stockCheck = false; 
+                    stockCheck = false;
+                }
+
+                // Find applicable offers
+                const productOffers = activeOffers.filter(offer => 
+                    offer.type === 'product' && 
+                    offer.productIds.some(id => id.toString() === product._id.toString())
+                );
+
+                const categoryOffers = activeOffers.filter(offer => 
+                    offer.type === 'category' && 
+                    product.categoryId && 
+                    offer.categoryId.toString() === product.categoryId.toString()
+                );
+
+                // Find best offer
+                const applicableOffers = [...productOffers, ...categoryOffers];
+                let bestOffer = null;
+                let discountedPrice = item.price;
+
+                if (applicableOffers.length > 0) {
+                    bestOffer = applicableOffers.reduce((best, current) => {
+                        const currentDiscount = current.discountType === 'percentage'
+                            ? (item.price * current.discountAmount / 100)
+                            : current.discountAmount;
+                        
+                        const bestDiscount = best ? (best.discountType === 'percentage'
+                            ? (item.price * best.discountAmount / 100)
+                            : best.discountAmount) : 0;
+
+                        return currentDiscount > bestDiscount ? current : best;
+                    }, null);
+
+                    if (bestOffer) {
+                        discountedPrice = bestOffer.discountType === 'percentage'
+                            ? item.price - (item.price * bestOffer.discountAmount / 100)
+                            : item.price - bestOffer.discountAmount;
+                    }
                 }
 
                 return {
                     product: {
                         _id: product._id,
                         name: product.name,
-                        imageUrl: product.images[0] || '', 
+                        imageUrl: product.images[0] || '',
                     },
                     quantity: item.quantity,
                     price: item.price,
+                    discountedPrice: discountedPrice,
+                    offer: bestOffer ? {
+                        name: bestOffer.name,
+                        discountType: bestOffer.discountType,
+                        discountAmount: bestOffer.discountAmount
+                    } : null,
                     variant: variant ? variant.size : 'N/A',
                     stock: variant ? variant.stock : 0,
-                    subtotal: item.quantity * item.price
+                    subtotal: item.quantity * discountedPrice
                 };
             });
 
@@ -55,7 +107,7 @@ const userCheckoutController = {
                 return res.redirect('/cart?error=stock');
             }
 
-            // Calculate total
+            // Calculate total with discounts
             const total = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
             const finalTotal = total;
 
