@@ -37,16 +37,45 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h2 class="text-lg font-medium text-gray-200">Available Balance</h2>
-                        <p class="text-3xl md:text-4xl font-bold mt-2">₹<%= wallet.balance.toFixed(2) %></p>
+                        <p class="text-3xl md:text-4xl font-bold mt-2" id="walletBalance">₹<%= wallet.balance.toFixed(2) %></p>
                     </div>
                     <button 
-                        class="w-full sm:w-auto bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-6 py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled
+                        onclick="showAddFundsModal()"
+                        class="w-full sm:w-auto bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-6 py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
                     >
                         <i class="fas fa-plus"></i>
                         <span>Add Funds</span>
-                        <span class="text-xs">(coming soon)</span>
                     </button>
+                </div>
+            </div>
+
+            <!-- Add Funds Modal -->
+            <div id="addFundsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+                <div class="flex items-center justify-center min-h-screen p-4">
+                    <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">Add Funds to Wallet</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Amount (₹)</label>
+                                    <input type="number" id="fundAmount" min="100" max="50000" 
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500"
+                                        placeholder="Enter amount">
+                                </div>
+                                <p class="text-sm text-gray-500">Min: ₹100, Max: ₹50,000</p>
+                            </div>
+                            <div class="mt-6 flex justify-end gap-3">
+                                <button onclick="closeAddFundsModal()" 
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">
+                                    Cancel
+                                </button>
+                                <button onclick="addFunds()" 
+                                    class="px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-md">
+                                    Add Funds
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -97,5 +126,50 @@
     </main>
 
     <%- include("../partials/footer") %>
+
+    <script>
+        function showAddFundsModal() {
+            document.getElementById('addFundsModal').classList.remove('hidden');
+        }
+
+        function closeAddFundsModal() {
+            document.getElementById('addFundsModal').classList.add('hidden');
+            document.getElementById('fundAmount').value = '';
+        }
+
+        async function addFunds() {
+            const amount = parseFloat(document.getElementById('fundAmount').value);
+            
+            if (!amount || amount < 100 || amount > 50000) {
+                alert('Please enter an amount between ₹100 and ₹50,000');
+                return;
+            }
+
+            try {
+                const response = await fetch('/wallet/add-funds', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ amount })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update wallet balance
+                    document.getElementById('walletBalance').textContent = `₹${data.newBalance.toFixed(2)}`;
+                    closeAddFundsModal();
+                    // Reload page to show new transaction
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Failed to add funds');
+                }
+            } catch (error) {
+                console.error('Add funds error:', error);
+                alert('Failed to add funds. Please try again.');
+            }
+        }
+    </script>
 </body>
 </html> 

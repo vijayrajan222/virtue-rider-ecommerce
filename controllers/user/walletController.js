@@ -13,21 +13,34 @@ export const walletController = {
                 wallet = await Wallet.create({ userId });
             }
 
-            const transactions = wallet.transactions
-                .sort((a, b) => b.date - a.date)
-                .slice(0, 50); // Get last 50 transactions
+            // Populate order details for transactions
+            const transactions = await Promise.all(wallet.transactions.map(async (transaction) => {
+                if (transaction.orderId) {
+                    const order = await Order.findById(transaction.orderId);
+                    if (order) {
+                        transaction = transaction.toObject();
+                        transaction.orderNumber = order._id;
+                    }
+                }
+                return transaction;
+            }));
+
+            // Sort transactions by date
+            const sortedTransactions = transactions.sort((a, b) => 
+                new Date(b.date) - new Date(a.date)
+            ).slice(0, 50);
 
             res.render('user/wallet', {
                 wallet,
-                transactions,
+                transactions: sortedTransactions,
                 user
             });
 
         } catch (error) {
             console.error('Get wallet error:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Error fetching wallet details'
+            res.status(500).render('error', {
+                message: 'Error fetching wallet details',
+                error: error.message
             });
         }
     },
@@ -111,6 +124,38 @@ export const walletController = {
                 success: false,
                 message: 'Error processing payment'
             });
+        }
+    },
+
+    processRefund: async (userId, amount, orderId, description) => {
+        try {
+            let wallet = await Wallet.findOne({ userId });
+            if (!wallet) {
+                wallet = await Wallet.create({ userId });
+            }
+
+            // Add refund transaction
+            wallet.transactions.push({
+                type: 'credit',
+                amount: parseFloat(amount),
+                description: description || 'Order refund',
+                orderId: orderId,
+                status: 'completed',
+                date: new Date()
+            });
+
+            // Update balance
+            wallet.balance += parseFloat(amount);
+            await wallet.save();
+
+            return {
+                success: true,
+                newBalance: wallet.balance
+            };
+
+        } catch (error) {
+            console.error('Refund processing error:', error);
+            throw error;
         }
     }
 };

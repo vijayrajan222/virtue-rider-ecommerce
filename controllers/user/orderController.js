@@ -2,6 +2,7 @@ import Order from '../../models/orderModel.js';
 import Product from '../../models/productModel.js';
 import User from "../../models/userModel.js";
 import PDFDocument from 'pdfkit';
+import walletController from './walletController.js';
 
 export const userOrderController = {
     getOrders: async (req, res) => {
@@ -82,6 +83,32 @@ export const userOrderController = {
                 return res.status(404).json({
                     success: false,
                     message: 'Product not found in order'
+                });
+            }
+
+            if (item.status === 'returned') {
+                // Process refund to wallet
+                const refundAmount = item.price * item.quantity;
+                await walletController.processRefund(
+                    userId,
+                    refundAmount,
+                    orderId,
+                    `Refund for returned item in order #${orderId}`
+                );
+
+                // Update status history
+                item.statusHistory = item.statusHistory || [];
+                item.statusHistory.push({
+                    status: 'returned',
+                    date: new Date(),
+                    comment: `Return completed. Refund of ₹${refundAmount} processed to wallet.`
+                });
+
+                await order.save();
+
+                return res.json({
+                    success: true,
+                    message: 'Return completed and refund processed successfully'
                 });
             }
 
@@ -306,7 +333,7 @@ export const userOrderController = {
         try {
             const { orderId, productId } = req.params;
             const { reason } = req.body;
-            const userId = req.session.userId;
+            const userId = req.session.user;
 
             const order = await Order.findOne({ _id: orderId, user: userId })
                 .populate('products.product');
@@ -319,8 +346,8 @@ export const userOrderController = {
             }
 
             const itemIndex = order.products.findIndex(item =>
-                item.product._id.toString() === productId && 
-                item.status !== 'cancelled' // Only find non-cancelled items
+                item.product._id.toString() === productId &&
+                item.status !== 'cancelled'
             );
 
             if (itemIndex === -1) {
@@ -332,18 +359,6 @@ export const userOrderController = {
 
             const item = order.products[itemIndex];
 
-            // Ensure statusHistory is initialized
-            if (!item.statusHistory) {
-                item.statusHistory = [];
-            }
-
-            if (!item.status) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Status information is missing for this item'
-                });
-            }
-
             if (!['pending', 'processing'].includes(item.status)) {
                 return res.status(400).json({
                     success: false,
@@ -351,34 +366,41 @@ export const userOrderController = {
                 });
             }
 
-            // Get the product and update stock
-            const product = await Product.findById(productId);
-            if (!product) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Product not found'
-                });
-            }
+            // Calculate refund amount for this item
+            const refundAmount = item.price * item.quantity;
 
-            const variant = product.variants.id(item.variant);
-            if (variant) {
-                variant.stock += Number(item.quantity);
-            await product.save();
+            // Process refund to wallet
+            await walletController.processRefund(
+                userId,
+                refundAmount,
+                orderId,
+                `Refund for cancelled order #${orderId}`
+            );
+
+            // Update product stock
+            const product = await Product.findById(productId);
+            if (product) {
+                const variant = product.variants.id(item.variant);
+                if (variant) {
+                    variant.stock += Number(item.quantity);
+                    await product.save();
+                }
             }
 
             // Update item status
             item.status = 'cancelled';
+            item.statusHistory = item.statusHistory || [];
             item.statusHistory.push({
                 status: 'cancelled',
                 date: new Date(),
-                comment: `Item cancelled by user: ${reason}`
+                comment: `Item cancelled by user: ${reason}. Refund of ₹${refundAmount} processed to wallet.`
             });
 
             await order.save();
 
             res.json({
                 success: true,
-                message: 'Item cancelled successfully'
+                message: 'Item cancelled and refund processed successfully'
             });
 
         } catch (error) {
