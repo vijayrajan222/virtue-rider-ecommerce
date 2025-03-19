@@ -12,6 +12,7 @@ import {getCoupons,addCoupons,
 import { getUsers, toggleUserStatus } from '../controllers/admin/userController.js';
 import adminMiddleware from '../middleware/adminMiddleware.js';
 import { getOrders,handleReturnRequest,updateItemStatus } from '../controllers/admin/orderController.js';
+import reportController from '../controllers/admin/reportController.js';
 
 const router = express.Router();
 
@@ -62,5 +63,10 @@ router.delete("/coupons/delete/:id", adminMiddleware.checkSession, deleteCoupon)
 router.get('/active-coupons', getActiveCoupons);
 
 router.get('/coupons/active', getActiveCoupons);
+
+// Sales Report Routes
+router.get('/sales-report', adminMiddleware.checkSession, reportController.getSalesReport);
+router.get('/sales-report/download-excel', adminMiddleware.checkSession, reportController.downloadExcel);
+router.get('/sales-report/download-pdf', adminMiddleware.checkSession, reportController.downloadPDF);
 
 export default router;

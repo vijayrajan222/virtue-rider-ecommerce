@@ -106,154 +106,77 @@
                 <!-- Orders Table -->
               
             </div>
+
+            <!-- Add this after your table section -->
+            <div class="mt-8">
+                <canvas id="salesChart"></canvas>
+            </div>
         </div>
     </div>
 
-    <!-- <script>
+    <!-- Add Chart.js before your closing body tag -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
         // Initialize Chart
         const ctx = document.getElementById('salesChart').getContext('2d');
         const dailyData = <%- JSON.stringify(dailyData) %>;
         
-        const dates = Object.keys(dailyData);
-        const sales = dates.map(date => {
-            const dayData = dailyData[date];
-            return {
-                orders: dayData.orders,
-                sales: dayData.sales,
-                discount: dayData.discount,
-                netRevenue: dayData.netRevenue
-            };
-        });
-        
+        const dates = Object.keys(dailyData).sort();
+        const salesData = dates.map(date => dailyData[date].sales);
+        const ordersData = dates.map(date => dailyData[date].orders);
+
         new Chart(ctx, {
             type: 'line',
             data: {
                 labels: dates,
-                datasets: [{
-                    label: 'Daily Sales',
-                    data: sales,
-                    borderColor: 'rgb(0, 0, 0)',
-                    tension: 0.1
-                }]
+                datasets: [
+                    {
+                        label: 'Daily Sales (₹)',
+                        data: salesData,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Number of Orders',
+                        data: ordersData,
+                        borderColor: 'rgb(255, 99, 132)',
+                        tension: 0.1,
+                        yAxisID: 'y1'
+                    }
+                ]
             },
             options: {
                 responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
                 scales: {
                     y: {
-                        beginAtZero: true
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Sales Amount (₹)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Number of Orders'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
                     }
                 }
             }
         });
-
-        // Filter Functions
-        function setPeriod(period) {
-            window.location.href = `/admin/sales-report?period=${period}`;
-        }
-
-        async function applyDateFilter() {
-            try {
-                const startDateStr = document.getElementById('startDate').value;
-                const endDateStr = document.getElementById('endDate').value;
-                
-                // Create dates and set to start and end of day
-                const startDate = new Date(startDateStr);
-                startDate.setHours(0, 0, 0, 0);
-                
-                const endDate = new Date(endDateStr);
-                endDate.setHours(23, 59, 59, 999);
-                
-                const today = new Date();
-                today.setHours(23, 59, 59, 999);
-
-                // Client-side validation
-                if (!startDateStr || !endDateStr) {
-                    await Swal.fire({
-                        icon: 'warning',
-                        title: 'Missing Dates',
-                        text: 'Please select both start and end dates',
-                        confirmButtonColor: '#000000'
-                    });
-                    return;
-                }
-
-                if (startDate > today) {
-                    await Swal.fire({
-                        icon: 'error',
-                        title: 'Invalid Date',
-                        text: 'Start date cannot be in the future',
-                        confirmButtonColor: '#000000'
-                    });
-                    return;
-                }
-
-                if (endDate < startDate) {
-                    await Swal.fire({
-                        icon: 'error',
-                        title: 'Invalid Date Range',
-                        text: 'End date must be after or equal to start date',
-                        confirmButtonColor: '#000000'
-                    });
-                    return;
-                }
-
-                window.location.href = `/admin/sales-report?startDate=${startDateStr}&endDate=${endDateStr}`;
-
-            } catch (error) {
-                await Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.message || 'Error applying filter',
-                    confirmButtonColor: '#000000'
-                });
-            }
-        }
-
-        // Download Functions
-        async function downloadReport(type) {
-            try {
-                const startDateStr = document.getElementById('startDate').value;
-                const endDateStr = document.getElementById('endDate').value;
-                
-                if (!startDateStr || !endDateStr) {
-                    await Swal.fire({
-                        icon: 'warning',
-                        title: 'Missing Dates',
-                        text: 'Please select both start and end dates',
-                        confirmButtonColor: '#000000'
-                    });
-                    return;
-                }
-
-                const response = await fetch(`/admin/sales-report/download-${type}?startDate=${startDateStr}&endDate=${endDateStr}`);
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Download failed');
-                }
-
-                if (type === 'excel') {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `sales-report-${startDateStr}-${endDateStr}.xlsx`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    a.remove();
-                } else {
-                    window.location.href = `/admin/sales-report/download-${type}?startDate=${startDateStr}&endDate=${endDateStr}`;
-                }
-            } catch (error) {
-                await Swal.fire({
-                    icon: 'error',
-                    title: 'Download Failed',
-                    text: error.message || 'Error downloading report',
-                    confirmButtonColor: '#000000'
-                });
-            }
-        }
-    </script> -->
+    </script>
 </body>
 </html> 
