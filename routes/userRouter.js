@@ -46,6 +46,8 @@ import userOrderController from '../controllers/user/orderController.js';
 
 import { getWishlist, addToWishlist, removeFromWishlist, checkWishlistStatus } from '../controllers/user/wishlistController.js';
 
+import walletController from '../controllers/user/walletController.js';
+
 
 const userRouter = express.Router();
 
@@ -105,7 +107,7 @@ userRouter.get('/orders', userMiddlewares.checkSession, userOrderController.getO
 
 userRouter.patch("/orders/:orderId/items/:productId/cancel", userMiddlewares.checkSession ,userOrderController.cancelOrder)
 
-userRouter.post("/orders/:orderId/items/:productId/return", userMiddlewares.checkSession, userOrderController.requestReturnItem);
+userRouter.post("/orders/:orderId/items/:productId/return", userMiddlewares.checkSession, userOrderController.requestReturnItem)
 
 userRouter.get('/checkout', userMiddlewares.checkSession, userCheckoutController.getCheckoutPage);
 
@@ -139,6 +141,10 @@ userRouter.post('/checkout/verify-payment',
     userMiddlewares.checkSession, 
     userCheckoutController.verifyPayment
 );
+
+userRouter.get('/wallet', userMiddlewares.checkSession, walletController.getWallet);
+userRouter.post('/wallet/add-funds', userMiddlewares.checkSession, walletController.addFunds);
+userRouter.post('/wallet/process-payment', userMiddlewares.checkSession, walletController.processWalletPayment);
 
 export default userRouter;
 
