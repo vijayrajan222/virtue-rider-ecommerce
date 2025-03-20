@@ -583,9 +583,9 @@
 
               if (paymentMethod.value === 'online') {
                   try {
-                      const data = await createRazorpayOrder(selectedAddress.value);
-                      console.log('Razorpay order created:', data); // Add this for debugging
-
+                      // Pass the coupon code if one is applied
+                      const data = await createRazorpayOrder(selectedAddress.value, appliedCoupon);
+                      
                       if (!data.success) {
                           throw new Error(data.message || 'Failed to create payment order');
                       }
@@ -810,14 +810,17 @@
           }
       });
 
-      async function createRazorpayOrder(addressId) {
+      async function createRazorpayOrder(addressId, couponCode) {
           try {
               const response = await fetch('/checkout/create-razorpay-order', {
                   method: 'POST',
                   headers: {
                       'Content-Type': 'application/json'
                   },
-                  body: JSON.stringify({ addressId })
+                  body: JSON.stringify({ 
+                      addressId,
+                      couponCode 
+                  })
               });
 
               if (!response.ok) {

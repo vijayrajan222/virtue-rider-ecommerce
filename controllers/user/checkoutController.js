@@ -301,7 +301,7 @@ const userCheckoutController = {
 
     createRazorpayOrder: async (req, res) => {
         try {
-            const { addressId } = req.body;
+            const { addressId, couponCode } = req.body;
             const userId = req.session.user;
 
             // Get cart with populated products
@@ -365,7 +365,7 @@ const userCheckoutController = {
                 }
 
                 return {
-                    product: product._id,
+                    product: item.productId._id,
                     quantity: item.quantity,
                     price: item.price,
                     discountedPrice,
@@ -382,20 +382,24 @@ const userCheckoutController = {
             // Calculate subtotal after offers
             const subtotalAfterOffers = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
 
-            // Apply coupon if exists
+            // Apply coupon discount if provided
             let couponDiscount = 0;
             let couponDetails = null;
 
-            if (cart.coupon && cart.coupon.code) {
-                const coupon = await Coupon.findOne({ code: cart.coupon.code });
-                if (coupon && coupon.isActive) {
+            if (couponCode) {
+                const coupon = await Coupon.findOne({ 
+                    code: couponCode,
+                    isActive: true,
+                    expiryDate: { $gte: new Date() }
+                });
+
+                if (coupon && subtotalAfterOffers >= coupon.minimumPurchase) {
                     couponDiscount = Math.min(
                         (subtotalAfterOffers * coupon.discountPercentage) / 100,
                         coupon.maximumDiscount
                     );
                     couponDetails = {
                         code: coupon.code,
-                        discountType: 'percentage',
                         discountPercentage: coupon.discountPercentage,
                         discountAmount: couponDiscount
                     };
@@ -403,24 +407,25 @@ const userCheckoutController = {
             }
 
             // Calculate final amounts
-            const subtotalAfterCoupon = subtotalAfterOffers - couponDiscount;
-            const gstAmount = subtotalAfterCoupon * 0.18;
-            const shippingCharges = subtotalAfterCoupon >= 1000 ? 0 : 40;
-            const finalAmount = Math.round((subtotalAfterCoupon + gstAmount + shippingCharges) * 100);
+            const subtotalAfterAllDiscounts = subtotalAfterOffers - couponDiscount;
+            const gstAmount = subtotalAfterAllDiscounts * 0.18;
+            const shippingCharges = subtotalAfterAllDiscounts >= 1000 ? 0 : 40;
+            const finalAmount = Math.round((subtotalAfterAllDiscounts + gstAmount + shippingCharges) * 100); // Convert to paise
 
             // Create Razorpay order
             const razorpayOrder = await razorpay.orders.create({
-                amount: finalAmount, // amount in paise
+                amount: finalAmount,
                 currency: 'INR',
                 receipt: `order_${Date.now()}`
             });
 
-            // Store order details in session for verification
+            // Store order details in session
             req.session.orderDetails = {
                 cartItems,
                 couponDetails,
                 subtotalAfterOffers,
                 couponDiscount,
+                subtotalAfterAllDiscounts,
                 gstAmount,
                 shippingCharges,
                 finalAmount: finalAmount / 100,
@@ -429,8 +434,16 @@ const userCheckoutController = {
 
             res.json({
                 success: true,
+                key: process.env.RAZORPAY_KEY_ID,
                 order: razorpayOrder,
-                amount: finalAmount / 100
+                amount: finalAmount / 100,
+                breakdown: {
+                    subtotal: subtotalAfterOffers,
+                    couponDiscount,
+                    gstAmount,
+                    shippingCharges,
+                    final: finalAmount / 100
+                }
             });
 
         } catch (error) {
@@ -446,6 +459,16 @@ const userCheckoutController = {
         try {
             const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
             const orderDetails = req.session.orderDetails;
+
+            // Get address details
+            const address = await addressSchema.findOne({
+                _id: orderDetails.addressId,
+                userId: req.session.user
+            });
+
+            if (!address) {
+                throw new Error('Delivery address not found');
+            }
 
             // Verify signature
             const sign = razorpay_order_id + "|" + razorpay_payment_id;
@@ -495,16 +518,29 @@ const userCheckoutController = {
                     razorpay_payment_id,
                     razorpay_signature
                 },
-                shippingAddress: orderDetails.shippingAddress
+                shippingAddress: {
+                    fullName: address.fullName,
+                    mobileNumber: address.mobileNumber,
+                    addressLine1: address.addressLine1,
+                    addressLine2: address.addressLine2,
+                    city: address.city,
+                    state: address.state,
+                    pincode: address.pincode
+                },
+                orderCode: `ORD-${Date.now()}`
             });
 
             await order.save();
 
+            // Clear cart after successful order
+            await cartSchema.findOneAndUpdate(
+                { userId: req.session.user },
+                { $set: { items: [], totalAmount: 0 } }
+            );
+
             // Clear session order details
             delete req.session.orderDetails;
 
-            // Rest of your code (update stock, clear cart, etc.)
-            
             return res.json({
                 success: true,
                 message: 'Payment verified and order placed successfully',
