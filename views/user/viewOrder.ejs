@@ -120,7 +120,11 @@
                                                     <p class="font-medium"><%= item.product.name %></p>
                                                     <div class="text-sm text-gray-500">
                                                         <p>Quantity: <%= item.quantity %></p>
-                                                        <p>Price: ₹<%= item.price %></p>
+                                                        <script>
+                                                            const item3 = <%- JSON.stringify(item) %>;
+                                                            console.log("Item Data:", item3);
+                                                        </script>
+                                                        <p>Price: ₹<%=  item.price %></p>
                                                         <% if (item.variantInfo && item.variantInfo.size) { %>
                                                             <p>Size: <%= item.variantInfo.size %></p>
                                                         <% } %>
