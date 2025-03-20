@@ -584,15 +584,17 @@
               if (paymentMethod.value === 'online') {
                   try {
                       // Pass the coupon code if one is applied
-                      const data = await createRazorpayOrder(selectedAddress.value, appliedCoupon);
-                      
+                      const finalTotal = document.getElementById('finalTotal').innerText;
+                      console.log("finalTotal",finalTotal)
+                      const data = await createRazorpayOrder(selectedAddress.value, appliedCoupon,finalTotal);
+                       console.log("data",data)
                       if (!data.success) {
                           throw new Error(data.message || 'Failed to create payment order');
                       }
 
                       const options = {
                           key: data.key,
-                          amount: data.order.amount,
+                          amount: data.amount,
                           currency: "INR",
                           name: "LISTEN",
                           description: "Order Payment",
@@ -810,7 +812,7 @@
           }
       });
 
-      async function createRazorpayOrder(addressId, couponCode) {
+      async function createRazorpayOrder(addressId, couponCode,finalAmount) {
           try {
               const response = await fetch('/checkout/create-razorpay-order', {
                   method: 'POST',
@@ -819,7 +821,8 @@
                   },
                   body: JSON.stringify({ 
                       addressId,
-                      couponCode 
+                      couponCode ,
+                      finalAmount
                   })
               });
 
