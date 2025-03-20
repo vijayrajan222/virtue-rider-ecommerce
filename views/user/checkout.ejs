@@ -581,7 +581,42 @@
                   return;
               }
 
-              if (paymentMethod.value === 'online') {
+              const finalTotal = document.getElementById('finalTotal').textContent;
+
+              if (paymentMethod.value === 'cod') {
+                  // Show loading state
+                  await showAlert('loading', 'Processing your order...');
+
+                  const response = await fetch('/checkout/place-order', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                          addressId: selectedAddress.value,
+                          paymentMethod: 'cod',
+                          couponCode: appliedCoupon,
+                          finalAmount: parseFloat(finalTotal)
+                      })
+                  });
+
+                  if (!response.ok) {
+                      throw new Error('Network response was not ok');
+                  }
+
+                  const data = await response.json();
+
+                  if (data.success) {
+                      // Hide the loading alert first
+                      hideAlert();
+                      // Show success alert
+                      await showAlert('success', 'Order placed successfully!');
+                      // Redirect to orders page
+                      window.location.href = `/orders?success=true&orderId=${data.orderId}`;
+                  } else {
+                      throw new Error(data.message || 'Failed to place order');
+                  }
+              } else if (paymentMethod.value === 'online') {
                   try {
                       // Pass the coupon code if one is applied
                       const finalTotal = document.getElementById('finalTotal').innerText;
@@ -644,12 +679,12 @@
                       console.error('Razorpay error:', error);
                       await showAlert('error', error.message || 'Payment initialization failed');
                   }
-              } else if (paymentMethod.value === 'cod') {
-                  // ... rest of your code for COD ...
               } else if (paymentMethod.value === 'wallet') {
                   // ... rest of your code for wallet ...
               }
           } catch (error) {
+              // Hide the loading alert first
+              hideAlert();
               console.error('Order placement error:', error);
               await showAlert('error', error.message || 'Failed to place order');
           }
@@ -774,15 +809,19 @@
                   modalContent.classList.remove('scale-90', 'opacity-0', 'translate-y-4');
               }, 50);
 
+              // For loading state, resolve immediately
+              if (type === 'loading') {
+                  resolve();
+                  return;
+              }
+
               // Add click handler to button (except for loading state)
-              if (type !== 'loading') {
-                  const button = alertElement.querySelector('button');
-                  if (button) {
-                      button.onclick = () => {
-                          hideAlert();
-                          resolve(true);
-                      };
-                  }
+              const button = alertElement.querySelector('button');
+              if (button) {
+                  button.onclick = () => {
+                      hideAlert();
+                      resolve(true);
+                  };
               }
           });
       }

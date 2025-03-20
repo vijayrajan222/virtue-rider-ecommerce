@@ -2,6 +2,7 @@ import Order from '../../models/orderModel.js';
 import Product from '../../models/productModel.js';
 import User from "../../models/userModel.js";
 import PDFDocument from 'pdfkit';
+import { walletController } from './walletController.js';
 
 export const userOrderController = {
     getOrders: async (req, res) => {
@@ -306,7 +307,7 @@ export const userOrderController = {
         try {
             const { orderId, productId } = req.params;
             const { reason } = req.body;
-            const userId = req.session.userId;
+            const userId = req.session.user;
 
             const order = await Order.findOne({ _id: orderId, user: userId })
                 .populate('products.product');
@@ -320,7 +321,7 @@ export const userOrderController = {
 
             const itemIndex = order.products.findIndex(item =>
                 item.product._id.toString() === productId && 
-                item.status !== 'cancelled' // Only find non-cancelled items
+                item.status !== 'cancelled'
             );
 
             if (itemIndex === -1) {
@@ -332,18 +333,6 @@ export const userOrderController = {
 
             const item = order.products[itemIndex];
 
-            // Ensure statusHistory is initialized
-            if (!item.statusHistory) {
-                item.statusHistory = [];
-            }
-
-            if (!item.status) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Status information is missing for this item'
-                });
-            }
-
             if (!['pending', 'processing'].includes(item.status)) {
                 return res.status(400).json({
                     success: false,
@@ -351,19 +340,19 @@ export const userOrderController = {
                 });
             }
 
-            // Get the product and update stock
-            const product = await Product.findById(productId);
-            if (!product) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Product not found'
-                });
-            }
+            // Calculate refund amount including any offers
+            const refundAmount = item.offer ? 
+                item.offer.discountedPrice * item.quantity : 
+                item.price * item.quantity;
 
-            const variant = product.variants.id(item.variant);
-            if (variant) {
-                variant.stock += Number(item.quantity);
-            await product.save();
+            // Update product stock
+            const product = await Product.findById(productId);
+            if (product) {
+                const variant = product.variants.id(item.variant);
+                if (variant) {
+                    variant.stock += Number(item.quantity);
+                    await product.save();
+                }
             }
 
             // Update item status
@@ -376,10 +365,26 @@ export const userOrderController = {
 
             await order.save();
 
-            res.json({
-                success: true,
-                message: 'Item cancelled successfully'
-            });
+            // Process refund to wallet
+            try {
+                await walletController.processRefund(
+                    userId,
+                    refundAmount,
+                    orderId,
+                    `Refund for cancelled order #${order.orderCode}`
+                );
+
+                res.json({
+                    success: true,
+                    message: 'Item cancelled and refund processed successfully'
+                });
+            } catch (refundError) {
+                console.error('Refund processing error:', refundError);
+                res.status(500).json({
+                    success: false,
+                    message: 'Order cancelled but refund failed'
+                });
+            }
 
         } catch (error) {
             console.error('Cancel item error:', error);

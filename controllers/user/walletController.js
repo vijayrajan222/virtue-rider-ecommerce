@@ -131,21 +131,22 @@ export const walletController = {
         try {
             let wallet = await Wallet.findOne({ userId });
             if (!wallet) {
-                wallet = await Wallet.create({ userId });
+                wallet = new Wallet({ userId, balance: 0 });
             }
 
             // Add refund transaction
             wallet.transactions.push({
                 type: 'credit',
                 amount: parseFloat(amount),
-                description: description || 'Order refund',
+                description: description,
                 orderId: orderId,
                 status: 'completed',
                 date: new Date()
             });
 
             // Update balance
-            wallet.balance += parseFloat(amount);
+            wallet.balance = parseFloat(wallet.balance) + parseFloat(amount);
+            
             await wallet.save();
 
             return {
@@ -155,7 +156,10 @@ export const walletController = {
 
         } catch (error) {
             console.error('Refund processing error:', error);
-            throw error;
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 };
