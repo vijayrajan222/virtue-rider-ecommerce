@@ -486,14 +486,14 @@ const userCheckoutController = {
                 couponDiscount,
                 gstAmount,
                 shippingCharges,
-                finalAmount: Number(req.body.finalAmount*100),
+                finalAmount: Number(req.body.finalAmount),
                 addressId
             };
 
             res.json({
                 success: true,
                 order: razorpayOrder,
-                amount: Number(req.body.finalAmount*100)
+                amount: Number(req.body.finalAmount)
             });
 
         } catch (error) {
