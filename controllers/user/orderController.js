@@ -4,7 +4,30 @@ import User from "../../models/userModel.js";
 import PDFDocument from 'pdfkit';
 import { walletController } from './walletController.js';
 
-export const userOrderController = {
+const userOrderController = {
+    getUserOrders: async (req, res) => {
+        try {
+            const userId = req.session.user;
+            
+            const orders = await Order.find({ user: userId })
+                .populate('products.product')
+                .populate('products.variant')
+                .sort('-createdAt');
+
+            res.render('user/orders', {
+                orders,
+                user: req.session.user,
+                error: null
+            });
+        } catch (error) {
+            console.error('Error fetching orders:', error);
+            res.render('user/orders', {
+                orders: [],
+                user: req.session.user,
+                error: 'Failed to load orders. Please try again later.'
+            });
+        }
+    },
     getOrders: async (req, res) => {
         try {
             const user = await User.findById(req.session.user);

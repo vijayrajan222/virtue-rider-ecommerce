@@ -1,6 +1,8 @@
 import Wallet from '../../models/walletModel.js';
 import User from '../../models/userModel.js';
 import Order from '../../models/orderModel.js';
+import Address from '../../models/addressModel.js';
+import Cart from '../../models/cartModel.js';
 
 export const walletController = {
     getWallet: async (req, res) => {
@@ -89,7 +91,7 @@ export const walletController = {
 
     processWalletPayment: async (req, res) => {
         try {
-            const { amount, orderId } = req.body;
+            const { amount, addressId } = req.body;
             const userId = req.session.user;
 
             const wallet = await Wallet.findOne({ userId });
@@ -100,21 +102,41 @@ export const walletController = {
                 });
             }
 
+            // Create order first
+            const order = new Order({
+                user: userId,
+                products: req.session.orderDetails.cartItems,
+                subtotal: req.session.orderDetails.subtotalAfterOffers,
+                totalAmount: amount,
+                shippingAddress: await Address.findById(addressId),
+                paymentMethod: 'wallet',
+                paymentStatus: 'completed'
+            });
+
+            await order.save();
+
             // Deduct from wallet
             wallet.balance -= parseFloat(amount);
             wallet.transactions.push({
                 type: 'debit',
                 amount: parseFloat(amount),
-                description: 'Order payment',
-                orderId,
+                description: `Order payment (${order.orderCode})`,
+                orderId: order._id,
                 status: 'completed'
             });
 
             await wallet.save();
 
+            // Clear cart
+            await Cart.findOneAndUpdate(
+                { userId },
+                { $set: { items: [], totalAmount: 0 } }
+            );
+
             res.json({
                 success: true,
                 message: 'Payment successful',
+                orderId: order.orderCode,
                 newBalance: wallet.balance
             });
 

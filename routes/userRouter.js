@@ -48,6 +48,8 @@ import { getWishlist, addToWishlist, removeFromWishlist, checkWishlistStatus } f
 
 import walletController from '../controllers/user/walletController.js';
 
+import userCouponController from '../controllers/user/couponController.js';
+
 
 const userRouter = express.Router();
 
@@ -145,6 +147,9 @@ userRouter.post('/checkout/verify-payment',
 userRouter.get('/wallet', userMiddlewares.checkSession, walletController.getWallet);
 userRouter.post('/wallet/add-funds', userMiddlewares.checkSession, walletController.addFunds);
 userRouter.post('/wallet/process-payment', userMiddlewares.checkSession, walletController.processWalletPayment);
+
+userRouter.get('/coupons', userMiddlewares.checkSession, userCouponController.getCoupons);
+userRouter.post('/coupons/validate', userMiddlewares.checkSession, userCouponController.validateCoupon);
 
 export default userRouter;
 
