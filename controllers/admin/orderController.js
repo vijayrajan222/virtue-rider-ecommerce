@@ -1,6 +1,7 @@
 import { config } from 'dotenv';
 import Order from '../../models/orderModel.js';
 import Product from '../../models/productModel.js';
+import walletController from '../../controllers/user/walletController.js';
 
 config();
 
@@ -69,19 +70,16 @@ export const updateItemStatus = async (req, res) => {
     try {
         const { orderId, productId } = req.params;
         const { status } = req.body;
-        console.log("Order ID:", orderId)
-        console.log("Product ID:", productId)
-        console.log("Status:", status)
         
-        const order = await Order.findById(orderId);
-        console.log("Order:", order)
+        const order = await Order.findById(orderId)
+            .populate('products.product');
         
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
         const productItem = order.products.find(item => 
-            item.product.toString() === productId && 
+            item.product._id.toString() === productId && 
             item.status !== 'cancelled'
         );
         
@@ -89,7 +87,13 @@ export const updateItemStatus = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Product not found in order or already cancelled' });
         }
 
+        // Calculate refund amount including any offers
+        const refundAmount = productItem.discountedPrice || productItem.price;
+        const totalRefundAmount = refundAmount * productItem.quantity;
+
+        // Handle cancellation
         if (status === 'cancelled') {
+            // Update product stock
             const product = await Product.findById(productId);
             if (!product) {
                 return res.status(404).json({ success: false, message: 'Product not found' });
@@ -100,11 +104,43 @@ export const updateItemStatus = async (req, res) => {
                 return res.status(404).json({ success: false, message: 'Variant not found' });
             }
 
-            // Update the specific variant's stock
+            // Update stock
             variant.stock += productItem.quantity;
             await product.save();
+
+            // Process refund if payment was made
+            if (order.paymentStatus === 'completed' || 
+                (order.paymentMethod === 'cod' && productItem.status === 'delivered')) {
+                try {
+                    console.log('Processing refund:', {
+                        userId: order.user,
+                        amount: totalRefundAmount,
+                        orderId: order._id
+                    });
+
+                    const refundResult = await walletController.processRefund(
+                        order.user,
+                        totalRefundAmount,
+                        order._id,
+                        `Refund for cancelled order #${order.orderCode}`
+                    );
+
+                    console.log('Refund result:', refundResult);
+
+                    if (!refundResult.success) {
+                        throw new Error(refundResult.error || 'Refund failed');
+                    }
+                } catch (refundError) {
+                    console.error('Refund processing error:', refundError);
+                    return res.status(500).json({ 
+                        success: false, 
+                        message: 'Error processing refund' 
+                    });
+                }
+            }
         }
 
+        // Update item status
         productItem.status = status;
         if (!productItem.statusHistory) {
             productItem.statusHistory = [];
@@ -115,32 +151,26 @@ export const updateItemStatus = async (req, res) => {
             comment: `Status updated to ${status} by admin`
         });
 
+        // Update order payment status if needed
         if (status === 'cancelled') {
-            // Check if all products are cancelled
             const allCancelled = order.products.every(item => item.status === 'cancelled');
             if (allCancelled) {
-                order.paymentStatus = 'failed';
-            }
-        } else if (status === 'delivered' && order.paymentMethod === 'cod') {
-            const allDelivered = order.products.every(item =>
-                item.status === 'delivered' || item.status === 'cancelled'
-            );
-            if (allDelivered) {
-                order.paymentStatus = 'completed';
+                order.paymentStatus = 'refunded';
             }
         }
 
         await order.save();
+
         res.json({
             success: true,
-            message: 'Product status updated successfully',
+            message: `Product ${status} and refund processed successfully`,
             newStatus: status,
             paymentStatus: order.paymentStatus
         });
 
     } catch (error) {
         console.error('Error:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: error.message || 'Server error' });
     }
 };
 

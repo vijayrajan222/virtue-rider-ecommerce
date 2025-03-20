@@ -129,29 +129,44 @@ export const walletController = {
 
     processRefund: async (userId, amount, orderId, description) => {
         try {
+            console.log('Processing refund with params:', { userId, amount, orderId, description });
+
             let wallet = await Wallet.findOne({ userId });
             if (!wallet) {
+                console.log('Creating new wallet for user:', userId);
                 wallet = new Wallet({ userId, balance: 0 });
             }
 
             // Add refund transaction
-            wallet.transactions.push({
+            const refundTransaction = {
                 type: 'credit',
                 amount: parseFloat(amount),
                 description: description,
                 orderId: orderId,
                 status: 'completed',
                 date: new Date()
-            });
+            };
+
+            console.log('Adding refund transaction:', refundTransaction);
+            wallet.transactions.push(refundTransaction);
 
             // Update balance
+            const previousBalance = wallet.balance;
             wallet.balance = parseFloat(wallet.balance) + parseFloat(amount);
             
+            console.log('Wallet balance update:', {
+                previousBalance,
+                newBalance: wallet.balance,
+                refundAmount: amount
+            });
+
             await wallet.save();
+            console.log('Wallet saved successfully');
 
             return {
                 success: true,
-                newBalance: wallet.balance
+                newBalance: wallet.balance,
+                transaction: refundTransaction
             };
 
         } catch (error) {

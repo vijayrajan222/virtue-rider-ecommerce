@@ -319,19 +319,17 @@ export const userOrderController = {
                 });
             }
 
-            const itemIndex = order.products.findIndex(item =>
+            const item = order.products.find(item =>
                 item.product._id.toString() === productId && 
                 item.status !== 'cancelled'
             );
 
-            if (itemIndex === -1) {
+            if (!item) {
                 return res.status(404).json({
                     success: false,
                     message: 'Item not found in order or already cancelled'
                 });
             }
-
-            const item = order.products[itemIndex];
 
             if (!['pending', 'processing'].includes(item.status)) {
                 return res.status(400).json({
@@ -341,9 +339,8 @@ export const userOrderController = {
             }
 
             // Calculate refund amount including any offers
-            const refundAmount = item.offer ? 
-                item.offer.discountedPrice * item.quantity : 
-                item.price * item.quantity;
+            const refundAmount = item.discountedPrice || item.price;
+            const totalRefundAmount = refundAmount * item.quantity;
 
             // Update product stock
             const product = await Product.findById(productId);
@@ -363,28 +360,43 @@ export const userOrderController = {
                 comment: `Item cancelled by user: ${reason}`
             });
 
+            // Process refund if payment was made
+            if (order.paymentStatus === 'completed' || 
+                (order.paymentMethod === 'cod' && item.status === 'delivered')) {
+                try {
+                    console.log('Processing refund:', {
+                        userId,
+                        amount: totalRefundAmount,
+                        orderId
+                    });
+
+                    const refundResult = await walletController.processRefund(
+                        userId,
+                        totalRefundAmount,
+                        orderId,
+                        `Refund for cancelled order #${order.orderCode}`
+                    );
+
+                    console.log('Refund result:', refundResult);
+
+                    if (!refundResult.success) {
+                        throw new Error(refundResult.error || 'Refund failed');
+                    }
+                } catch (refundError) {
+                    console.error('Refund processing error:', refundError);
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Order cancelled but refund failed'
+                    });
+                }
+            }
+
             await order.save();
 
-            // Process refund to wallet
-            try {
-                await walletController.processRefund(
-                    userId,
-                    refundAmount,
-                    orderId,
-                    `Refund for cancelled order #${order.orderCode}`
-                );
-
-                res.json({
-                    success: true,
-                    message: 'Item cancelled and refund processed successfully'
-                });
-            } catch (refundError) {
-                console.error('Refund processing error:', refundError);
-                res.status(500).json({
-                    success: false,
-                    message: 'Order cancelled but refund failed'
-                });
-            }
+            res.json({
+                success: true,
+                message: 'Item cancelled and refund processed successfully'
+            });
 
         } catch (error) {
             console.error('Cancel item error:', error);
