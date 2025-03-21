@@ -142,34 +142,62 @@ const reportController = {
 
     downloadExcel: async (req, res) => {
         try {
-            const { startDate, endDate } = req.query;
+            const { startDate, endDate, period } = req.query;
+            
+            // Build query based on filters
+            let query = {
+                'products.status': 'delivered'
+            };
 
-            const startDay = new Date(startDate);
-            const endDay = new Date(endDate);
+            // Handle date filtering
+            if (startDate && endDate) {
+                query.createdAt = {
+                    $gte: new Date(startDate),
+                    $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
+                };
+            } else if (period) {
+                const now = new Date();
+                let start = new Date();
+                
+                switch (period) {
+                    case 'daily':
+                        start = new Date(now.setHours(0, 0, 0, 0));
+                        break;
+                    case 'weekly':
+                        start = new Date(now.setDate(now.getDate() - 7));
+                        break;
+                    case 'monthly':
+                        start = new Date(now.setMonth(now.getMonth() - 1));
+                        break;
+                    case 'yearly':
+                        start = new Date(now.setFullYear(now.getFullYear() - 1));
+                        break;
+                }
+                
+                query.createdAt = {
+                    $gte: start,
+                    $lte: new Date()
+                };
+            }
 
-            const start = new Date(startDay.setHours(23, 59, 59, 999));
-            const end = new Date(endDay.setHours(23, 59, 59, 999));
-
-            const orders = await Order.find({
-                createdAt: { $gte: start, $lte: end },
-                'items.order.status': { $nin: ['pending', 'cancelled'] },
-                'payment.paymentStatus': { $nin: ['failed', 'cancelled'] }
-            })
-            .populate('userId', 'firstName lastName email')
-            .populate('items.product', 'productName')
-            .lean();
+            const orders = await Order.find(query)
+                .populate('user', 'firstName lastName email')
+                .populate('products.product', 'name')
+                .sort({ createdAt: -1 })
+                .lean();
 
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Sales Report');
 
+            // Define columns
             worksheet.columns = [
                 { header: 'Order ID', key: 'orderId', width: 15 },
-                { header: 'Date', key: 'date', width: 12 },
-                { header: 'Customer', key: 'customer', width: 20 },
-                { header: 'Items', key: 'items', width: 30 },
-                { header: 'Status', key: 'status', width: 15 },
-                { header: 'Payment Method', key: 'paymentMethod', width: 15 },
-                { header: 'Amount', key: 'amount', width: 12 }
+                { header: 'Date', key: 'date', width: 15 },
+                { header: 'User ID', key: 'userId', width: 20 },
+                { header: 'Product', key: 'product', width: 30 },
+                { header: 'Quantity', key: 'quantity', width: 10 },
+                { header: 'Unit Price', key: 'price', width: 15 },
+                { header: 'Total', key: 'total', width: 15 }
             ];
 
             // Style header
@@ -182,27 +210,35 @@ const reportController = {
 
             // Add data
             orders.forEach(order => {
-                worksheet.addRow({
-                    orderId: order.orderCode,
-                    date: new Date(order.createdAt).toLocaleDateString(),
-                    customer: `${order.userId?.firstName || ''} ${order.userId?.lastName || ''}`,
-                    items: order.items.map(item => 
-                        `${item.quantity}x ${item.product?.productName || 'Unknown'} `
-                    ).join('\n'),
-                    status: order.items[0]?.order?.status || 'N/A',
-                    paymentMethod: `${order.payment.method} (${order.payment.paymentStatus})`,
-                    amount: order.totalAmount.toFixed(2)
+                order.products.forEach(product => {
+                    if (product.status === 'delivered') {
+                        worksheet.addRow({
+                            orderId: order._id.toString(),
+                            date: new Date(order.createdAt).toLocaleDateString(),
+                            userId: order.user?._id || 'Unknown',
+                            product: product.product?.name || 'Unknown Product',
+                            quantity: product.quantity,
+                            price: `₹${product.price}`,
+                            total: `₹${product.price * product.quantity}`
+                        });
+                    }
                 });
             });
 
-            // Set response headers
-            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            res.setHeader('Content-Disposition', `attachment; filename=sales-report-${startDate}-${endDate}.xlsx`);
+            // Add summary row
+            worksheet.addRow({});
+            worksheet.addRow({
+                orderId: 'Total Orders:',
+                date: orders.length,
+                product: 'Total Revenue:',
+                total: `₹${orders.reduce((sum, order) => sum + order.totalAmount, 0)}`
+            }).font = { bold: true };
 
-            // Write to response
-            return workbook.xlsx.write(res).then(() => {
-                res.status(200).end();
-            });
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename=sales-report-${new Date().toISOString().split('T')[0]}.xlsx`);
+
+            await workbook.xlsx.write(res);
+            res.end();
 
         } catch (error) {
             console.error('Excel download error:', error);
@@ -212,51 +248,106 @@ const reportController = {
 
     downloadPDF: async (req, res) => {
         try {
-            const { startDate, endDate } = req.query;
-            const startDay = new Date(startDate);
-            const endDay = new Date(endDate);
+            const { startDate, endDate, period } = req.query;
+            
+            // Build query based on filters
+            let query = {
+                'products.status': 'delivered'
+            };
 
-            const start = new Date(startDay.setHours(23, 59, 59, 999));
-            const end = new Date(endDay.setHours(23, 59, 59, 999));
+            // Handle date filtering
+            if (startDate && endDate) {
+                query.createdAt = {
+                    $gte: new Date(startDate),
+                    $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
+                };
+            } else if (period) {
+                const now = new Date();
+                let start = new Date();
+                
+                switch (period) {
+                    case 'daily':
+                        start = new Date(now.setHours(0, 0, 0, 0));
+                        break;
+                    case 'weekly':
+                        start = new Date(now.setDate(now.getDate() - 7));
+                        break;
+                    case 'monthly':
+                        start = new Date(now.setMonth(now.getMonth() - 1));
+                        break;
+                    case 'yearly':
+                        start = new Date(now.setFullYear(now.getFullYear() - 1));
+                        break;
+                }
+                
+                query.createdAt = {
+                    $gte: start,
+                    $lte: new Date()
+                };
+            }
 
-            const orders = await Order.find({
-                createdAt: { $gte: start, $lte: end },
-                'items.order.status': { $nin: ['pending', 'cancelled'] },
-                'payment.paymentStatus': { $nin: ['failed', 'cancelled'] }
-            })
-            .populate('userId', 'firstName lastName email')
-            .populate('items.product', 'name')
-            .lean();
+            const orders = await Order.find(query)
+                .populate('user', 'firstName lastName email')
+                .populate('products.product', 'name')
+                .sort({ createdAt: -1 })
+                .lean();
 
             const doc = new PDFDocument();
 
             // Set response headers
             res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename=sales-report-${startDate}-${endDate}.pdf`);
+            res.setHeader('Content-Disposition', `attachment; filename=sales-report-${new Date().toISOString().split('T')[0]}.pdf`);
 
             // Pipe the PDF to the response
             doc.pipe(res);
 
-            // Add content
+            // Add header
             doc.fontSize(16).text('Sales Report', { align: 'center' });
             doc.moveDown();
-            doc.fontSize(12).text(`Period: ${start.toLocaleDateString()} to ${end.toLocaleDateString()}`, { align: 'center' });
+
+            // Add date range
+            const dateText = period ? 
+                `Period: ${period.charAt(0).toUpperCase() + period.slice(1)}` :
+                `Period: ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}`;
+            doc.fontSize(12).text(dateText, { align: 'center' });
+            doc.moveDown();
+
+            // Add summary
+            const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+            const totalItems = orders.reduce((sum, order) => 
+                sum + order.products.filter(p => p.status === 'delivered')
+                    .reduce((pSum, p) => pSum + p.quantity, 0), 0);
+
+            doc.fontSize(12).text('Summary:', { underline: true });
+            doc.fontSize(10)
+                .text(`Total Orders: ${orders.length}`)
+                .text(`Total Items Sold: ${totalItems}`)
+                .text(`Total Revenue: ₹${totalRevenue.toFixed(2)}`);
             doc.moveDown();
 
             // Create the table
-            const table = {
-                headers: ['Order ID', 'Date', 'Customer', 'Amount', 'Status'],
-                rows: orders.map(order => [
-                    order.orderCode,
-                    new Date(order.createdAt).toLocaleDateString(),
-                    `${order.userId?.firstName || ''} ${order.userId?.lastName || ''}`,
-                    `₹${order.totalAmount.toFixed(2)}`,
-                    order.items[0]?.order?.status || 'N/A'
-                ])
+            const tableData = {
+                headers: ['Order ID', 'Date', 'Product', 'Qty', 'Price', 'Total'],
+                rows: []
             };
 
-            // Add table to document
-            doc.table(table, {
+            orders.forEach(order => {
+                order.products.forEach(product => {
+                    if (product.status === 'delivered') {
+                        tableData.rows.push([
+                            order._id.toString().slice(-6),
+                            new Date(order.createdAt).toLocaleDateString(),
+                            product.product?.name || 'Unknown Product',
+                            product.quantity.toString(),
+                            `₹${product.price}`,
+                            `₹${(product.price * product.quantity).toFixed(2)}`
+                        ]);
+                    }
+                });
+            });
+
+            // Draw the table
+            await doc.table(tableData, {
                 prepareHeader: () => doc.font('Helvetica-Bold').fontSize(10),
                 prepareRow: () => doc.font('Helvetica').fontSize(10)
             });
