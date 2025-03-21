@@ -5,178 +5,222 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Report - Admin</title>
     <link rel="stylesheet" href="/tailwindcss/output.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <link
-      href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet"
-    />
-
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body class="mybg-green">
+<body class="bg-gray-900">
     <%- include('../partials/sidebar') %>
 
-    <div class="p-4 sm:ml-64">
-        <div class="p-4 mt-14">
-            <!-- Main Content -->
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <!-- Filter Section -->
-                <!-- <div class="mb-6">
-                    <h2 class="text-2xl font-bold mb-4">Sales Report</h2>
-                    <div class="flex flex-wrap gap-4 mb-4">
-                        <button onclick="setPeriod('daily')" 
-                                class="px-4 py-2 rounded-lg transition-colors <%= period === 'daily' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200' %>">
-                            <i class="far fa-calendar-day mr-2"></i>Daily
-                        </button>
-                        <button onclick="setPeriod('weekly')"
-                                class="px-4 py-2 rounded-lg transition-colors <%= period === 'weekly' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200' %>">
-                            <i class="far fa-calendar-week mr-2"></i>Weekly
-                        </button>
-                        <button onclick="setPeriod('monthly')"
-                                class="px-4 py-2 rounded-lg transition-colors <%= period === 'monthly' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200' %>">
-                            <i class="far fa-calendar-alt mr-2"></i>Monthly
-                        </button>
-                        <button onclick="setPeriod('yearly')"
-                                class="px-4 py-2 rounded-lg transition-colors <%= period === 'yearly' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200' %>">
-                            <i class="far fa-calendar mr-2"></i>Yearly
-                        </button>
-                    </div>
-                    <div class="flex flex-wrap gap-4 items-end">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                            <input type="date" id="startDate" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-black" 
-                                   value="<%= dateRange.start?.toISOString().split('T')[0] %>">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                            <input type="date" id="endDate" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-black"
-                                   value="<%= dateRange.end?.toISOString().split('T')[0] %>">
-                        </div>
-                        <button onclick="applyDateFilter()" 
-                                class="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
-                            <i class="fas fa-filter mr-2"></i>Apply Filter
-                        </button>
-                    </div> -->
+    <div class="p-2 sm:ml-64">
+        <header class="flex items-center justify-between mb-8 p-4 lg:p-8 border-b border-gray-800">
+            <h1 class="text-2xl font-semibold text-gray-200">Sales Report</h1>
+            
+            <!-- Download Options -->
+            <div class="flex gap-4">
+                <button onclick="downloadReport('excel')" 
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="material-icons align-middle">description</i>
+                    Excel
+                </button>
+                <button onclick="downloadReport('pdf')" 
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    <i class="material-icons align-middle">picture_as_pdf</i>
+                    PDF
+                </button>
+            </div>
+        </header>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+            <!-- Total Orders -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-gray-400">Total Orders</h3>
+                    <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">delivery_dining</i>
                 </div>
-
-                <!-- Metrics Section -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl shadow-sm">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-gray-500 text-sm">Total Orders</h3>
-                            <i class="fas fa-shopping-cart text-gray-400"></i>
-                        </div>
-                        <p class="text-3xl font-bold text-gray-800"><%= metrics.totalOrders %></p>
-                    </div>
-                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl shadow-sm">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-gray-500 text-sm">Total Sales</h3>
-                            <i class="fas fa-rupee-sign text-gray-400"></i>
-                        </div>
-                        <p class="text-3xl font-bold text-gray-800">₹<%= metrics.totalSales.toFixed(2) %></p>
-                    </div>
-                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl shadow-sm">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-gray-500 text-sm">Total Discount</h3>
-                            <i class="fas fa-tags text-gray-400"></i>
-                        </div>
-                        <p class="text-3xl font-bold text-gray-800">₹<%= metrics.totalDiscount.toFixed(2) %></p>
-                    </div>
-                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl shadow-sm">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-gray-500 text-sm">Average Order Value</h3>
-                            <i class="fas fa-chart-line text-gray-400"></i>
-                        </div>
-                        <p class="text-3xl font-bold text-gray-800">₹<%= metrics.averageOrderValue.toFixed(2) %></p>
-                    </div>
+                <div class="flex items-baseline">
+                    <p class="text-3xl font-bold text-gray-200"><%= totalOrders %></p>
                 </div>
-
-
-                <!-- Download Options -->
-                <div class="flex gap-4 mb-6">
-                    <button onclick="downloadReport('excel')" 
-                            class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                        <i class="fas fa-file-excel mr-2"></i>Download Excel
-                    </button>
-                    <button onclick="downloadReport('pdf')" 
-                            class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                        <i class="fas fa-file-pdf mr-2"></i>Download PDF
-                    </button>
-                </div>
-
-                <!-- Orders Table -->
-              
             </div>
 
-            <!-- Add this after your table section -->
-            <div class="mt-8">
-                <canvas id="salesChart"></canvas>
+            <!-- Products Delivered -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-gray-400">Products Delivered</h3>
+                    <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">inventory_2</i>
+                </div>
+                <div class="flex items-baseline">
+                    <p class="text-3xl font-bold text-gray-200">
+                        <%= salesData.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0) %>
+                    </p>
+                </div>
             </div>
+
+            <!-- Total Revenue -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-gray-400">Total Revenue</h3>
+                    <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">trending_up</i>
+                </div>
+                <div class="flex items-baseline">
+                    <p class="text-3xl font-bold text-gray-200">₹<%= salesData.reduce((sum, order) => sum + order.netAmount, 0).toLocaleString() %></p>
+                </div>
+            </div>
+
+            <!-- Total Coupon Discounts -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-gray-400">Coupon Discounts</h3>
+                    <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">local_offer</i>
+                </div>
+                <div class="flex items-baseline">
+                    <p class="text-3xl font-bold text-gray-200">₹<%= salesData.reduce((sum, order) => sum + order.couponDiscount, 0).toLocaleString() %></p>
+                </div>
+            </div>
+
+            <!-- Total Offer Discounts -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-gray-400">Offer Discounts</h3>
+                    <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">sell</i>
+                </div>
+                <div class="flex items-baseline">
+                    <p class="text-3xl font-bold text-gray-200">₹<%= salesData.reduce((sum, order) => sum + order.totalOfferDiscount, 0).toLocaleString() %></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales Table -->
+        <div class="bg-gray-800 rounded-lg shadow-lg p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">receipt_long</i>
+                <h2 class="text-xl font-semibold text-gray-200">Sales Details</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-700">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Order ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">User ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase" colspan="3">Items Details</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Total Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Coupon Discount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Offer Discount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Net Amount</th>
+                        </tr>
+                        <tr class="bg-gray-700/50">
+                            <th class="px-6 py-2" colspan="3"></th>
+                            <th class="px-6 py-2 text-left text-xs font-medium text-gray-400">Product Name</th>
+                            <th class="px-6 py-2 text-left text-xs font-medium text-gray-400">Qty</th>
+                            <th class="px-6 py-2 text-left text-xs font-medium text-gray-400">Price</th>
+                            <th class="px-6 py-2" colspan="4"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        <% if (salesData && salesData.length > 0) { %>
+                            <% salesData.forEach(order => { %>
+                                <tr class="hover:bg-gray-700">
+                                    <td class="px-6 py-4 whitespace-nowrap text-gray-300"><%= order.orderId %></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-gray-300">
+                                        <%= new Date(order.date).toLocaleDateString('en-US', { 
+                                            day: 'numeric', 
+                                            month: 'short', 
+                                            year: 'numeric' 
+                                        }) %>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-gray-300"><%= order.userId %></td>
+                                    <td class="px-6 py-4 text-gray-300" colspan="3">
+                                        <div class="grid grid-cols-3 gap-4">
+                                            <% order.items.forEach(item => { %>
+                                                <div class="text-gray-300"><%= item.name %></div>
+                                                <div class="text-center text-gray-300"><%= item.quantity %></div>
+                                                <div class="text-right text-gray-300">₹<%= item.price %></div>
+                                            <% }); %>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-gray-300">₹<%= order.subtotal %></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-green-500">
+                                        <% if (order.couponDiscount > 0) { %>
+                                            -₹<%= order.couponDiscount %>
+                                        <% } else { %>
+                                            -
+                                        <% } %>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-green-500">
+                                        <% if (order.totalOfferDiscount > 0) { %>
+                                            -₹<%= order.totalOfferDiscount %>
+                                        <% } else { %>
+                                            -
+                                        <% } %>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-gray-300">₹<%= order.netAmount %></td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="10" class="px-6 py-4 text-center text-gray-400">No sales data found</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <% if (totalPages > 1) { %>
+                <div class="mt-6 flex justify-center gap-2">
+                    <% if (hasPrevPage) { %>
+                        <a href="?page=<%= currentPage - 1 %>" 
+                           class="px-4 py-2 bg-gray-700 text-gray-200 rounded hover:bg-gray-600 transition-colors">
+                            Previous
+                        </a>
+                    <% } %>
+                    
+                    <% for(let i = 1; i <= totalPages; i++) { %>
+                        <a href="?page=<%= i %>" 
+                           class="px-4 py-2 rounded <%= currentPage === i ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600' %> transition-colors">
+                            <%= i %>
+                        </a>
+                    <% } %>
+                    
+                    <% if (hasNextPage) { %>
+                        <a href="?page=<%= currentPage + 1 %>" 
+                           class="px-4 py-2 bg-gray-700 text-gray-200 rounded hover:bg-gray-600 transition-colors">
+                            Next
+                        </a>
+                    <% } %>
+                </div>
+            <% } %>
         </div>
     </div>
 
-    <!-- Add Chart.js before your closing body tag -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Initialize Chart
-        const ctx = document.getElementById('salesChart').getContext('2d');
-        const dailyData = <%- JSON.stringify(dailyData) %>;
-        
-        const dates = Object.keys(dailyData).sort();
-        const salesData = dates.map(date => dailyData[date].sales);
-        const ordersData = dates.map(date => dailyData[date].orders);
-
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: dates,
-                datasets: [
-                    {
-                        label: 'Daily Sales (₹)',
-                        data: salesData,
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1,
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Number of Orders',
-                        data: ordersData,
-                        borderColor: 'rgb(255, 99, 132)',
-                        tension: 0.1,
-                        yAxisID: 'y1'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: 'Sales Amount (₹)'
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Number of Orders'
-                        },
-                        grid: {
-                            drawOnChartArea: false
-                        }
-                    }
-                }
+        async function downloadReport(type) {
+            try {
+                const response = await fetch(`/admin/sales-report/download/${type}`, {
+                    method: 'GET'
+                });
+                
+                if (!response.ok) throw new Error('Download failed');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `sales-report.${type}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            } catch (error) {
+                console.error('Download error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Download Failed',
+                    text: 'Failed to download the report'
+                });
             }
-        });
+        }
     </script>
 </body>
 </html> 

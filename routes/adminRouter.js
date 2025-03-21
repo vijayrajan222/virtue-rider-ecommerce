@@ -64,6 +64,7 @@ router.get('/active-coupons', getActiveCoupons);
 
 router.get('/coupons/active', getActiveCoupons);
 
+
 // Sales Report Routes
 router.get('/sales-report', adminMiddleware.checkSession, reportController.getSalesReport);
 router.get('/sales-report/download-excel', adminMiddleware.checkSession, reportController.downloadExcel);

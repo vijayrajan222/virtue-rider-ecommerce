@@ -5,106 +5,80 @@ import PDFDocument from 'pdfkit-table';
 const reportController = {
     getSalesReport: async (req, res) => {
         try {
-            const { startDate, endDate, period } = req.query;
-            let query = { 
-                'products': {
-                    $elemMatch: {
-                        status: 'delivered'
-                    }
-                },
-                'paymentStatus': 'completed'
+            const page = parseInt(req.query.page) || 1;
+            const limit = 10; // Items per page
+
+            // Get only delivered orders
+            const query = {
+                'products.status': 'delivered'
             };
-            let dateRange = {};
 
-            // Handle different period types
-            if (period) {
-                const now = new Date();
-                switch (period) {
-                    case 'daily':
-                        dateRange.start = new Date(now.setHours(0, 0, 0, 0));
-                        dateRange.end = new Date(now.setHours(23, 59, 59, 999));
-                        break;
-                    case 'weekly':
-                        dateRange.start = new Date(now.setDate(now.getDate() - 7));
-                        dateRange.end = new Date();
-                        break;
-                    case 'monthly':
-                        dateRange.start = new Date(now.setMonth(now.getMonth() - 1));
-                        dateRange.end = new Date();
-                        break;
-                    case 'yearly':
-                        dateRange.start = new Date(now.setFullYear(now.getFullYear() - 1));
-                        dateRange.end = new Date();
-                        break;
-                }
-            } else if (startDate && endDate) {
-                dateRange.start = new Date(new Date(startDate).setHours(0, 0, 0, 0));
-                dateRange.end = new Date(new Date(endDate).setHours(23, 59, 59, 999));
-            }
+            // Get total count for pagination
+            const totalOrders = await Order.countDocuments(query);
+            const totalPages = Math.ceil(totalOrders / limit);
 
-            if (dateRange.start && dateRange.end) {
-                query.createdAt = {
-                    $gte: dateRange.start,
-                    $lte: dateRange.end
-                };
-            }
-
+            // Get orders for current page
             const orders = await Order.find(query)
                 .populate('user', 'firstName lastName email')
-                .populate('products.product', 'name price')
-                .populate('products.variant', 'size')
-                .sort({ createdAt: -1 });
+                .populate('products.product', 'name')
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit);
 
-            // Calculate metrics
-            const metrics = {
-                totalOrders: orders.length,
-                totalSales: orders.reduce((sum, order) => {
-                    const deliveredAmount = order.products
-                        .filter(p => p.status === 'delivered')
-                        .reduce((sum, p) => sum + (p.price * p.quantity), 0);
-                    return sum + deliveredAmount;
-                }, 0),
-                totalDiscount: 0,
-                averageOrderValue: 0
-            };
+            // Process orders to get required details
+            const salesData = orders.map(order => {
+                const totalOfferDiscount = order.products.reduce((sum, item) => {
+                    if (item.offer && item.price) {
+                        const originalPrice = item.price * item.quantity;
+                        const discountedPrice = (item.price - (item.offer.discountAmount || 0)) * item.quantity;
+                        return sum + (originalPrice - discountedPrice);
+                    }
+                    return sum;
+                }, 0);
 
-            metrics.averageOrderValue = orders.length ? metrics.totalSales / orders.length : 0;
+                const items = order.products
+                    .filter(item => item.status === 'delivered')
+                    .map(item => ({
+                        name: item.product?.name || 'Unknown Product',
+                        quantity: item.quantity,
+                        price: item.price,
+                        offerDiscount: item.offer ? 
+                            (item.price * item.quantity) - ((item.price - (item.offer.discountAmount || 0)) * item.quantity) 
+                            : 0
+                    }));
 
-            // Calculate daily data for the chart
-            const dailyData = {};
-            orders.forEach(order => {
-                const date = new Date(order.createdAt).toISOString().split('T')[0];
-                if (!dailyData[date]) {
-                    dailyData[date] = {
-                        orders: 0,
-                        sales: 0,
-                        discount: 0,
-                        netRevenue: 0
-                    };
-                }
-                
-                const deliveredAmount = order.products
-                    .filter(p => p.status === 'delivered')
-                    .reduce((sum, p) => sum + (p.price * p.quantity), 0);
-
-                dailyData[date].orders += 1;
-                dailyData[date].sales += deliveredAmount;
-                dailyData[date].netRevenue += deliveredAmount;
+                return {
+                    orderId: order.orderCode || order._id,
+                    date: order.createdAt,
+                    userId: order.user?._id || 'Unknown ID',
+                    items: items,
+                    subtotal: order.subtotal,
+                    couponDiscount: order.coupon?.discount || 0,
+                    totalOfferDiscount: totalOfferDiscount,
+                    netAmount: order.totalAmount
+                };
             });
 
             res.render('admin/salesReport', {
-                orders,
-                metrics,
-                dailyData,
-                dateRange,
-                period: period || 'monthly',
+                title: 'Sales Report',
                 path: '/admin/sales-report',
-                title: 'Sales Report'
+                salesData,
+                currentPage: page,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+                nextPage: page + 1,
+                prevPage: page - 1,
+                lastPage: totalPages,
+                totalPages,
+                totalOrders
             });
 
         } catch (error) {
-            console.error('Sales report error:', error);
-            res.status(500).render('error', { message: 'Error generating sales report' });
+            console.error('Sales Report Error:', error);
+            res.status(500).render('error', {
+                message: 'Error generating sales report',
+                error: error
+            });
         }
     },
 
