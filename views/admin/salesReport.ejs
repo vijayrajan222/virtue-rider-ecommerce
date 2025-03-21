@@ -30,64 +30,91 @@
             </div>
         </header>
 
-        <!-- Statistics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-            <!-- Total Orders -->
-            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-gray-400">Total Orders</h3>
-                    <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">delivery_dining</i>
-                </div>
-                <div class="flex items-baseline">
-                    <p class="text-3xl font-bold text-gray-200"><%= totalOrders %></p>
-                </div>
+        <!-- Filter Section -->
+        <div class="mb-6 bg-gray-800 p-6 rounded-lg">
+            <div class="flex flex-wrap gap-4 mb-4">
+                <button onclick="setPeriod('daily')" 
+                        class="px-4 py-2 rounded-lg transition-colors <%= period === 'daily' ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600' %>">
+                    <i class="material-icons align-middle text-sm">today</i>
+                    Daily
+                </button>
+                <!-- Add weekly, monthly, yearly buttons similarly -->
             </div>
+            
+            <div class="flex flex-wrap gap-4 items-end">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Start Date</label>
+                    <input type="date" id="startDate" 
+                           class="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 border-none"
+                           value="<%= dateRange.start?.toISOString().split('T')[0] %>">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">End Date</label>
+                    <input type="date" id="endDate"
+                           class="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 border-none"
+                           value="<%= dateRange.end?.toISOString().split('T')[0] %>">
+                </div>
+                <button onclick="applyDateFilter()" 
+                        class="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                    <i class="material-icons align-middle">filter_list</i>
+                    Apply Filter
+                </button>
+            </div>
+        </div>
 
-            <!-- Products Delivered -->
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Overall Sales Count -->
             <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-gray-400">Products Delivered</h3>
-                    <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">inventory_2</i>
+                    <h3 class="text-gray-400">Overall Sales Count</h3>
+                    <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">shopping_cart</i>
                 </div>
                 <div class="flex items-baseline">
                     <p class="text-3xl font-bold text-gray-200">
                         <%= salesData.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0) %>
                     </p>
+                    <p class="ml-2 text-sm text-gray-400">items</p>
                 </div>
             </div>
 
-            <!-- Total Revenue -->
+            <!-- Overall Order Amount -->
             <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-gray-400">Total Revenue</h3>
-                    <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">trending_up</i>
+                    <h3 class="text-gray-400">Overall Order Amount</h3>
+                    <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">payments</i>
                 </div>
                 <div class="flex items-baseline">
-                    <p class="text-3xl font-bold text-gray-200">₹<%= salesData.reduce((sum, order) => sum + order.netAmount, 0).toLocaleString() %></p>
+                    <p class="text-3xl font-bold text-gray-200">₹<%= salesData.reduce((sum, order) => sum + order.subtotal, 0).toLocaleString() %></p>
                 </div>
             </div>
 
-            <!-- Total Coupon Discounts -->
+            <!-- Overall Discount -->
             <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-gray-400">Coupon Discounts</h3>
-                    <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">local_offer</i>
+                    <h3 class="text-gray-400">Overall Discount</h3>
+                    <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">discount</i>
                 </div>
                 <div class="flex items-baseline">
-                    <p class="text-3xl font-bold text-gray-200">₹<%= salesData.reduce((sum, order) => sum + order.couponDiscount, 0).toLocaleString() %></p>
+                    <p class="text-3xl font-bold text-gray-200">₹<%= salesData.reduce((sum, order) => sum + (order.couponDiscount + order.totalOfferDiscount), 0).toLocaleString() %></p>
+                    <p class="ml-2 text-sm text-gray-400">(Coupon + Offer)</p>
                 </div>
             </div>
+        </div>
 
-            <!-- Total Offer Discounts -->
-            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-gray-400">Offer Discounts</h3>
-                    <i class="material-icons text-orange-500 text-lg md:text-xl lg:text-2xl">sell</i>
-                </div>
-                <div class="flex items-baseline">
-                    <p class="text-3xl font-bold text-gray-200">₹<%= salesData.reduce((sum, order) => sum + order.totalOfferDiscount, 0).toLocaleString() %></p>
-                </div>
-            </div>
+        <!-- Add sorting controls -->
+        <div class="flex justify-end mb-4">
+            <select id="sortField" onchange="updateSort()" 
+                    class="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg mr-2">
+                <option value="date" <%= currentSort === 'date' ? 'selected' : '' %>>Date</option>
+                <option value="amount" <%= currentSort === 'amount' ? 'selected' : '' %>>Amount</option>
+            </select>
+            <button onclick="toggleSortOrder()" 
+                    class="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg">
+                <i class="material-icons align-middle">
+                    <%= currentOrder === 'desc' ? 'arrow_downward' : 'arrow_upward' %>
+                </i>
+            </button>
         </div>
 
         <!-- Sales Table -->
@@ -195,6 +222,38 @@
     </div>
 
     <script>
+        function setPeriod(period) {
+            window.location.href = `/admin/sales-report?period=${period}`;
+        }
+
+        function applyDateFilter() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (!startDate || !endDate) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Dates',
+                    text: 'Please select both start and end dates'
+                });
+                return;
+            }
+            window.location.href = `/admin/sales-report?startDate=${startDate}&endDate=${endDate}`;
+        }
+
+        function updateSort() {
+            const sort = document.getElementById('sortField').value;
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('sort', sort);
+            window.location.href = `?${urlParams.toString()}`;
+        }
+
+        function toggleSortOrder() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentOrder = urlParams.get('order') || 'desc';
+            urlParams.set('order', currentOrder === 'desc' ? 'asc' : 'desc');
+            window.location.href = `?${urlParams.toString()}`;
+        }
+
         async function downloadReport(type) {
             try {
                 const response = await fetch(`/admin/sales-report/download/${type}`, {

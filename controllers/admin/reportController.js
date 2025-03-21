@@ -5,25 +5,82 @@ import PDFDocument from 'pdfkit-table';
 const reportController = {
     getSalesReport: async (req, res) => {
         try {
+            const { startDate, endDate, period, sort = 'date', order = 'desc' } = req.query;
             const page = parseInt(req.query.page) || 1;
-            const limit = 10; // Items per page
+            const limit = 10;
 
-            // Get only delivered orders
-            const query = {
+            let query = {
                 'products.status': 'delivered'
             };
 
-            // Get total count for pagination
+            let dateRange = {};
+            
+            // Handle period filtering
+            if (period) {
+                const now = new Date();
+                switch (period) {
+                    case 'daily':
+                        dateRange.start = new Date(now.setHours(0, 0, 0, 0));
+                        dateRange.end = new Date(now.setHours(23, 59, 59, 999));
+                        break;
+                    case 'weekly':
+                        dateRange.start = new Date(now.setDate(now.getDate() - 7));
+                        dateRange.end = new Date();
+                        break;
+                    case 'monthly':
+                        dateRange.start = new Date(now.setMonth(now.getMonth() - 1));
+                        dateRange.end = new Date();
+                        break;
+                    case 'yearly':
+                        dateRange.start = new Date(now.setFullYear(now.getFullYear() - 1));
+                        dateRange.end = new Date();
+                        break;
+                }
+            } else if (startDate && endDate) {
+                dateRange.start = new Date(startDate);
+                dateRange.end = new Date(endDate);
+                dateRange.end.setHours(23, 59, 59, 999);
+            }
+
+            if (dateRange.start && dateRange.end) {
+                query.createdAt = {
+                    $gte: dateRange.start,
+                    $lte: dateRange.end
+                };
+            }
+
+            // Handle sorting
+            let sortQuery = {};
+            switch (sort) {
+                case 'amount':
+                    sortQuery.totalAmount = order === 'desc' ? -1 : 1;
+                    break;
+                case 'date':
+                default:
+                    sortQuery.createdAt = order === 'desc' ? -1 : 1;
+            }
+
             const totalOrders = await Order.countDocuments(query);
             const totalPages = Math.ceil(totalOrders / limit);
 
-            // Get orders for current page
             const orders = await Order.find(query)
                 .populate('user', 'firstName lastName email')
                 .populate('products.product', 'name')
-                .sort({ createdAt: -1 })
+                .sort(sortQuery)
                 .skip((page - 1) * limit)
                 .limit(limit);
+
+            // Calculate metrics
+            const allOrders = await Order.find(query);
+            const metrics = {
+                totalOrders: allOrders.length,
+                totalSales: allOrders.reduce((sum, order) => sum + order.totalAmount, 0),
+                totalDiscount: allOrders.reduce((sum, order) => {
+                    return sum + (order.coupon?.discount || 0) + order.products.reduce((acc, item) => 
+                        acc + (item.offer?.discountAmount || 0), 0);
+                }, 0)
+            };
+            metrics.averageOrderValue = metrics.totalOrders ? metrics.totalSales / metrics.totalOrders : 0;
 
             // Process orders to get required details
             const salesData = orders.map(order => {
@@ -63,14 +120,15 @@ const reportController = {
                 title: 'Sales Report',
                 path: '/admin/sales-report',
                 salesData,
+                metrics,
+                dateRange,
+                period: period || 'custom',
                 currentPage: page,
+                totalPages,
                 hasNextPage: page < totalPages,
                 hasPrevPage: page > 1,
-                nextPage: page + 1,
-                prevPage: page - 1,
-                lastPage: totalPages,
-                totalPages,
-                totalOrders
+                currentSort: sort,
+                currentOrder: order
             });
 
         } catch (error) {
