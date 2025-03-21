@@ -126,7 +126,6 @@
                                             <h3 class="text-lg font-semibold mb-4">Order Items</h3>
                                             <div class="space-y-4">
                                                 <% order.products.forEach(item=> { %>
-                                                    <!-- Changed 'items' to 'products' -->
                                                     <div class="flex items-center gap-4 p-4 border rounded-lg"
                                                         data-order="<%= order._id %>">
                                                         <img src="<%= item.product.images[0] %>"
@@ -138,18 +137,16 @@
                                                                 <%= item.product.name %>
                                                             </p>
                                                             <div class="text-sm text-gray-500">
-                                                                <p>Quantity: <%= item.quantity %>
-                                                                </p>
-
-                                                                <!-- <p>Price: ₹<%= item.price %> -->
-                                                                    <p >Price ₹<span class="line-through"> <%= item.price %>  </span>   ₹<%= item.price - (item.offer?.discountAmount || 0) %></p>
-                                                                    <p>Coupon:</p>
-                                                                </p>
-                                                                
+                                                                <p>Quantity: <%= item.quantity %></p>
+                                                                <% if (item.offer && item.offer.discountAmount) { %>
+                                                                    <p>Price: <span class="line-through">₹<%= item.price %></span> 
+                                                                       ₹<%= item.price - item.offer.discountAmount %></p>
+                                                                <% } else { %>
+                                                                    <p>Price: ₹<%= item.price %></p>
+                                                                <% } %>
                                                                 <% if (item.variantInfo && item.variantInfo.size) { %>
-                                                                    <p>Size: <%= item.variantInfo.size %>
-                                                                    </p>
-                                                                    <% } %>
+                                                                    <p>Size: <%= item.variantInfo.size %></p>
+                                                                <% } %>
                                                             </div>
                                                         </div>
 
@@ -203,6 +200,30 @@
                                                         </div>
                                                     </div>
                                                     <% }); %>
+                                            </div>
+                                        </div>
+
+                                        <!-- Order Summary -->
+                                        <div class="p-6 border-b">
+                                            <h3 class="text-lg font-semibold mb-4">Order Summary</h3>
+                                            <div class="space-y-2">
+                                                <div class="flex justify-between text-gray-600">
+                                                    <span>Subtotal:</span>
+                                                    <span>₹<%= order.subtotal %></span>
+                                                </div>
+                                                
+                                                <% if (order.coupon && order.coupon.code) { %>
+                                                    <div class="flex justify-between text-gray-600">
+                                                        <span>Coupon Applied (<%= order.coupon.code %>):</span>
+                                                        <span class="text-green-600">-₹<%= order.coupon.discount %></span>
+                                                    </div>
+                                                <% } %>
+
+                                                <!-- You can add shipping charges here if applicable -->
+                                                <div class="flex justify-between font-semibold text-lg mt-4">
+                                                    <span>Total Amount:</span>
+                                                    <span>₹<%= order.totalAmount %></span>
+                                                </div>
                                             </div>
                                         </div>
 
