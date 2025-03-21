@@ -434,9 +434,8 @@ const userCheckoutController = {
 
     createRazorpayOrder: async (req, res) => {
         try {
-            const { addressId, couponCode } = req.body;
-            // console.log("Coupon code from razorpay",couponCode)
-            console.log("req.body of createOrder",req.body)
+            const { addressId, couponCode, finalAmount } = req.body;
+            console.log("Coupon code from razorpay", couponCode);
             const userId = req.session.user;
 
             // Get cart with populated products
@@ -450,14 +449,14 @@ const userCheckoutController = {
                 throw new Error('Cart is empty');
             }
 
-            // Fetch active offers
+            // Fetch active offers and calculate items with offers
             const currentDate = new Date();
             const activeOffers = await Offer.find({
                 isActive: true,
                 startDate: { $lte: currentDate },
                 endDate: { $gte: currentDate }
             });
-            // console.log('activeOffers', activeOffers);
+
             // Calculate items with offers
             const cartItems = cart.items.map(item => {
                 const product = item.productId;
@@ -467,7 +466,7 @@ const userCheckoutController = {
                     offer.type === 'product' && 
                     offer.productIds.some(id => id.toString() === product._id.toString())
                 );
-                console.log('productOffers', productOffers);
+
                 const categoryOffers = activeOffers.filter(offer => 
                     offer.type === 'category' && 
                     product.categoryId && 
@@ -480,7 +479,6 @@ const userCheckoutController = {
                 let discountedPrice = item.price;
 
                 if (applicableOffers.length > 0) {
-                    // console.log('applicableOffers', applicableOffers);
                     bestOffer = applicableOffers.reduce((best, current) => {
                         const currentDiscount = current.discountType === 'percentage'
                             ? (item.price * current.discountAmount / 100)
@@ -502,9 +500,9 @@ const userCheckoutController = {
 
                 return {
                     product: item.productId._id,
+                    variant: item.variantId,
                     quantity: item.quantity,
                     price: item.price,
-                    variant: item.variantId,
                     discountedPrice,
                     offer: bestOffer ? {
                         offerId: bestOffer._id,
@@ -516,60 +514,47 @@ const userCheckoutController = {
                 };
             });
 
-           // Calculate subtotal after offers
+            // Calculate subtotal after offers
             const subtotalAfterOffers = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
-            // console.log('subtotalAfterOffers', subtotalAfterOffers);
-            // Apply coupon if exists
-            let couponDiscount = 0;
+
+            // Get coupon details if exists
             let couponDetails = null;
-            console.log('cart.coupon', cart.coupon);
-            if (cart.coupon && cart.coupon.code) {
-                const coupon = await Coupon.findOne({ code: cart.coupon.code });
-                if (coupon && coupon.isActive) {
+            let couponDiscount = 0;
+            if (couponCode) {
+                const coupon = await Coupon.findOne({ code: couponCode });
+                if (coupon) {
                     couponDiscount = Math.min(
                         (subtotalAfterOffers * coupon.discountPercentage) / 100,
                         coupon.maximumDiscount
                     );
                     couponDetails = {
-                        code: couponCode,
-                        discountType: 'percentage',
-                        discountPercentage: coupon.discountPercentage,
-                        discountAmount: couponDiscount
+                        code: coupon.code,
+                        discount: couponDiscount
                     };
                 }
             }
 
-            // Calculate final amounts      
-            // console.log('subtotalAfterOffers', subtotalAfterOffers);
-            // console.log('couponDiscount', couponDiscount);
-            const subtotalAfterCoupon = subtotalAfterOffers - couponDiscount;
-            const gstAmount = subtotalAfterCoupon * 0.18;
-            const shippingCharges = subtotalAfterCoupon >= 1000 ? 0 : 40;
-            const finalAmount = Math.round((subtotalAfterCoupon + gstAmount + shippingCharges) * 100);
-            console.log('finalAmount', finalAmount);
             // Create Razorpay order
             const razorpayOrder = await razorpay.orders.create({
-                amount: Number(req.body.finalAmount*100), // amount in paise
+                amount: Number(finalAmount * 100),
                 currency: 'INR',
                 receipt: `order_${Date.now()}`
             });
 
-            // Store order details in session for verification
+            // Store complete order details in session
             req.session.orderDetails = {
                 cartItems,
-                couponDetails,
+                addressId,
                 subtotalAfterOffers,
+                couponDetails, // Store coupon details in session
                 couponDiscount,
-                gstAmount,
-                shippingCharges,
-                finalAmount: Number(req.body.finalAmount),
-                addressId
+                finalAmount: Number(finalAmount)
             };
 
             res.json({
                 success: true,
                 order: razorpayOrder,
-                amount: Number(req.body.finalAmount)
+                amount: Number(finalAmount)
             });
 
         } catch (error) {
