@@ -456,6 +456,8 @@
       }
 
       async function applyCouponCode(code) {
+        console.log("HEYYYYYYYY_____________________");
+        
           try {
               if (appliedCoupon) {
                   throw new Error('Please remove the existing coupon before applying a new one');
@@ -477,6 +479,8 @@
 
                   // Get the current values
                   const subtotal = parseFloat(document.getElementById('subtotal').textContent);
+                  console.log("subtotalssssssss",subtotal);
+                  
                   const gstAmount = subtotal * 0.18; // Calculate GST after discount
                   const shippingCharges = subtotal >= 1000 ? 0 : 40;
 
@@ -574,6 +578,7 @@
                   await showAlert('error', 'Please select a delivery address');
                   return;
               }
+              const subtotal = parseFloat(document.getElementById('subtotal').textContent);
 
               const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
               if (!paymentMethod) {
@@ -596,7 +601,8 @@
                           addressId: selectedAddress.value,
                           paymentMethod: 'cod',
                           couponCode: appliedCoupon,
-                          finalAmount: parseFloat(finalTotal)
+                          finalAmount: parseFloat(finalTotal),
+                          subtotal: parseFloat(subtotal)
                       })
                   });
 
@@ -852,6 +858,7 @@
       });
 
       async function createRazorpayOrder(addressId, couponCode,finalAmount) {
+
           try {
               const response = await fetch('/checkout/create-razorpay-order', {
                   method: 'POST',
@@ -861,7 +868,7 @@
                   body: JSON.stringify({ 
                       addressId,
                       couponCode ,
-                      finalAmount
+                      finalAmount,
                   })
               });
 

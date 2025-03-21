@@ -2,6 +2,7 @@ import cartSchema from '../../models/cartModel.js';
 import Order from '../../models/orderModel.js';
 import addressSchema from '../../models/addressModel.js';
 import productSchema from '../../models/productModel.js';
+import couponSchema from '../../models/couponModel.js';
 import Coupon from '../../models/couponModel.js';
 import mongoose from 'mongoose';
 import razorpay from '../../utils/razorpay.js';
@@ -131,6 +132,7 @@ const userCheckoutController = {
     validateCoupon: async (req, res) => {
         try {
             const { couponCode } = req.body;
+            console.log("couponCode", couponCode);
             const userId = req.session.user;
 
             // Find the coupon
@@ -146,25 +148,80 @@ const userCheckoutController = {
                 });
             }
 
-            // Get cart total
-            const cart = await cartSchema.findOne({ userId });
-            const cartTotal = cart.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+            // Get cart with populated products
+            const cart = await cartSchema.findOne({ userId })
+                .populate({
+                    path: 'items.productId',
+                    select: 'name images price variants categoryId'
+                });
 
-            // Check minimum purchase requirement
-            if (cartTotal < coupon.minimumPurchase) {
+            // Fetch active offers
+            const currentDate = new Date();
+            const activeOffers = await Offer.find({
+                isActive: true,
+                startDate: { $lte: currentDate },
+                endDate: { $gte: currentDate }
+            });
+
+            // Calculate cart total after offers
+            let totalAfterOffers = 0;
+            cart.items.forEach(item => {
+                const product = item.productId;
+                
+                // Find applicable offers
+                const productOffers = activeOffers.filter(offer => 
+                    offer.type === 'product' && 
+                    offer.productIds.some(id => id.toString() === product._id.toString())
+                );
+
+                const categoryOffers = activeOffers.filter(offer => 
+                    offer.type === 'category' && 
+                    product.categoryId && 
+                    offer.categoryId.toString() === product.categoryId.toString()
+                );
+
+                // Find best offer
+                const applicableOffers = [...productOffers, ...categoryOffers];
+                let discountedPrice = item.price;
+
+                if (applicableOffers.length > 0) {
+                    const bestOffer = applicableOffers.reduce((best, current) => {
+                        const currentDiscount = current.discountType === 'percentage'
+                            ? (item.price * current.discountAmount / 100)
+                            : current.discountAmount;
+                        
+                        const bestDiscount = best ? (best.discountType === 'percentage'
+                            ? (item.price * best.discountAmount / 100)
+                            : best.discountAmount) : 0;
+
+                        return currentDiscount > bestDiscount ? current : best;
+                    }, null);
+
+                    if (bestOffer) {
+                        discountedPrice = bestOffer.discountType === 'percentage'
+                            ? item.price - (item.price * bestOffer.discountAmount / 100)
+                            : item.price - bestOffer.discountAmount;
+                    }
+                }
+
+                totalAfterOffers += discountedPrice * item.quantity;
+            });
+
+            // Check minimum purchase requirement against price after offers
+            if (totalAfterOffers < coupon.minimumPurchase) {
                 return res.json({
                     success: false,
                     message: `Minimum purchase of ₹${coupon.minimumPurchase} required`
                 });
             }
 
-            // Calculate discount
-            let discount = (cartTotal * coupon.discountPercentage) / 100;
+            // Calculate coupon discount on price after offers
+            let discount = (totalAfterOffers * coupon.discountPercentage) / 100;
             if (discount > coupon.maximumDiscount) {
                 discount = coupon.maximumDiscount;
             }
 
-            const finalAmount = cartTotal - discount;
+            const finalAmount = totalAfterOffers - discount;
 
             res.json({
                 success: true,
@@ -184,8 +241,22 @@ const userCheckoutController = {
 
     placeOrder: async (req, res) => {
         try {
-            const { addressId, paymentMethod, couponCode, finalAmount } = req.body;
+            const { addressId, paymentMethod, couponCode, finalAmount , subtotal } = req.body;
+            console.log("subtotal",subtotal)
+            console.log("finalAmount",finalAmount)
+            // console.log('Coupon code', couponCode)
             const userId = req.session.user;
+            let couponValue = 0 
+            let couponDiscount = 0 
+            if(couponCode){
+                const coupon = await couponSchema.findOne({code:couponCode})
+                if(coupon){
+                    coupon.usedCouponCount++;
+                    await coupon.save()
+                    couponValue = coupon.discountPercentage
+                    couponDiscount = (subtotal * couponValue) / 100
+                }
+            }
 
             // Validate payment method
             if (paymentMethod !== 'cod') {
@@ -304,6 +375,10 @@ const userCheckoutController = {
                         date: new Date()
                     }]
                 })),
+                coupon:{
+                    code:couponCode,
+                    discount:couponDiscount
+                },
                 subtotal: cartItems.reduce((sum, item) => sum + item.subtotal, 0),
                 totalAmount: finalAmount,
                 shippingAddress: {
@@ -360,6 +435,7 @@ const userCheckoutController = {
     createRazorpayOrder: async (req, res) => {
         try {
             const { addressId, couponCode } = req.body;
+            // console.log("Coupon code from razorpay",couponCode)
             console.log("req.body of createOrder",req.body)
             const userId = req.session.user;
 
@@ -455,7 +531,7 @@ const userCheckoutController = {
                         coupon.maximumDiscount
                     );
                     couponDetails = {
-                        code: coupon.code,
+                        code: couponCode,
                         discountType: 'percentage',
                         discountPercentage: coupon.discountPercentage,
                         discountAmount: couponDiscount
