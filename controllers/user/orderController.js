@@ -4,6 +4,39 @@ import User from "../../models/userModel.js";
 import PDFDocument from 'pdfkit';
 import { walletController } from './walletController.js';
 
+const calculateRefundAmount = (order, item) => {
+    // Get all delivered/cancelled items in the order
+    const processedItems = order.products.filter(p => 
+        p.status === 'delivered' || p.status === 'cancelled'
+    );
+
+    // If this is the only item in the order or the last item being cancelled
+    const isLastItem = processedItems.length === order.products.length - 1;
+    
+    let refundAmount = 0;
+
+    if (isLastItem) {
+        // Refund total amount if this is the last/only item
+        refundAmount = order.totalAmount;
+    } else {
+        // Calculate refund for individual item
+        const itemSubtotal = item.price * item.quantity;
+        const gstAmount = itemSubtotal * 0.18; // 18% GST
+        
+        // Calculate proportional coupon discount if applicable
+        let itemCouponDiscount = 0;
+        if (order.coupon && order.coupon.discount > 0) {
+            const orderSubtotal = order.products.reduce((sum, p) => sum + (p.price * p.quantity), 0);
+            const itemProportion = itemSubtotal / orderSubtotal;
+            itemCouponDiscount = order.coupon.discount * itemProportion;
+        }
+
+        refundAmount = itemSubtotal + gstAmount - itemCouponDiscount;
+    }
+
+    return Math.round(refundAmount * 100) / 100; // Round to 2 decimal places
+};
+
 const userOrderController = {
     getUserOrders: async (req, res) => {
         try {
@@ -361,9 +394,8 @@ const userOrderController = {
                 });
             }
 
-            // Calculate refund amount including any offers
-            const refundAmount = item.discountedPrice || item.price;
-            const totalRefundAmount = refundAmount * item.quantity;
+            // Calculate refund amount
+            const refundAmount = calculateRefundAmount(order, item);
 
             // Update product stock
             const product = await Product.findById(productId);
@@ -389,18 +421,16 @@ const userOrderController = {
                 try {
                     console.log('Processing refund:', {
                         userId,
-                        amount: totalRefundAmount,
+                        amount: refundAmount,
                         orderId
                     });
 
                     const refundResult = await walletController.processRefund(
                         userId,
-                        totalRefundAmount,
+                        refundAmount,
                         orderId,
-                        `Refund for cancelled order #${order.orderCode}`
+                        `Refund for cancelled order #${order._id.toString().slice(-6)}`
                     );
-
-                    console.log('Refund result:', refundResult);
 
                     if (!refundResult.success) {
                         throw new Error(refundResult.error || 'Refund failed');
@@ -418,7 +448,8 @@ const userOrderController = {
 
             res.json({
                 success: true,
-                message: 'Item cancelled and refund processed successfully'
+                message: 'Item cancelled and refund processed successfully',
+                refundAmount
             });
 
         } catch (error) {
