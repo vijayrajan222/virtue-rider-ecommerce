@@ -101,7 +101,24 @@
           </div>
           
           <div class="flex flex-wrap gap-2">
+            <!-- Chart Type Toggle Button -->
+            <div class="flex items-center mb-2 md:mb-0 mr-4">
+              <span class="text-sm text-gray-400 mr-2">Chart Type:</span>
+              <div class="relative inline-block w-16 h-8 transition duration-200 ease-in-out">
+                <input type="checkbox" id="chartToggle" class="absolute w-0 h-0 opacity-0" <%= data.chartType === 'bar' ? 'checked' : '' %>>
+                <label for="chartToggle" class="flex items-center justify-between w-16 h-8 p-1 bg-gray-700 rounded-full cursor-pointer">
+                  <i class="material-icons text-sm text-gray-300">show_chart</i>
+                  <i class="material-icons text-sm text-gray-300">bar_chart</i>
+                  <span class="absolute w-6 h-6 bg-orange-500 rounded-full transition-transform duration-200 ease-in-out transform <%= data.chartType === 'bar' ? 'translate-x-8' : 'translate-x-0' %>"></span>
+                </label>
+              </div>
+            </div>
+            
             <form id="filterForm" action="/admin/dashboard" method="GET" class="flex flex-wrap gap-2">
+              <!-- Hidden input for chart type -->
+              <input type="hidden" id="chartTypeInput" name="chartType" value="<%= data.chartType %>">
+              
+              <!-- Period Selection -->
               <div class="flex space-x-2">
                 <button type="submit" name="period" value="weekly" 
                         class="px-3 py-1 <%= data.period === 'weekly' ? 'bg-orange-600' : 'bg-gray-700' %> text-gray-300 rounded-lg text-sm hover:bg-orange-500 transition-colors">
@@ -117,6 +134,7 @@
                 </button>
               </div>
               
+              <!-- Custom Date Range -->
               <div class="flex items-center space-x-2 mt-2 md:mt-0">
                 <input type="text" id="dateRange" placeholder="Custom Date Range" 
                        class="px-3 py-1 bg-gray-700 text-gray-300 rounded-lg text-sm w-48">
@@ -259,6 +277,13 @@
         }
       });
 
+      // Chart type toggle functionality
+      document.getElementById('chartToggle').addEventListener('change', function() {
+        const chartTypeInput = document.getElementById('chartTypeInput');
+        chartTypeInput.value = this.checked ? 'bar' : 'line';
+        document.getElementById('filterForm').submit();
+      });
+
       // Initialize Sales Chart
       document.addEventListener('DOMContentLoaded', function() {
         // Check if Chart.js is loaded
@@ -281,8 +306,9 @@
         const labels = <%- JSON.stringify(data.chartData.labels || []) %>;
         const revenueData = <%- JSON.stringify(data.chartData.revenues || []) %>;
         const orderData = <%- JSON.stringify(data.chartData.orders || []) %>;
+        const chartType = '<%= data.chartType %>';
 
-        console.log('Chart data:', { labels, revenueData, orderData });
+        console.log('Chart data:', { labels, revenueData, orderData, chartType });
 
         // Create gradient for revenue line
         const revenueGradient = ctx.createLinearGradient(0, 0, 0, 400);
@@ -294,48 +320,57 @@
         ordersGradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
         ordersGradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
 
-        // Create the line chart
+        // Configure datasets based on chart type
+        const datasets = [
+          {
+            label: 'Revenue (₹)',
+            data: revenueData,
+            backgroundColor: chartType === 'line' ? revenueGradient : 'rgba(249, 115, 22, 0.7)',
+            borderColor: '#f97316',
+            borderWidth: 2,
+            pointBackgroundColor: '#f97316',
+            pointBorderColor: '#fff',
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#f97316',
+            pointHoverBorderColor: '#fff',
+            pointHoverBorderWidth: 2,
+            tension: 0.4,
+            fill: chartType === 'line',
+            yAxisID: 'y'
+          },
+          {
+            label: 'Orders',
+            data: orderData,
+            backgroundColor: chartType === 'line' ? ordersGradient : 'rgba(59, 130, 246, 0.7)',
+            borderColor: '#3b82f6',
+            borderWidth: 2,
+            pointBackgroundColor: '#3b82f6',
+            pointBorderColor: '#fff',
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#3b82f6',
+            pointHoverBorderColor: '#fff',
+            pointHoverBorderWidth: 2,
+            tension: 0.4,
+            fill: chartType === 'line',
+            yAxisID: 'y1'
+          }
+        ];
+
+        // Create the chart
         const salesChart = new Chart(ctx, {
-          type: 'line',
+          type: chartType,
           data: {
             labels: labels,
-            datasets: [
-              {
-                label: 'Revenue (₹)',
-                data: revenueData,
-                borderColor: '#f97316',
-                backgroundColor: revenueGradient,
-                borderWidth: 3,
-                pointBackgroundColor: '#f97316',
-                pointBorderColor: '#fff',
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                fill: true,
-                tension: 0.4,
-                yAxisID: 'y'
-              },
-              {
-                label: 'Orders',
-                data: orderData,
-                borderColor: '#3b82f6',
-                backgroundColor: ordersGradient,
-                borderWidth: 3,
-                pointBackgroundColor: '#3b82f6',
-                pointBorderColor: '#fff',
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                fill: true,
-                tension: 0.4,
-                yAxisID: 'y1'
-              }
-            ]
+            datasets: datasets
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
             interaction: {
               mode: 'index',
-              intersect: false,
+              intersect: false
             },
             plugins: {
               legend: {
@@ -434,7 +469,7 @@
                 }
               }
             },
-            animations: {
+            animations: chartType === 'line' ? {
               tension: {
                 duration: 1000,
                 easing: 'linear',
@@ -442,7 +477,7 @@
                 to: 0.4,
                 loop: false
               }
-            }
+            } : false
           }
         });
 

@@ -5,10 +5,12 @@ import Category from '../../models/categoryModel.js';
 
 export const getDashboard = async (req, res) => {
     try {
+        // Get query parameters
+        const { period = 'weekly', startDate, endDate, chartType = 'line' } = req.query;
+        
         // Get filter parameters
-        const period = req.query.period || 'monthly'; // Default to monthly
-        const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date(new Date().getFullYear(), 0, 1);
-        const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date();
+        const startDateObj = req.query.startDate ? new Date(req.query.startDate) : new Date(new Date().getFullYear(), 0, 1);
+        const endDateObj = req.query.endDate ? new Date(req.query.endDate) : new Date();
         
         // Basic stats
         const totalUsers = await User.countDocuments();
@@ -98,8 +100,8 @@ export const getDashboard = async (req, res) => {
                     $match: {
                         paymentStatus: 'completed',
                         createdAt: {
-                            $gte: startDate,
-                            $lte: endDate
+                            $gte: startDateObj,
+                            $lte: endDateObj
                         }
                     }
                 },
@@ -308,6 +310,7 @@ export const getDashboard = async (req, res) => {
             totalRevenue,
             chartData,
             period,
+            chartType,
             topProducts,
             topCategories,
             topBrands,
@@ -323,7 +326,8 @@ export const getDashboard = async (req, res) => {
             path: '/admin/dashboard',
             title: 'Dashboard',
             data,
-            admin: req.session.admin
+            admin: req.session.admin,
+            query: req.query
         });
 
     } catch (error) {
