@@ -627,10 +627,6 @@ video {
   left: 50%;
 }
 
-.right-0 {
-  right: 0px;
-}
-
 .right-2 {
   right: 0.5rem;
 }
@@ -1037,6 +1033,10 @@ video {
   width: 8rem;
 }
 
+.w-48 {
+  width: 12rem;
+}
+
 .w-5 {
   width: 1.25rem;
 }
@@ -1067,10 +1067,6 @@ video {
 
 .w-full {
   width: 100%;
-}
-
-.w-48 {
-  width: 12rem;
 }
 
 .min-w-0 {

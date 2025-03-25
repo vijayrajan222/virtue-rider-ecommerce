@@ -146,7 +146,7 @@
                     <span class="text-gray-400">#<%= index + 1 %></span>
                     <span class="text-gray-200"><%= category.categoryName %></span>
                   </div>
-                  <span class="text-gray-400">₹<%= category.revenue.toLocaleString() %></span>
+                  <span class="text-gray-400"><%= category.totalSales %> sold</span>
                 </div>
               <% }); %>
             <% } else { %>

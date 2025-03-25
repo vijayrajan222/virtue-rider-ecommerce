@@ -187,27 +187,20 @@ export const getDashboard = async (req, res) => {
             },
             { $unwind: '$product' },
             {
-                $group: {
-                    _id: '$product.category',
-                    totalSales: { $sum: '$products.quantity' },
-                    revenue: { $sum: { $multiply: ['$products.price', '$products.quantity'] } }
-                }
-            },
-            {
                 $lookup: {
                     from: 'categories',
-                    localField: '_id',
+                    localField: 'product.categoryId',
                     foreignField: '_id',
                     as: 'categoryDetails'
                 }
             },
-            { $unwind: { path: '$categoryDetails', preserveNullAndEmptyArrays: true } },
-            { 
-                $project: {
-                    _id: 1,
-                    totalSales: 1,
-                    revenue: 1,
-                    categoryName: { $ifNull: ['$categoryDetails.name', 'Uncategorized'] }
+            { $unwind: '$categoryDetails' },
+            {
+                $group: {
+                    _id: '$categoryDetails._id',
+                    categoryName: { $first: '$categoryDetails.name' },
+                    totalSales: { $sum: '$products.quantity' },
+                    revenue: { $sum: { $multiply: ['$products.price', '$products.quantity'] } }
                 }
             },
             { $sort: { totalSales: -1 } },
