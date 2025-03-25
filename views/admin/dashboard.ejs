@@ -14,6 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   </head>
 
   <body class="bg-gray-900">
@@ -22,6 +23,7 @@
     <div class="p-2 sm:ml-64">
       <header class="flex items-center justify-between mb-8 p-4 lg:p-8 border-b border-gray-800">
         <h1 class="text-2xl font-semibold text-gray-200">Dashboard Overview</h1>
+        <div class="text-gray-400"><%= data.currentDate %></div>
       </header>
 
       <!-- Statistics Cards -->
@@ -76,25 +78,34 @@
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <h2 class="text-xl font-semibold text-gray-200 mb-4 md:mb-0">Sales Overview</h2>
           
-          <!-- Filter Options -->
-          <div class="flex flex-wrap gap-3">
-            <button id="weeklyBtn" class="px-3 py-1 bg-gray-700 text-gray-300 rounded-lg text-sm hover:bg-gray-600 transition-colors">Weekly</button>
-            <button id="monthlyBtn" class="px-3 py-1 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600 transition-colors">Monthly</button>
-            <button id="yearlyBtn" class="px-3 py-1 bg-gray-700 text-gray-300 rounded-lg text-sm hover:bg-gray-600 transition-colors">Yearly</button>
-            <div class="relative">
-              <button id="customDateBtn" class="px-3 py-1 bg-gray-700 text-gray-300 rounded-lg text-sm hover:bg-gray-600 transition-colors">Custom Range</button>
-              <div id="dateRangePicker" class="hidden absolute right-0 mt-2 bg-gray-800 p-4 rounded-lg shadow-lg z-10 w-64">
-                <div class="mb-3">
-                  <label class="block text-gray-400 text-sm mb-1">Start Date</label>
-                  <input type="text" id="startDate" class="w-full bg-gray-700 text-white px-3 py-2 rounded-lg">
-                </div>
-                <div class="mb-3">
-                  <label class="block text-gray-400 text-sm mb-1">End Date</label>
-                  <input type="text" id="endDate" class="w-full bg-gray-700 text-white px-3 py-2 rounded-lg">
-                </div>
-                <button id="applyDateRange" class="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors">Apply</button>
+          <div class="flex flex-wrap gap-2">
+            <form id="filterForm" action="/admin/dashboard" method="GET" class="flex flex-wrap gap-2">
+              <div class="flex space-x-2">
+                <button type="submit" name="period" value="weekly" 
+                        class="px-3 py-1 <%= data.period === 'weekly' ? 'bg-orange-600' : 'bg-gray-700' %> text-gray-300 rounded-lg text-sm">
+                  Weekly
+                </button>
+                <button type="submit" name="period" value="monthly" 
+                        class="px-3 py-1 <%= data.period === 'monthly' ? 'bg-orange-600' : 'bg-gray-700' %> text-gray-300 rounded-lg text-sm">
+                  Monthly
+                </button>
+                <button type="submit" name="period" value="yearly" 
+                        class="px-3 py-1 <%= data.period === 'yearly' ? 'bg-orange-600' : 'bg-gray-700' %> text-gray-300 rounded-lg text-sm">
+                  Yearly
+                </button>
               </div>
-            </div>
+              
+              <div class="flex items-center space-x-2 mt-2 md:mt-0">
+                <input type="text" id="dateRange" placeholder="Custom Date Range" 
+                       class="px-3 py-1 bg-gray-700 text-gray-300 rounded-lg text-sm w-48">
+                <input type="hidden" id="startDate" name="startDate">
+                <input type="hidden" id="endDate" name="endDate">
+                <button type="submit" name="period" value="custom" id="customDateBtn"
+                        class="px-3 py-1 bg-gray-700 text-gray-300 rounded-lg text-sm">
+                  Apply
+                </button>
+              </div>
+            </form>
           </div>
         </div>
         <div class="h-[400px]">
@@ -106,16 +117,16 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <!-- Top Products -->
         <div class="bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 class="text-xl font-semibold text-gray-200 mb-4">Top 10 Products</h2>
+          <h2 class="text-xl font-semibold text-gray-200 mb-4">Top Products</h2>
           <div class="space-y-4">
             <% if (data.topProducts && data.topProducts.length > 0) { %>
               <% data.topProducts.forEach((product, index) => { %>
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-3">
                     <span class="text-gray-400">#<%= index + 1 %></span>
-                    <span class="text-gray-200"><%= product.name %></span>
+                    <span class="text-gray-200"><%= product.productDetails.name %></span>
                   </div>
-                  <span class="text-gray-400"><%= product.sales || 0 %> sold</span>
+                  <span class="text-gray-400"><%= product.totalSales %> sold</span>
                 </div>
               <% }); %>
             <% } else { %>
@@ -126,16 +137,16 @@
 
         <!-- Top Categories -->
         <div class="bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 class="text-xl font-semibold text-gray-200 mb-4">Top 10 Categories</h2>
+          <h2 class="text-xl font-semibold text-gray-200 mb-4">Top Categories</h2>
           <div class="space-y-4">
             <% if (data.topCategories && data.topCategories.length > 0) { %>
               <% data.topCategories.forEach((category, index) => { %>
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-3">
                     <span class="text-gray-400">#<%= index + 1 %></span>
-                    <span class="text-gray-200"><%= category.name %></span>
+                    <span class="text-gray-200"><%= category.categoryName %></span>
                   </div>
-                  <span class="text-gray-400"><%= category.productCount || 0 %> products</span>
+                  <span class="text-gray-400">₹<%= category.revenue.toLocaleString() %></span>
                 </div>
               <% }); %>
             <% } else { %>
@@ -146,7 +157,7 @@
 
         <!-- Top Brands -->
         <div class="bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 class="text-xl font-semibold text-gray-200 mb-4">Top 10 Brands</h2>
+          <h2 class="text-xl font-semibold text-gray-200 mb-4">Top Brands</h2>
           <div class="space-y-4">
             <% if (data.topBrands && data.topBrands.length > 0) { %>
               <% data.topBrands.forEach((brand, index) => { %>
@@ -155,7 +166,7 @@
                     <span class="text-gray-400">#<%= index + 1 %></span>
                     <span class="text-gray-200"><%= brand._id %></span>
                   </div>
-                  <span class="text-gray-400"><%= brand.totalSales || 0 %> sold</span>
+                  <span class="text-gray-400">₹<%= brand.revenue.toLocaleString() %></span>
                 </div>
               <% }); %>
             <% } else { %>
@@ -191,10 +202,10 @@
                     <td class="p-4 text-gray-300">₹<%= order.totalAmount.toLocaleString() %></td>
                     <td class="p-4">
                       <span class="px-2 py-1 rounded-full text-xs 
-                        <%= order.status === 'Delivered' ? 'bg-green-900/30 text-green-400' : 
-                          order.status === 'Pending' ? 'bg-yellow-900/30 text-yellow-400' : 
+                        <%= order.paymentStatus === 'completed' ? 'bg-green-900/30 text-green-400' : 
+                          order.paymentStatus === 'pending' ? 'bg-yellow-900/30 text-yellow-400' : 
                           'bg-red-900/30 text-red-400' %>">
-                        <%= order.status %>
+                        <%= order.paymentStatus %>
                       </span>
                     </td>
                     <td class="p-4 text-gray-300"><%= new Date(order.createdAt).toLocaleDateString() %></td>
@@ -208,32 +219,58 @@
     </div>
 
     <script>
-      // Initialize Chart
-      const ctx = document.getElementById('salesChart').getContext('2d');
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      
-      // Prepare monthly data
-      const salesData = Array(12).fill(0);
-      <% data.monthlySales.forEach(month => { %>
-        salesData[<%= month._id - 1 %>] = <%= month.revenue %>;
-      <% }); %>
+      // Initialize date picker
+      flatpickr("#dateRange", {
+        mode: "range",
+        dateFormat: "Y-m-d",
+        onChange: function(selectedDates, dateStr) {
+          if (selectedDates.length === 2) {
+            document.getElementById('startDate').value = selectedDates[0].toISOString().split('T')[0];
+            document.getElementById('endDate').value = selectedDates[1].toISOString().split('T')[0];
+          }
+        }
+      });
 
-      const salesChart = new Chart(ctx, {
+      // Initialize Sales Chart
+      const ctx = document.getElementById('salesChart').getContext('2d');
+      
+      // Get chart data from server
+      const labels = <%= JSON.stringify(data.chartData.labels) %>;
+      const revenueData = <%= JSON.stringify(data.chartData.revenues) %>;
+      const orderData = <%= JSON.stringify(data.chartData.orders) %>;
+
+      new Chart(ctx, {
         type: 'line',
         data: {
-          labels: monthNames,
-          datasets: [{
-            label: 'Monthly Revenue (₹)',
-            data: salesData,
-            borderColor: '#f97316',
-            backgroundColor: 'rgba(249, 115, 22, 0.1)',
-            tension: 0.4,
-            fill: true
-          }]
+          labels: labels,
+          datasets: [
+            {
+              label: 'Revenue (₹)',
+              data: revenueData,
+              borderColor: '#f97316',
+              backgroundColor: 'rgba(249, 115, 22, 0.1)',
+              tension: 0.4,
+              fill: true,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Orders',
+              data: orderData,
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              tension: 0.4,
+              fill: true,
+              yAxisID: 'y1'
+            }
+          ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
           plugins: {
             legend: {
               labels: {
@@ -243,13 +280,25 @@
             tooltip: {
               callbacks: {
                 label: function(context) {
-                  return '₹' + context.raw.toLocaleString();
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  if (context.datasetIndex === 0) {
+                    label += '₹' + context.parsed.y.toLocaleString();
+                  } else {
+                    label += context.parsed.y;
+                  }
+                  return label;
                 }
               }
             }
           },
           scales: {
             y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
               beginAtZero: true,
               grid: {
                 color: 'rgba(255, 255, 255, 0.1)'
@@ -259,6 +308,18 @@
                 callback: function(value) {
                   return '₹' + value.toLocaleString();
                 }
+              }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              beginAtZero: true,
+              grid: {
+                drawOnChartArea: false,
+              },
+              ticks: {
+                color: '#e5e7eb'
               }
             },
             x: {
@@ -272,146 +333,6 @@
           }
         }
       });
-
-      // Set up filter buttons
-      document.getElementById('weeklyBtn').addEventListener('click', function() {
-        updateActiveButton(this);
-        fetchChartData('weekly');
-      });
-
-      document.getElementById('monthlyBtn').addEventListener('click', function() {
-        updateActiveButton(this);
-        fetchChartData('monthly');
-      });
-
-      document.getElementById('yearlyBtn').addEventListener('click', function() {
-        updateActiveButton(this);
-        fetchChartData('yearly');
-      });
-
-      document.getElementById('customDateBtn').addEventListener('click', function() {
-        document.getElementById('dateRangePicker').classList.toggle('hidden');
-      });
-
-      // Initialize date pickers
-      flatpickr("#startDate", {
-        dateFormat: "Y-m-d",
-        theme: "dark"
-      });
-
-      flatpickr("#endDate", {
-        dateFormat: "Y-m-d",
-        theme: "dark"
-      });
-
-      document.getElementById('applyDateRange').addEventListener('click', function() {
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        
-        if (startDate && endDate) {
-          updateActiveButton(document.getElementById('customDateBtn'));
-          fetchChartData('custom', startDate, endDate);
-          document.getElementById('dateRangePicker').classList.add('hidden');
-        } else {
-          alert('Please select both start and end dates');
-        }
-      });
-
-      // Helper function to update active button styling
-      function updateActiveButton(activeButton) {
-        const buttons = [
-          document.getElementById('weeklyBtn'),
-          document.getElementById('monthlyBtn'),
-          document.getElementById('yearlyBtn'),
-          document.getElementById('customDateBtn')
-        ];
-        
-        buttons.forEach(btn => {
-          btn.classList.remove('bg-orange-500', 'text-white');
-          btn.classList.add('bg-gray-700', 'text-gray-300');
-        });
-        
-        activeButton.classList.remove('bg-gray-700', 'text-gray-300');
-        activeButton.classList.add('bg-orange-500', 'text-white');
-      }
-
-      // Function to fetch chart data based on selected period
-      function fetchChartData(period, startDate = null, endDate = null) {
-        let params = new URLSearchParams();
-        params.append('period', period);
-        
-        if (period === 'custom' && startDate && endDate) {
-          params.append('startDate', startDate);
-          params.append('endDate', endDate);
-        }
-        
-        fetch(`/admin/dashboard/chart-data?${params.toString()}`)
-          .then(response => response.json())
-          .then(data => {
-            updateChart(data, period);
-          })
-          .catch(error => {
-            console.error('Error fetching chart data:', error);
-          });
-      }
-
-      // Function to update chart with new data
-      function updateChart(data, period) {
-        let labels = [];
-        let values = [];
-        
-        if (period === 'weekly') {
-          labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-          values = Array(7).fill(0);
-          
-          data.forEach(item => {
-            // MongoDB $dayOfWeek returns 1 for Sunday, 2 for Monday, etc.
-            const dayIndex = item._id - 1;
-            if (dayIndex >= 0 && dayIndex < 7) {
-              values[dayIndex] = item.revenue;
-            }
-          });
-          
-          salesChart.data.datasets[0].label = 'Weekly Revenue (₹)';
-        } else if (period === 'monthly') {
-          const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-          labels = Array.from({length: daysInMonth}, (_, i) => i + 1);
-          values = Array(daysInMonth).fill(0);
-          
-          data.forEach(item => {
-            const dayIndex = item._id - 1;
-            if (dayIndex >= 0 && dayIndex < daysInMonth) {
-              values[dayIndex] = item.revenue;
-            }
-          });
-          
-          salesChart.data.datasets[0].label = 'Monthly Revenue (₹)';
-        } else if (period === 'yearly') {
-          labels = monthNames;
-          values = Array(12).fill(0);
-          
-          data.forEach(item => {
-            const monthIndex = item._id - 1;
-            if (monthIndex >= 0 && monthIndex < 12) {
-              values[monthIndex] = item.revenue;
-            }
-          });
-          
-          salesChart.data.datasets[0].label = 'Yearly Revenue (₹)';
-        } else if (period === 'custom') {
-          // For custom dates, use the dates directly from the response
-          data.forEach(item => {
-            labels.push(new Date(item._id).toLocaleDateString('en-US', {month: 'short', day: 'numeric'}));
-            values.push(item.revenue);
-          });
-          
-          salesChart.data.datasets[0].label = 'Custom Period Revenue (₹)';
-        }
-        
-        salesChart.data.labels = labels;
-        salesChart.data.datasets[0].data = values;
-        salesChart.update();
-      }
     </script>
   </body>
 </html>

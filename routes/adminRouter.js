@@ -1,7 +1,7 @@
 import express from 'express';
 import {getCategories,createCategory,getCategoryById,updateCategory,deleteCategory} from '../controllers/admin/categoryController.js';
 import { getProducts, getProductById, addProduct, updateProduct, deleteProduct, removeProductImage, toggleProductVisibility} from '../controllers/admin/productController.js'
-import {getDashboard} from '../controllers/admin/dashboardController.js';
+import {getDashboard, getChartData} from '../controllers/admin/dashboardController.js';
 import {getAdminLogin, postAdminLogin, logout} from '../controllers/admin/adminauthController.js';
 import { getOffers, createOffer, updateOffer, deleteOffer } from '../controllers/admin/offerController.js';
 import upload from '../utils/multer.js';
@@ -65,6 +65,8 @@ router.get('/active-coupons', getActiveCoupons);
 router.get('/coupons/active', getActiveCoupons);
 
 
+
+// In your admin routes file
 // Sales Report Routes
 router.get('/sales-report', adminMiddleware.checkSession, reportController.getSalesReport);
 router.get('/sales-report/download-excel', adminMiddleware.checkSession, reportController.downloadExcel);
