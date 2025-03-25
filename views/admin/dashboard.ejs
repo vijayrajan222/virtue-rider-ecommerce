@@ -198,7 +198,13 @@
                 <% data.recentOrders.forEach(order => { %>
                   <tr class="border-b border-gray-700">
                     <td class="p-4 text-gray-300">#<%= order._id.toString().slice(-6) %></td>
-                    <td class="p-4 text-gray-300"><%= order.user?.name || 'Unknown' %></td>
+                    <td class="p-4 text-gray-300">
+                      <% if (order.user && order.shippingAddress.fullName) { %>
+                        <%= order.shippingAddress.fullName %>
+                      <% } else { %>
+                        Guest User
+                      <% } %>
+                    </td>
                     <td class="p-4 text-gray-300">₹<%= order.totalAmount.toLocaleString() %></td>
                     <td class="p-4">
                       <span class="px-2 py-1 rounded-full text-xs 

@@ -21,7 +21,7 @@ export const getDashboard = async (req, res) => {
         const recentOrders = await Order.find()
             .sort({ createdAt: -1 })
             .limit(10)
-            .populate('user', 'name');
+            .populate('user', 'name email');
 
         // Sales data based on period
         let salesData;
