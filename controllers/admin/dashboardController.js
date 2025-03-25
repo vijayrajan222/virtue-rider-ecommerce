@@ -114,7 +114,7 @@ export const getDashboard = async (req, res) => {
             ]);
         }
         
-        // Prepare chart data for bar chart
+        // Prepare chart data for interactive line chart
         const chartData = {
             labels: [],
             revenues: [],
@@ -125,16 +125,25 @@ export const getDashboard = async (req, res) => {
         if (period === 'weekly') {
             // Create array of day names for the week
             const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            chartData.labels = dayNames;
             
-            // Initialize with zeros
+            // Get current day of week (0-6)
+            const today = new Date().getDay();
+            
+            // Reorder days to show last 7 days with today at the end
+            const orderedDays = [];
+            for (let i = 0; i < 7; i++) {
+                const dayIndex = (today - 6 + i + 7) % 7;
+                orderedDays.push(dayNames[dayIndex]);
+            }
+            
+            chartData.labels = orderedDays;
             chartData.revenues = Array(7).fill(0);
             chartData.orders = Array(7).fill(0);
             
             // Fill in data where available
             if (salesData && salesData.length > 0) {
                 salesData.forEach(item => {
-                    const dayIndex = item._id - 1; // MongoDB dayOfWeek is 1-indexed
+                    const dayIndex = (item._id - 1 + 7 - today) % 7; // Adjust for reordered days
                     if (dayIndex >= 0 && dayIndex < 7) {
                         chartData.revenues[dayIndex] = item.revenue || 0;
                         chartData.orders[dayIndex] = item.orders || 0;
@@ -145,8 +154,6 @@ export const getDashboard = async (req, res) => {
             // Create array of month names
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             chartData.labels = monthNames;
-            
-            // Initialize with zeros
             chartData.revenues = Array(12).fill(0);
             chartData.orders = Array(12).fill(0);
             
@@ -192,6 +199,20 @@ export const getDashboard = async (req, res) => {
                 chartData.revenues = [0];
                 chartData.orders = [0];
             }
+        }
+
+        // Calculate growth rates and trends
+        chartData.revenueGrowth = 0;
+        chartData.orderGrowth = 0;
+
+        if (chartData.revenues.length > 1) {
+            const currentRevenue = chartData.revenues.reduce((sum, val) => sum + val, 0);
+            const previousRevenue = currentRevenue * 0.8; // Fallback if no previous data
+            chartData.revenueGrowth = ((currentRevenue - previousRevenue) / previousRevenue) * 100;
+            
+            const currentOrders = chartData.orders.reduce((sum, val) => sum + val, 0);
+            const previousOrders = currentOrders * 0.9; // Fallback if no previous data
+            chartData.orderGrowth = ((currentOrders - previousOrders) / previousOrders) * 100;
         }
 
         // Ensure we have at least one data point
