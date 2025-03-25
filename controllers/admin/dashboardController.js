@@ -21,11 +21,10 @@ export const getDashboard = async (req, res) => {
         const recentOrders = await Order.find()
             .sort({ createdAt: -1 })
             .limit(10)
-            .populate('user', 'name email');
+            .populate('user', 'name');
 
         // Sales data based on period
         let salesData;
-        let labels;
         
         if (period === 'weekly') {
             // Last 7 days data
@@ -49,10 +48,6 @@ export const getDashboard = async (req, res) => {
                 { $sort: { _id: 1 } }
             ]);
             
-            // Convert day of week to day name
-            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            labels = salesData.map(item => dayNames[item._id - 1]);
-            
         } else if (period === 'monthly') {
             // Monthly data for current year
             salesData = await Order.aggregate([
@@ -73,10 +68,6 @@ export const getDashboard = async (req, res) => {
                 },
                 { $sort: { _id: 1 } }
             ]);
-            
-            // Convert month number to month name
-            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            labels = monthNames;
             
         } else if (period === 'yearly') {
             // Yearly data for last 5 years
@@ -100,8 +91,6 @@ export const getDashboard = async (req, res) => {
                 { $sort: { _id: 1 } }
             ]);
             
-            labels = salesData.map(item => item._id.toString());
-            
         } else if (period === 'custom') {
             // Custom date range
             salesData = await Order.aggregate([
@@ -123,33 +112,94 @@ export const getDashboard = async (req, res) => {
                 },
                 { $sort: { _id: 1 } }
             ]);
-            
-            labels = salesData.map(item => item._id);
         }
         
-        // Prepare chart data
+        // Prepare chart data for bar chart
         const chartData = {
-            labels: labels,
-            revenues: Array(labels.length).fill(0),
-            orders: Array(labels.length).fill(0)
+            labels: [],
+            revenues: [],
+            orders: []
         };
-        
-        // Fill in the actual data
-        salesData.forEach(item => {
-            let index;
-            if (period === 'monthly') {
-                index = item._id - 1; // Month is 1-indexed
-            } else if (period === 'weekly') {
-                index = item._id - 1; // Day of week is 1-indexed
-            } else {
-                index = chartData.labels.indexOf(item._id.toString());
-            }
+
+        // Initialize chart data based on period
+        if (period === 'weekly') {
+            // Create array of day names for the week
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            chartData.labels = dayNames;
             
-            if (index !== -1) {
-                chartData.revenues[index] = item.revenue;
-                chartData.orders[index] = item.orders;
+            // Initialize with zeros
+            chartData.revenues = Array(7).fill(0);
+            chartData.orders = Array(7).fill(0);
+            
+            // Fill in data where available
+            if (salesData && salesData.length > 0) {
+                salesData.forEach(item => {
+                    const dayIndex = item._id - 1; // MongoDB dayOfWeek is 1-indexed
+                    if (dayIndex >= 0 && dayIndex < 7) {
+                        chartData.revenues[dayIndex] = item.revenue || 0;
+                        chartData.orders[dayIndex] = item.orders || 0;
+                    }
+                });
             }
-        });
+        } else if (period === 'monthly') {
+            // Create array of month names
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            chartData.labels = monthNames;
+            
+            // Initialize with zeros
+            chartData.revenues = Array(12).fill(0);
+            chartData.orders = Array(12).fill(0);
+            
+            // Fill in data where available
+            if (salesData && salesData.length > 0) {
+                salesData.forEach(item => {
+                    const monthIndex = item._id - 1; // MongoDB month is 1-indexed
+                    if (monthIndex >= 0 && monthIndex < 12) {
+                        chartData.revenues[monthIndex] = item.revenue || 0;
+                        chartData.orders[monthIndex] = item.orders || 0;
+                    }
+                });
+            }
+        } else if (period === 'yearly') {
+            // For yearly data, use the actual years
+            if (salesData && salesData.length > 0) {
+                // Sort years in ascending order
+                salesData.sort((a, b) => a._id - b._id);
+                
+                chartData.labels = salesData.map(item => item._id.toString());
+                chartData.revenues = salesData.map(item => item.revenue || 0);
+                chartData.orders = salesData.map(item => item.orders || 0);
+            } else {
+                // If no data, show last 5 years
+                const currentYear = new Date().getFullYear();
+                chartData.labels = Array.from({length: 5}, (_, i) => (currentYear - 4 + i).toString());
+                chartData.revenues = Array(5).fill(0);
+                chartData.orders = Array(5).fill(0);
+            }
+        } else if (period === 'custom') {
+            // For custom date range
+            if (salesData && salesData.length > 0) {
+                // Format dates for display
+                chartData.labels = salesData.map(item => {
+                    const date = new Date(item._id);
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                });
+                chartData.revenues = salesData.map(item => item.revenue || 0);
+                chartData.orders = salesData.map(item => item.orders || 0);
+            } else {
+                // If no data in custom range
+                chartData.labels = ['No data available'];
+                chartData.revenues = [0];
+                chartData.orders = [0];
+            }
+        }
+
+        // Ensure we have at least one data point
+        if (!chartData.labels.length) {
+            chartData.labels = ['No data'];
+            chartData.revenues = [0];
+            chartData.orders = [0];
+        }
 
         // Top 10 Products
         const topProducts = await Order.aggregate([

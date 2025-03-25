@@ -82,15 +82,15 @@
             <form id="filterForm" action="/admin/dashboard" method="GET" class="flex flex-wrap gap-2">
               <div class="flex space-x-2">
                 <button type="submit" name="period" value="weekly" 
-                        class="px-3 py-1 <%= data.period === 'weekly' ? 'bg-orange-600' : 'bg-gray-700' %> text-gray-300 rounded-lg text-sm">
+                        class="px-3 py-1 <%= data.period === 'weekly' ? 'bg-orange-600' : 'bg-gray-700' %> text-gray-300 rounded-lg text-sm hover:bg-orange-500 transition-colors">
                   Weekly
                 </button>
                 <button type="submit" name="period" value="monthly" 
-                        class="px-3 py-1 <%= data.period === 'monthly' ? 'bg-orange-600' : 'bg-gray-700' %> text-gray-300 rounded-lg text-sm">
+                        class="px-3 py-1 <%= data.period === 'monthly' ? 'bg-orange-600' : 'bg-gray-700' %> text-gray-300 rounded-lg text-sm hover:bg-orange-500 transition-colors">
                   Monthly
                 </button>
                 <button type="submit" name="period" value="yearly" 
-                        class="px-3 py-1 <%= data.period === 'yearly' ? 'bg-orange-600' : 'bg-gray-700' %> text-gray-300 rounded-lg text-sm">
+                        class="px-3 py-1 <%= data.period === 'yearly' ? 'bg-orange-600' : 'bg-gray-700' %> text-gray-300 rounded-lg text-sm hover:bg-orange-500 transition-colors">
                   Yearly
                 </button>
               </div>
@@ -101,7 +101,7 @@
                 <input type="hidden" id="startDate" name="startDate">
                 <input type="hidden" id="endDate" name="endDate">
                 <button type="submit" name="period" value="custom" id="customDateBtn"
-                        class="px-3 py-1 bg-gray-700 text-gray-300 rounded-lg text-sm">
+                        class="px-3 py-1 <%= data.period === 'custom' ? 'bg-orange-600' : 'bg-gray-700' %> text-gray-300 rounded-lg text-sm hover:bg-orange-500 transition-colors">
                   Apply
                 </button>
               </div>
@@ -238,106 +238,125 @@
       });
 
       // Initialize Sales Chart
-      const ctx = document.getElementById('salesChart').getContext('2d');
-      
-      // Get chart data from server
-      const labels = <%= JSON.stringify(data.chartData.labels) %>;
-      const revenueData = <%= JSON.stringify(data.chartData.revenues) %>;
-      const orderData = <%= JSON.stringify(data.chartData.orders) %>;
+      document.addEventListener('DOMContentLoaded', function() {
+        // Check if Chart.js is loaded
+        if (typeof Chart === 'undefined') {
+          console.error('Chart.js is not loaded');
+          document.getElementById('salesChart').innerHTML = 'Chart library not loaded';
+          return;
+        }
 
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Revenue (₹)',
-              data: revenueData,
-              borderColor: '#f97316',
-              backgroundColor: 'rgba(249, 115, 22, 0.1)',
-              tension: 0.4,
-              fill: true,
-              yAxisID: 'y'
-            },
-            {
-              label: 'Orders',
-              data: orderData,
-              borderColor: '#3b82f6',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              tension: 0.4,
-              fill: true,
-              yAxisID: 'y1'
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: 'index',
-            intersect: false,
-          },
-          plugins: {
-            legend: {
-              labels: {
-                color: '#e5e7eb'
+        // Check if canvas element exists
+        const canvas = document.getElementById('salesChart');
+        if (!canvas) {
+          console.error('Canvas element not found');
+          return;
+        }
+
+        const ctx = canvas.getContext('2d');
+        
+        // Get chart data from server
+        const labels = <%- JSON.stringify(data.chartData.labels || []) %>;
+        const revenueData = <%- JSON.stringify(data.chartData.revenues || []) %>;
+        const orderData = <%- JSON.stringify(data.chartData.orders || []) %>;
+
+        console.log('Chart data:', { labels, revenueData, orderData });
+
+        // Create the bar chart
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Revenue (₹)',
+                data: revenueData,
+                backgroundColor: 'rgba(249, 115, 22, 0.7)',
+                borderColor: '#f97316',
+                borderWidth: 1,
+                yAxisID: 'y'
+              },
+              {
+                label: 'Orders',
+                data: orderData,
+                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                borderColor: '#3b82f6',
+                borderWidth: 1,
+                yAxisID: 'y1'
               }
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  let label = context.dataset.label || '';
-                  if (label) {
-                    label += ': ';
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  color: '#e5e7eb',
+                  font: {
+                    size: 12
                   }
-                  if (context.datasetIndex === 0) {
-                    label += '₹' + context.parsed.y.toLocaleString();
-                  } else {
-                    label += context.parsed.y;
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    let label = context.dataset.label || '';
+                    if (label) {
+                      label += ': ';
+                    }
+                    if (context.datasetIndex === 0) {
+                      label += '₹' + context.parsed.y.toLocaleString();
+                    } else {
+                      label += context.parsed.y;
+                    }
+                    return label;
                   }
-                  return label;
                 }
               }
-            }
-          },
-          scales: {
-            y: {
-              type: 'linear',
-              display: true,
-              position: 'left',
-              beginAtZero: true,
-              grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
-              },
-              ticks: {
-                color: '#e5e7eb',
-                callback: function(value) {
-                  return '₹' + value.toLocaleString();
+            },
+            scales: {
+              x: {
+                grid: {
+                  color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                  color: '#e5e7eb',
+                  maxRotation: 45,
+                  minRotation: 0
                 }
-              }
-            },
-            y1: {
-              type: 'linear',
-              display: true,
-              position: 'right',
-              beginAtZero: true,
-              grid: {
-                drawOnChartArea: false,
               },
-              ticks: {
-                color: '#e5e7eb'
-              }
-            },
-            x: {
-              grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
+              y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                beginAtZero: true,
+                grid: {
+                  color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                  color: '#e5e7eb',
+                  callback: function(value) {
+                    return '₹' + value.toLocaleString();
+                  }
+                }
               },
-              ticks: {
-                color: '#e5e7eb'
+              y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                beginAtZero: true,
+                grid: {
+                  drawOnChartArea: false
+                },
+                ticks: {
+                  color: '#e5e7eb'
+                }
               }
             }
           }
-        }
+        });
       });
     </script>
   </body>
