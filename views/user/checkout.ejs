@@ -700,7 +700,7 @@
                           order_id: data.order.id,
                           handler: async function (response) {
                               try {
-                                  console.log('Payment success:', response); // Add this for debugging
+                                  console.log('Payment response:', response);
                                   const verifyResponse = await fetch('/checkout/verify-payment', {
                                       method: 'POST',
                                       headers: {
@@ -710,7 +710,8 @@
                                           razorpay_order_id: response.razorpay_order_id,
                                           razorpay_payment_id: response.razorpay_payment_id,
                                           razorpay_signature: response.razorpay_signature,
-                                          addressId: selectedAddress.value
+                                          addressId: selectedAddress.value,
+                                          status: 'success'
                                       })
                                   });
 
@@ -724,6 +725,35 @@
                               } catch (error) {
                                   console.error('Payment verification error:', error);
                                   await showAlert('error', error.message || 'Payment verification failed');
+                              }
+                          },
+                          modal: {
+                              ondismiss: async function() {
+                                  try {
+                                      // When modal is dismissed, create order with pending payment status
+                                      const response = await fetch('/checkout/verify-payment', {
+                                          method: 'POST',
+                                          headers: {
+                                              'Content-Type': 'application/json'
+                                          },
+                                          body: JSON.stringify({
+                                              razorpay_order_id: options.order_id,
+                                              addressId: selectedAddress.value,
+                                              status: 'failed'
+                                          })
+                                      });
+
+                                      const result = await response.json();
+                                      if (result.success) {
+                                          await showAlert('info', 'Order placed with pending payment status.');
+                                          window.location.href = `/orders?pending=true&orderId=${result.orderId}`;
+                                      } else {
+                                          throw new Error(result.message || 'Failed to place order');
+                                      }
+                                  } catch (error) {
+                                      console.error('Order placement error:', error);
+                                      await showAlert('error', error.message || 'Failed to place order');
+                                  }
                               }
                           },
                           prefill: {

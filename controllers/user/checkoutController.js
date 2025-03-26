@@ -581,23 +581,32 @@ const userCheckoutController = {
 
     verifyPayment: async (req, res) => {
         try {
-            const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+            const { 
+                razorpay_payment_id, 
+                razorpay_order_id, 
+                razorpay_signature, 
+                addressId,
+                status 
+            } = req.body;
             const orderDetails = req.session.orderDetails;
 
-            // Verify signature
-            const sign = razorpay_order_id + "|" + razorpay_payment_id;
-            const expectedSign = crypto
-                .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-                .update(sign.toString())
-                .digest("hex");
+            // For successful payments, verify signature
+            if (status === 'success') {
+                const sign = razorpay_order_id + "|" + razorpay_payment_id;
+                const expectedSign = crypto
+                    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+                    .update(sign.toString())
+                    .digest("hex");
 
-            if (razorpay_signature !== expectedSign) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid payment signature"
-                });
+                if (razorpay_signature !== expectedSign) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Invalid payment signature"
+                    });
+                }
             }
 
+            // Create order with appropriate payment status
             const order = new Order({
                 user: req.session.user,
                 products: orderDetails.cartItems.map(item => ({
@@ -618,18 +627,18 @@ const userCheckoutController = {
                 coupon: orderDetails.couponDetails,
                 totalAmount: orderDetails.finalAmount,
                 paymentMethod: 'online',
-                paymentStatus: 'completed',
+                paymentStatus: status === 'success' ? 'completed' : 'pending',
                 paymentDetails: {
                     razorpay_order_id,
                     razorpay_payment_id,
                     razorpay_signature
                 },
-                shippingAddress: await addressSchema.findById(orderDetails.addressId)
+                shippingAddress: await addressSchema.findById(addressId)
             });
 
             await order.save();
 
-            // Clear cart after successful order
+            // Clear cart after successful order creation
             await cartSchema.findOneAndUpdate(
                 { userId: req.session.user },
                 { $set: { items: [], totalAmount: 0 } }
@@ -638,11 +647,11 @@ const userCheckoutController = {
             // Clear session order details
             delete req.session.orderDetails;
 
-            // Rest of your code (update stock, clear cart, etc.)
-            
             return res.json({
                 success: true,
-                message: 'Payment verified and order placed successfully',
+                message: status === 'success' ? 
+                    'Payment verified and order placed successfully' : 
+                    'Order placed with pending payment',
                 orderId: order.orderCode
             });
 
