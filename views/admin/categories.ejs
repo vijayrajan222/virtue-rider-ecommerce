@@ -33,32 +33,88 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-700">
-                        <% categories.forEach(category => { %>
-                            <tr class="hover:bg-gray-700 transition-colors">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-200">
-                                        <%= category.name %>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-200">
-                                        <%= category.description || 'No description' %>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button onclick="editCategory('<%= category._id %>')"
-                                            class="text-blue-400 hover:text-blue-300 mr-3">
-                                        <i class="material-icons">edit</i>
-                                    </button>
-                                    <button onclick="deleteCategory('<%= category._id %>')"
-                                            class="text-red-400 hover:text-red-300">
-                                        <i class="material-icons">delete</i>
-                                    </button>
+                        <% if (categories.length > 0) { %>
+                            <% categories.forEach(category => { %>
+                                <tr class="hover:bg-gray-700 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-200">
+                                            <%= category.name %>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-200">
+                                            <%= category.description || 'No description' %>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button onclick="editCategory('<%= category._id %>')"
+                                                class="text-blue-400 hover:text-blue-300 mr-3">
+                                            <i class="material-icons">edit</i>
+                                        </button>
+                                        <button onclick="deleteCategory('<%= category._id %>')"
+                                                class="text-red-400 hover:text-red-300">
+                                            <i class="material-icons">delete</i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="3" class="px-6 py-10 text-center text-gray-400">
+                                    No categories found
                                 </td>
                             </tr>
-                        <% }); %>
+                        <% } %>
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="bg-gray-900 px-4 py-3 flex items-center justify-between border-t border-gray-700 sm:px-6">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    <button onclick="changePage(<%= currentPage - 1 %>)" 
+                            <%= currentPage === 1 ? 'disabled' : '' %>
+                            class="relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Previous
+                    </button>
+                    <button onclick="changePage(<%= currentPage + 1 %>)"
+                            <%= currentPage === totalPages ? 'disabled' : '' %>
+                            class="ml-3 relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Next
+                    </button>
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-400">
+                            Showing <span class="font-medium"><%= (currentPage - 1) * limit + 1 %></span> to 
+                            <span class="font-medium"><%= Math.min(currentPage * limit, totalCategories) %></span> of 
+                            <span class="font-medium"><%= totalCategories %></span> categories
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            <% 
+                            // Calculate range of pages to show
+                            let startPage = Math.max(1, currentPage - 2);
+                            let endPage = Math.min(totalPages, startPage + 4);
+                            
+                            if (endPage - startPage < 4 && totalPages > 4) {
+                                startPage = Math.max(1, endPage - 4);
+                            }
+                            
+                            for(let i = startPage; i <= endPage; i++) { 
+                            %>
+                                <button onclick="changePage(<%= i %>)"
+                                        class="relative inline-flex items-center px-4 py-2 text-sm font-medium 
+                                               <%= currentPage === i ? 'bg-orange-500 text-white' : 'text-gray-400 bg-gray-800 hover:bg-gray-700' %>
+                                               <%= i === startPage ? 'rounded-l-md' : '' %>
+                                               <%= i === endPage ? 'rounded-r-md' : '' %>">
+                                    <%= i %>
+                                </button>
+                            <% } %>
+                        </nav>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -219,6 +275,11 @@
         function closeModal() {
             document.getElementById('categoryModal').classList.add('hidden');
             document.getElementById('categoryModal').classList.remove('flex');
+        }
+        
+        function changePage(page) {
+            if (page < 1 || page > <%= totalPages %>) return;
+            window.location.href = `/admin/categories?page=${page}`;
         }
     </script>
 </body>

@@ -2,9 +2,37 @@ import Category from '../../models/categoryModel.js'
 
 export const getCategories = async (req, res) => {
     try {
-        const categories = await Category.find();
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10; // Number of categories per page
+        const skip = (page - 1) * limit;
+        
+        // Get total count of categories
+        const totalCategories = await Category.countDocuments();
+        const totalPages = Math.ceil(totalCategories / limit);
+        
+        // Get categories for current page
+        const categories = await Category.find()
+            .sort({ name: 1 })
+            .skip(skip)
+            .limit(limit);
+        
+        // Pagination data
+        const pagination = {
+            currentPage: page,
+            totalPages: totalPages,
+            limit: limit,
+            totalDocs: totalCategories,
+            hasPrevPage: page > 1,
+            hasNextPage: page < totalPages
+        };
+        
         res.render('admin/categories', {
             categories,
+            pagination,
+            currentPage: page,
+            totalPages,
+            limit,
+            totalCategories,
             path: req.path,
             title: 'Categories'
         });
