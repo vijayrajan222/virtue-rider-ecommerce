@@ -8,17 +8,26 @@ import mongoose from 'mongoose';
 import razorpay from '../../utils/razorpay.js';
 import crypto from 'crypto';
 import Offer from '../../models/offerModel.js';
+import Wallet from '../../models/walletModel.js';
 
 const userCheckoutController = {
     getCheckoutPage: async (req, res) => {
         try {
+            const userId = req.session.user;
+            
             // Get user's addresses
-            const addresses = await addressSchema.find({ userId: req.session.user });
-
+            const addresses = await addressSchema.find({ userId });
+            
             // Get cart items
-            const cart = await cartSchema.findOne({ userId: req.session.user });
+            const cart = await cartSchema.findOne({ userId });
             if (!cart || cart.items.length === 0) {
                 return res.redirect('/cart');
+            }
+            
+            // Get wallet balance
+            let wallet = await Wallet.findOne({ userId });
+            if (!wallet) {
+                wallet = { balance: 0 };
             }
 
             // Populate product details
@@ -117,14 +126,15 @@ const userCheckoutController = {
                 cartItems,
                 total,
                 finalTotal,
+                wallet,
                 user: req.session.user
             });
 
         } catch (error) {
             console.error('Checkout page error:', error);
             res.status(500).render('error', {
-                message: 'Error loading checkout page',
-                user: req.session.user
+                message: 'Failed to load checkout page',
+                error: error.message
             });
         }
     },
@@ -543,10 +553,13 @@ const userCheckoutController = {
 
             // Store complete order details in session
             req.session.orderDetails = {
-                cartItems,
+                cartItems: cartItems.map(item => ({
+                    ...item,
+                    variant: item.variant
+                })),
                 addressId,
                 subtotalAfterOffers,
-                couponDetails, // Store coupon details in session
+                couponDetails,
                 couponDiscount,
                 finalAmount: Number(finalAmount)
             };
@@ -603,14 +616,6 @@ const userCheckoutController = {
                 })),
                 subtotal: orderDetails.subtotalAfterOffers,
                 coupon: orderDetails.couponDetails,
-                priceBreakdown: {
-                    subtotalBeforeDiscount: orderDetails.cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-                    offerDiscount: orderDetails.cartItems.reduce((sum, item) => 
-                        sum + ((item.price - item.discountedPrice) * item.quantity), 0),
-                    couponDiscount: orderDetails.couponDiscount,
-                    gstAmount: orderDetails.gstAmount,
-                    shippingCharges: orderDetails.shippingCharges
-                },
                 totalAmount: orderDetails.finalAmount,
                 paymentMethod: 'online',
                 paymentStatus: 'completed',
@@ -646,6 +651,184 @@ const userCheckoutController = {
             return res.status(500).json({
                 success: false,
                 message: "Payment verification failed"
+            });
+        }
+    },
+
+    walletPayment: async (req, res) => {
+        try {
+            const userId = req.session.user;
+            const { addressId, couponCode, finalAmount } = req.body;
+            
+            // Validate address
+            const address = await addressSchema.findOne({ 
+                _id: addressId,
+                userId
+            });
+            
+            if (!address) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid delivery address'
+                });
+            }
+            
+            // Get cart with populated products
+            const cart = await cartSchema.findOne({ userId })
+                .populate({
+                    path: 'items.productId',
+                    select: 'name images price variants categoryId'
+                });
+            
+            if (!cart || cart.items.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Your cart is empty'
+                });
+            }
+
+            // Fetch active offers
+            const currentDate = new Date();
+            const activeOffers = await Offer.find({
+                isActive: true,
+                startDate: { $lte: currentDate },
+                endDate: { $gte: currentDate }
+            });
+
+            // Calculate items with offers
+            const cartItems = cart.items.map(item => {
+                const product = item.productId;
+                
+                // Find applicable offers
+                const productOffers = activeOffers.filter(offer => 
+                    offer.type === 'product' && 
+                    offer.productIds.some(id => id.toString() === product._id.toString())
+                );
+
+                const categoryOffers = activeOffers.filter(offer => 
+                    offer.type === 'category' && 
+                    product.categoryId && 
+                    offer.categoryId.toString() === product.categoryId.toString()
+                );
+
+                // Find best offer
+                const applicableOffers = [...productOffers, ...categoryOffers];
+                let bestOffer = null;
+                let discountedPrice = item.price;
+
+                if (applicableOffers.length > 0) {
+                    bestOffer = applicableOffers.reduce((best, current) => {
+                        const currentDiscount = current.discountType === 'percentage'
+                            ? (item.price * current.discountAmount / 100)
+                            : current.discountAmount;
+                        
+                        const bestDiscount = best ? (best.discountType === 'percentage'
+                            ? (item.price * best.discountAmount / 100)
+                            : best.discountAmount) : 0;
+
+                        return currentDiscount > bestDiscount ? current : best;
+                    }, null);
+
+                    if (bestOffer) {
+                        discountedPrice = bestOffer.discountType === 'percentage'
+                            ? item.price - (item.price * bestOffer.discountAmount / 100)
+                            : item.price - bestOffer.discountAmount;
+                    }
+                }
+
+                return {
+                    product: item.productId._id,
+                    variant: item.variantId,
+                    quantity: item.quantity,
+                    price: item.price,
+                    discountedPrice,
+                    offer: bestOffer ? {
+                        offerId: bestOffer._id,
+                        name: bestOffer.name,
+                        discountType: bestOffer.discountType,
+                        discountAmount: bestOffer.discountAmount
+                    } : null,
+                    subtotal: item.quantity * discountedPrice
+                };
+            });
+
+            // Calculate subtotal after offers
+            const subtotalAfterOffers = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
+            
+            // Check wallet balance
+            const wallet = await Wallet.findOne({ userId });
+            if (!wallet || wallet.balance < finalAmount) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Insufficient wallet balance'
+                });
+            }
+            
+            // Create order
+            const order = new Order({
+                user: userId,
+                products: cartItems,
+                subtotal: subtotalAfterOffers,
+                totalAmount: finalAmount,
+                paymentMethod: 'wallet',
+                paymentStatus: 'completed',
+                shippingAddress: address
+            });
+            
+            // If coupon was applied
+            if (couponCode) {
+                const coupon = await couponSchema.findOne({ code: couponCode });
+                if (coupon) {
+                    order.coupon = {
+                        code: coupon.code,
+                        discount: (subtotalAfterOffers * coupon.discountPercentage) / 100
+                    };
+                }
+            }
+            
+            await order.save();
+            
+            // Deduct from wallet
+            wallet.balance -= finalAmount;
+            wallet.transactions.push({
+                type: 'debit',
+                amount: finalAmount,
+                description: `Payment for order #${order.orderCode}`,
+                orderId: order._id,
+                date: new Date(),
+                status: 'completed'
+            });
+            
+            await wallet.save();
+            
+            // Update product stock
+            for (const item of cartItems) {
+                await productSchema.updateOne(
+                    { 
+                        _id: item.product,
+                        'variants._id': item.variant
+                    },
+                    { $inc: { 'variants.$.stock': -item.quantity } }
+                );
+            }
+            
+            // Clear cart
+            await cartSchema.findOneAndUpdate(
+                { userId },
+                { $set: { items: [], totalAmount: 0 } }
+            );
+            
+            res.json({
+                success: true,
+                message: 'Order placed successfully',
+                orderId: order.orderCode
+            });
+            
+        } catch (error) {
+            console.error('Wallet payment error:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Failed to process payment'
             });
         }
     }

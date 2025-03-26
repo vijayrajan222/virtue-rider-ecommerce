@@ -151,6 +151,11 @@ userRouter.post('/wallet/process-payment', userMiddlewares.checkSession, walletC
 userRouter.get('/coupons', userMiddlewares.checkSession, userCouponController.getCoupons);
 userRouter.post('/coupons/validate', userMiddlewares.checkSession, userCouponController.validateCoupon);
 
+userRouter.post('/checkout/wallet-payment', 
+  userMiddlewares.checkSession, 
+  userCheckoutController.walletPayment
+);
+
 export default userRouter;
 
 

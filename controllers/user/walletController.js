@@ -89,63 +89,40 @@ export const walletController = {
         }
     },
 
-    processWalletPayment: async (req, res) => {
+    processWalletPayment: async (userId, amount, orderId) => {
         try {
-            const { amount, addressId } = req.body;
-            const userId = req.session.user;
-
-            const wallet = await Wallet.findOne({ userId });
-            if (!wallet || wallet.balance < amount) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Insufficient wallet balance'
-                });
+            let wallet = await Wallet.findOne({ userId });
+            if (!wallet) {
+                wallet = new Wallet({ userId, balance: 0 });
             }
-
-            // Create order first
-            const order = new Order({
-                user: userId,
-                products: req.session.orderDetails.cartItems,
-                subtotal: req.session.orderDetails.subtotalAfterOffers,
-                totalAmount: amount,
-                shippingAddress: await Address.findById(addressId),
-                paymentMethod: 'wallet',
-                paymentStatus: 'completed'
-            });
-
-            await order.save();
-
+            
+            // Check balance again
+            if (wallet.balance < amount) {
+                throw new Error('Insufficient wallet balance');
+            }
+            
+            // Get order details for the transaction description
+            const order = await Order.findById(orderId);
+            
             // Deduct from wallet
             wallet.balance -= parseFloat(amount);
             wallet.transactions.push({
                 type: 'debit',
                 amount: parseFloat(amount),
                 description: `Order payment (${order.orderCode})`,
-                orderId: order._id,
+                orderId: orderId,
                 status: 'completed'
             });
-
+            
             await wallet.save();
-
-            // Clear cart
-            await Cart.findOneAndUpdate(
-                { userId },
-                { $set: { items: [], totalAmount: 0 } }
-            );
-
-            res.json({
+            
+            return {
                 success: true,
-                message: 'Payment successful',
-                orderId: order.orderCode,
                 newBalance: wallet.balance
-            });
-
+            };
         } catch (error) {
             console.error('Wallet payment error:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Error processing payment'
-            });
+            throw error;
         }
     },
 
@@ -197,6 +174,60 @@ export const walletController = {
                 success: false,
                 error: error.message
             };
+        }
+    },
+
+    processOrderRefund: async (req, res) => {
+        try {
+            const { orderId } = req.params;
+            const userId = req.session.user;
+            
+            const order = await Order.findById(orderId);
+            if (!order) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Order not found'
+                });
+            }
+            
+            // Only refund if payment was made (wallet or online)
+            if (['wallet', 'online'].includes(order.paymentMethod) && 
+                order.paymentStatus === 'completed') {
+                
+                const refundAmount = order.totalAmount;
+                const refundResult = await walletController.processRefund(
+                    userId, 
+                    refundAmount, 
+                    orderId, 
+                    `Refund for order ${order.orderCode}`
+                );
+                
+                if (refundResult.success) {
+                    // Update order status
+                    order.paymentStatus = 'refunded';
+                    await order.save();
+                    
+                    return res.json({
+                        success: true,
+                        message: 'Order cancelled and refunded to wallet',
+                        newBalance: refundResult.newBalance
+                    });
+                } else {
+                    throw new Error(refundResult.error || 'Refund processing failed');
+                }
+            } else {
+                // For COD orders or other cases
+                return res.json({
+                    success: true,
+                    message: 'Order cancelled successfully'
+                });
+            }
+        } catch (error) {
+            console.error('Order refund error:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Failed to process refund'
+            });
         }
     }
 };

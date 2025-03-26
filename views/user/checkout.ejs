@@ -117,6 +117,34 @@
                   </div>
                 </label>
 
+                <!-- Wallet Payment Option -->
+                <label
+                  id="walletOption"
+                  class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-all duration-300"
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="wallet"
+                    id="walletPayment"
+                  />
+                  <div class="flex flex-col">
+                    <span class="flex items-center gap-2">
+                      <i class="fas fa-wallet text-gray-600"></i> Wallet
+                      <span class="text-sm font-medium ml-1" id="walletBalance">
+                        Balance: ₹<%= wallet ? wallet.balance.toFixed(2) : '0.00' %>
+                      </span>
+                    </span>
+                    <span class="text-sm text-gray-500" id="walletMessage">
+                      <% if (wallet && wallet.balance >= finalTotal) { %>
+                        Pay using your wallet balance
+                      <% } else { %>
+                        <span class="text-red-500">Insufficient balance</span>
+                      <% } %>
+                    </span>
+                  </div>
+                </label>
+
                 <!-- Online Payment Option -->
                 <label
                   class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
@@ -578,17 +606,47 @@
                   await showAlert('error', 'Please select a delivery address');
                   return;
               }
-              const subtotal = parseFloat(document.getElementById('subtotal').textContent);
-
+              
               const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
               if (!paymentMethod) {
                   await showAlert('error', 'Please select a payment method');
                   return;
               }
-
-              const finalTotal = document.getElementById('finalTotal').textContent;
-
-              if (paymentMethod.value === 'cod') {
+              
+              const addressId = selectedAddress.value;
+              const paymentMethodValue = paymentMethod.value;
+              
+              if (paymentMethodValue === 'wallet') {
+                  // Process wallet payment
+                  await showAlert('loading', 'Processing your payment...');
+                  
+                  try {
+                      const response = await fetch('/checkout/wallet-payment', {
+                          method: 'POST',
+                          headers: {
+                              'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                              addressId,
+                              couponCode: appliedCoupon,
+                              finalAmount: parseFloat(document.getElementById('finalTotal').textContent.replace('₹', '').trim())
+                          })
+                      });
+                      
+                      const result = await response.json();
+                      
+                      if (result.success) {
+                          hideAlert();
+                          await showAlert('success', 'Payment successful! Order placed.');
+                          window.location.href = `/orders?success=true&orderId=${result.orderId}`;
+                      } else {
+                          throw new Error(result.message || 'Payment failed');
+                      }
+                  } catch (error) {
+                      hideAlert();
+                      await showAlert('error', error.message || 'Payment processing failed');
+                  }
+              } else if (paymentMethodValue === 'cod') {
                   // Show loading state
                   await showAlert('loading', 'Processing your order...');
 
@@ -598,11 +656,11 @@
                           'Content-Type': 'application/json'
                       },
                       body: JSON.stringify({
-                          addressId: selectedAddress.value,
+                          addressId,
                           paymentMethod: 'cod',
                           couponCode: appliedCoupon,
-                          finalAmount: parseFloat(finalTotal),
-                          subtotal: parseFloat(subtotal)
+                          finalAmount: parseFloat(document.getElementById('finalTotal').textContent.replace('₹', '').trim()),
+                          subtotal: parseFloat(document.getElementById('subtotal').textContent)
                       })
                   });
 
@@ -622,7 +680,7 @@
                   } else {
                       throw new Error(data.message || 'Failed to place order');
                   }
-              } else if (paymentMethod.value === 'online') {
+              } else if (paymentMethodValue === 'online') {
                   try {
                       // Pass the coupon code if one is applied
                       const finalTotal = document.getElementById('finalTotal').innerText;
@@ -685,8 +743,6 @@
                       console.error('Razorpay error:', error);
                       await showAlert('error', error.message || 'Payment initialization failed');
                   }
-              } else if (paymentMethod.value === 'wallet') {
-                  // ... rest of your code for wallet ...
               }
           } catch (error) {
               // Hide the loading alert first
@@ -882,6 +938,23 @@
               throw error;
           }
       }
+
+      document.addEventListener('DOMContentLoaded', function() {
+          // Check wallet balance against order total
+          const walletOption = document.getElementById('walletOption');
+          const walletPayment = document.getElementById('walletPayment');
+          
+          if (walletOption) {
+              const walletBalance = parseFloat('<%= wallet ? wallet.balance : 0 %>');
+              const finalTotal = parseFloat(document.getElementById('finalTotal').textContent.replace('₹', '').trim());
+              
+              // Disable wallet payment if balance is insufficient
+              if (walletBalance < finalTotal) {
+                  walletOption.classList.add('opacity-60');
+                  walletPayment.disabled = true;
+              }
+          }
+      });
 
     </script>
   </body>
