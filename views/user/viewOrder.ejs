@@ -233,7 +233,9 @@
                                               ['delivered', 'returned', 'refund processing'].includes(item.status))) { %>
                                                 <% } %>
 
-                                                    <% if (order.paymentMethod === 'online' && order.paymentStatus === 'pending') { %>
+                                                    <% if (order.paymentMethod === 'online' && 
+                                                          order.paymentStatus === 'pending' && 
+                                                          !order.products.every(item => item.status === 'cancelled')) { %>
                                                         <button 
                                                             onclick="retryPayment('<%= order._id %>', <%= order.totalAmount %>)"
                                                             class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
@@ -242,13 +244,6 @@
                                                             Retry Payment (₹<%= order.totalAmount %>)
                                                         </button>
                                                     <% } %>
-
-                                                    <% if (order.paymentMethod === 'razorpay' && order.paymentStatus === 'failed') { %>
-                                                        <button onclick="retryPayment('<%= order._id %>')"
-                                                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                                            <i class="fas fa-sync-alt mr-2"></i>Retry Payment
-                                                        </button>
-                                                        <% } %>
                                         </div>
                                     </div>
                                 </div>
