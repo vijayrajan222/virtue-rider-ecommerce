@@ -156,6 +156,11 @@ userRouter.post('/checkout/wallet-payment',
   userCheckoutController.walletPayment
 );
 
+userRouter.post('/orders/:orderId/retry-payment', 
+    userMiddlewares.checkSession, 
+    userOrderController.retryPayment
+);
+
 export default userRouter;
 
 

@@ -586,8 +586,56 @@ const userCheckoutController = {
                 razorpay_order_id, 
                 razorpay_signature, 
                 addressId,
+                orderId,
                 status 
             } = req.body;
+
+            // If this is a retry payment
+            if (orderId) {
+                const order = await Order.findById(orderId);
+                if (!order) {
+                    return res.status(404).json({
+                        success: false,
+                        message: "Order not found"
+                    });
+                }
+
+                if (status === 'success') {
+                    // Verify signature
+                    const sign = razorpay_order_id + "|" + razorpay_payment_id;
+                    const expectedSign = crypto
+                        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+                        .update(sign.toString())
+                        .digest("hex");
+
+                    if (razorpay_signature !== expectedSign) {
+                        return res.status(400).json({
+                            success: false,
+                            message: "Invalid payment signature"
+                        });
+                    }
+
+                    // Update order payment status
+                    order.paymentStatus = 'completed';
+                    order.paymentDetails = {
+                        razorpay_order_id,
+                        razorpay_payment_id,
+                        razorpay_signature
+                    };
+
+                    await order.save();
+                }
+
+                return res.json({
+                    success: true,
+                    message: status === 'success' ? 
+                        'Payment successful' : 
+                        'Payment status updated',
+                    orderId: order.orderCode
+                });
+            }
+
+            // Handle normal checkout payment verification
             const orderDetails = req.session.orderDetails;
 
             // For successful payments, verify signature

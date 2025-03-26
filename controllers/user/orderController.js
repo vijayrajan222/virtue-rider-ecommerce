@@ -3,6 +3,13 @@ import Product from '../../models/productModel.js';
 import User from "../../models/userModel.js";
 import PDFDocument from 'pdfkit';
 import { walletController } from './walletController.js';
+import Razorpay from 'razorpay';
+
+// Initialize Razorpay
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
+});
 
 const calculateRefundAmount = (order, item) => {
     // Get all delivered/cancelled items in the order
@@ -457,6 +464,49 @@ const userOrderController = {
             res.status(500).json({
                 success: false,
                 message: error.message || 'Error cancelling item'
+            });
+        }
+    },
+    retryPayment: async (req, res) => {
+        try {
+            const { orderId } = req.params;
+            const userId = req.session.user;
+
+            // Find the order
+            const order = await Order.findOne({ 
+                _id: orderId,
+                user: userId,
+                paymentMethod: 'online',
+                paymentStatus: 'pending'
+            });
+
+            if (!order) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Order not found or not eligible for payment retry'
+                });
+            }
+
+            // Create new Razorpay order
+            const razorpayOrder = await razorpay.orders.create({
+                amount: Number(order.totalAmount * 100),
+                currency: 'INR',
+                receipt: `retry_${orderId}`
+            });
+
+            res.json({
+                success: true,
+                key: process.env.RAZORPAY_KEY_ID,
+                order: razorpayOrder,
+                amount: order.totalAmount,
+                orderId: order._id
+            });
+
+        } catch (error) {
+            console.error('Retry payment error:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Failed to initiate payment retry'
             });
         }
     }

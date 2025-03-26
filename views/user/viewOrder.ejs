@@ -233,8 +233,17 @@
                                               ['delivered', 'returned', 'refund processing'].includes(item.status))) { %>
                                                 <% } %>
 
-                                                    <% if (order.paymentMethod==='razorpay' &&
-                                                        order.paymentStatus==='failed' ) { %>
+                                                    <% if (order.paymentMethod === 'online' && order.paymentStatus === 'pending') { %>
+                                                        <button 
+                                                            onclick="retryPayment('<%= order._id %>', <%= order.totalAmount %>)"
+                                                            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                                                        >
+                                                            <i class="fas fa-redo"></i>
+                                                            Retry Payment (₹<%= order.totalAmount %>)
+                                                        </button>
+                                                    <% } %>
+
+                                                    <% if (order.paymentMethod === 'razorpay' && order.paymentStatus === 'failed') { %>
                                                         <button onclick="retryPayment('<%= order._id %>')"
                                                             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                                                             <i class="fas fa-sync-alt mr-2"></i>Retry Payment
@@ -582,75 +591,79 @@
                     }
                 }
 
-                async function retryPayment(orderId) {
+                async function retryPayment(orderId, amount) {
                     try {
-                        showAlert('loading');
                         const response = await fetch(`/orders/${orderId}/retry-payment`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' }
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
                         });
+
                         const data = await response.json();
-
-                        if (data.success) {
-                            hideAlert();
-                            const options = {
-                                key: data.key,
-                                amount: data.order.amount,
-                                currency: data.order.currency,
-                                order_id: data.order.id,
-                                name: "Virtue Rider Fashion Store",
-                                description: "Order Payment Retry",
-                                handler: async function (response) {
-                                    try {
-                                        showAlert('loading');
-                                        const verifyResponse = await fetch(`/orders/${orderId}/verify-retry-payment`, {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({
-                                                razorpay_order_id: response.razorpay_order_id,
-                                                razorpay_payment_id: response.razorpay_payment_id,
-                                                razorpay_signature: response.razorpay_signature,
-                                                orderId: orderId
-                                            })
-                                        });
-
-                                        const verifyData = await verifyResponse.json();
-                                        if (verifyData.success) {
-                                            // Update payment status in UI
-                                            updatePaymentUI(orderId, 'completed');
-                                            // Hide retry payment button
-                                            hideRetryPaymentButton(orderId);
-                                            // Update order status to processing
-                                            updateOrderStatus(orderId, 'processing');
-
-                                            hideAlert();
-                                            showAlert('success', 'Your payment has been processed successfully');
-                                        } else {
-                                            throw new Error(verifyData.message);
-                                        }
-                                    } catch (error) {
-                                        hideAlert();
-                                        showAlert('error', error.message || 'Payment verification failed');
-                                    }
-                                },
-                                prefill: {
-                                    name: data.orderDetails.name,
-                                    email: data.orderDetails.email,
-                                    contact: data.orderDetails.contact
-                                },
-                                theme: {
-                                    color: "#000000"
-                                }
-                            };
-
-                            const rzp = new Razorpay(options);
-                            rzp.open();
-                        } else {
-                            throw new Error(data.message);
+                        if (!data.success) {
+                            throw new Error(data.message || 'Failed to initiate payment');
                         }
+
+                        const options = {
+                            key: data.key,
+                            amount: data.amount * 100, // amount in paisa
+                            currency: "INR",
+                            name: "LISTEN",
+                            description: "Order Payment Retry",
+                            order_id: data.order.id,
+                            handler: async function (response) {
+                                try {
+                                    showAlert('loading', 'Verifying payment...');
+                                    const verifyResponse = await fetch('/checkout/verify-payment', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                            razorpay_order_id: response.razorpay_order_id,
+                                            razorpay_payment_id: response.razorpay_payment_id,
+                                            razorpay_signature: response.razorpay_signature,
+                                            orderId: orderId,
+                                            status: 'success'
+                                        })
+                                    });
+
+                                    const verifyData = await verifyResponse.json();
+                                    if (verifyData.success) {
+                                        hideAlert();
+                                        await showAlert('success', 'Payment successful!');
+                                        window.location.reload();
+                                    } else {
+                                        throw new Error(verifyData.message || 'Payment verification failed');
+                                    }
+                                } catch (error) {
+                                    hideAlert();
+                                    console.error('Payment verification error:', error);
+                                    showAlert('error', error.message || 'Payment verification failed');
+                                }
+                            },
+                            modal: {
+                                ondismiss: async function() {
+                                    showAlert('info', 'Payment cancelled. You can retry payment later.');
+                                }
+                            },
+                            prefill: {
+                                name: "<%= user.firstName %> <%= user.lastName %>",
+                                email: "<%= user.email %>",
+                                contact: "<%= user.phone %>"
+                            },
+                            theme: {
+                                color: "#000000"
+                            }
+                        };
+
+                        const rzp = new Razorpay(options);
+                        rzp.open();
+
                     } catch (error) {
-                        hideAlert();
-                        showAlert('error', error.message || 'Failed to process payment');
+                        console.error('Payment retry error:', error);
+                        showAlert('error', error.message || 'Failed to retry payment');
                     }
                 }
 
