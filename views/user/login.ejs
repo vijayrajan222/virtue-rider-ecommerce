@@ -5,404 +5,156 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/tailwindcss/output.css" />
-  <title>User login | Premium Helmets</title>
-  <!-- Google Sign-In -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <title>Login | VIRTUE</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
   <style>
     body {
-      background-color: #f5f5f5;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
-    .split-screen {
-      display: grid;
-      grid-template-columns: 1fr;
-      min-height: 100vh;
-    }
-    
-    @media (min-width: 1024px) {
-      .split-screen {
-        grid-template-columns: 1.2fr 0.8fr;
-      }
-    }
-    
-    .helmet-bg {
-      background-image: url('https://images.unsplash.com/photo-1558981852-426c6c22a060?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80');
+      background-image: url('/images/login.jpg');
       background-size: cover;
       background-position: center;
+      min-height: 100vh;
       position: relative;
     }
     
-    /* Fallback background in case the above URL doesn't load */
-    .helmet-bg.fallback {
-      background: linear-gradient(135deg, #1a1a1a 0%, #363636 100%);
-    }
-    
-    .helmet-bg::before {
+    body::before {
       content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 100%);
-      z-index: 1;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 100%);
     }
-    
-    .content-wrapper {
-      position: relative;
-      z-index: 2;
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
     }
-    
-    .form-container {
-      background: #ffffff;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-    }
-    
-    .input-group {
-      position: relative;
-      margin-bottom: 1.5rem;
-    }
-    
-    .input-group label {
-      position: absolute;
-      top: -10px;
-      left: 10px;
-      background-color: white;
-      padding: 0 8px;
-      font-size: 0.875rem;
-      color: #4b5563;
-      transition: all 0.2s ease;
-    }
-    
-    .input-group input {
-      width: 100%;
-      padding: 0.75rem 1rem 0.75rem 3rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 0.5rem;
-      font-size: 1rem;
-      transition: all 0.2s ease;
-    }
-    
-    .input-group input:focus {
-      border-color: #000;
-      box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
-      outline: none;
-    }
-    
-    .input-group .icon {
-      position: absolute;
-      left: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #9ca3af;
-    }
-    
-    .btn-primary {
-      background: linear-gradient(90deg, #000000 0%, #333333 100%);
+
+    .input-style {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
       color: white;
-      border: none;
-      border-radius: 0.5rem;
-      padding: 0.875rem 1.5rem;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
     }
-    
-    .btn-primary::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-      transition: all 0.6s ease;
+
+    .input-style:focus {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.5);
     }
-    
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-    }
-    
-    .btn-primary:hover::after {
-      left: 100%;
-    }
-    
-    .feature-icon {
-      width: 3.5rem;
-      height: 3.5rem;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 1rem;
-      backdrop-filter: blur(5px);
-    }
-    
-    .feature-card {
-      background: rgba(255,255,255,0.1);
-      backdrop-filter: blur(10px);
-      border-radius: 1rem;
-      padding: 1.5rem;
-      border: 1px solid rgba(255,255,255,0.2);
-      transition: all 0.3s ease;
-    }
-    
-    .feature-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 30px rgba(0,0,0,0.2);
-    }
-    
-    .social-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.5rem;
-      font-weight: 500;
-      transition: all 0.3s ease;
-      border: 2px solid #e5e7eb;
-    }
-    
-    .social-btn:hover {
-      background-color: #f3f4f6;
-      transform: translateY(-2px);
-    }
-    
-    .divider {
-      display: flex;
-      align-items: center;
-      margin: 2rem 0;
-    }
-    
-    .divider::before,
-    .divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background-color: #e5e7eb;
-    }
-    
-    .divider-text {
-      padding: 0 1rem;
-      color: #6b7280;
-      font-size: 0.875rem;
-    }
-    
-    .logo-container {
-      position: relative;
-      width: 5rem;
-      height: 5rem;
-      margin: 0 auto 1.5rem;
-    }
-    
-    .logo-container::before {
-      content: '';
-      position: absolute;
-      top: -0.5rem;
-      left: -0.5rem;
-      right: -0.5rem;
-      bottom: -0.5rem;
-      background: linear-gradient(135deg, #000000, #333333);
-      border-radius: 50%;
-      z-index: -1;
-      opacity: 0.1;
-    }
-    
-    .logo-container img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-    
-    @keyframes shimmer {
-      0% {
-        background-position: -1000px 0;
-      }
-      100% {
-        background-position: 1000px 0;
-      }
-    }
-    
-    .loading-shimmer {
-      background: linear-gradient(to right, #f6f7f8 8%, #edeef1 18%, #f6f7f8 33%);
-      background-size: 1000px 100%;
-      animation: shimmer 2s infinite linear;
+
+    .input-style::placeholder {
+      color: rgba(255, 255, 255, 0.6);
     }
   </style>
 </head>
 
-<body>
-  <div class="split-screen">
-    <!-- Left side - Image and Features -->
-    <div class="helmet-bg hidden lg:block" id="bgContainer">
-      <div class="content-wrapper h-full flex flex-col justify-between p-8 md:p-12">
-        <div>
-          <h1 class="text-4xl font-bold mb-2 text-white">WORLD WIDE VIRTUE </h1>
-          <p class="text-xl text-white/90">Safety meets style. Ride with confidence.</p>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="fas fa-shield-alt text-white text-xl"></i>
-            </div>
-            <h3 class="text-white text-lg font-semibold mb-2">Safety Certified</h3>
-            <p class="text-white/80 text-sm">All our helmets meet or exceed DOT, ECE, and SNELL safety standards.</p>
-          </div>
-          
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="fas fa-wind text-white text-xl"></i>
-            </div>
-            <h3 class="text-white text-lg font-semibold mb-2">Aerodynamic Design</h3>
-            <p class="text-white/80 text-sm">Engineered for minimal drag and maximum stability at high speeds.</p>
-          </div>
-          
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="fas fa-tint text-white text-xl"></i>
-            </div>
-            <h3 class="text-white text-lg font-semibold mb-2">Weather Resistant</h3>
-            <p class="text-white/80 text-sm">Built to withstand all weather conditions while maintaining comfort.</p>
-          </div>
-          
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="fas fa-star text-white text-xl"></i>
-            </div>
-            <h3 class="text-white text-lg font-semibold mb-2">Premium Quality</h3>
-            <p class="text-white/80 text-sm">Crafted with premium materials for durability and superior comfort.</p>
-          </div>
-        </div>
-        
-        <div class="text-white/90 text-sm">
-          <p>© 2025 VIRTUE Helmets. All rights reserved.</p>
-        </div>
-      </div>
+<body class="flex items-center justify-center min-h-screen p-4">
+  <div class="w-full max-w-[400px] relative z-10">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <img src="/images/whitelogo.png" alt="VIRTUE" class="h-14 mx-auto">
     </div>
-    
-    <!-- Right side - Login Form -->
-    <div class="form-container flex items-center justify-center p-6 md:p-12">
-      <div class="w-full max-w-md">
-        <div class="text-center mb-8">
-          <div class="logo-container">
-            <img src="/images/blacklogo.png" alt="Premium Helmets Logo">
-          </div>
-          <h2 class="text-3xl font-bold text-gray-900">Welcome Back</h2>
-          <p class="text-gray-600 mt-2">Sign in to your Premium Helmets account</p>
+
+    <!-- Login Form -->
+    <div class="glass-card rounded-2xl p-8">
+      <h1 class="text-2xl font-bold text-white text-center mb-6">Welcome Back</h1>
+
+      <form id="login-form" class="space-y-4">
+        <!-- Email -->
+        <div class="relative">
+          <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-white/70"></i>
+          <input 
+            type="email" 
+            placeholder="Email address"
+            class="input-style w-full pl-10 pr-4 py-3 rounded-xl outline-none"
+            required
+          >
         </div>
-        
-        <form id="login-form" class="space-y-4">
-          <div class="input-group">
-            <label for="email">Email Address</label>
-            <i class="fas fa-envelope icon"></i>
-            <input type="email" id="email" name="email" placeholder="your@email.com" required>
-          </div>
-          
-          <div class="input-group">
-            <label for="password">Password</label>
-            <i class="fas fa-lock icon"></i>
-            <input type="password" id="password" name="password" placeholder="••••••••" required>
-          </div>
-          
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center">
-              <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-black focus:ring-black border-gray-300 rounded">
-              <label for="remember-me" class="ml-2 block text-sm text-gray-700">Remember me</label>
-            </div>
-            <a href="/forgotPassword" class="text-sm font-medium text-black hover:underline">Forgot password?</a>
-          </div>
-          
-          <div id="generalError" class="text-red-500 text-sm mt-2 hidden"></div>
-          
-          <div id="loading-spinner" class="hidden">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto"></div>
-          </div>
-          
-          <button type="submit" class="w-full btn-primary">
-            Sign In
-          </button>
-        </form>
-        
-        <!-- Divider -->
-        <div class="divider">
-          <div class="divider-text">or continue with</div>
+
+        <!-- Password -->
+        <div class="relative">
+          <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-white/70"></i>
+          <input 
+            type="password" 
+            placeholder="Password"
+            class="input-style w-full pl-10 pr-4 py-3 rounded-xl outline-none"
+            required
+          >
         </div>
-        
-        <!-- Social Login -->
-        <div class="space-y-3">
-          <a href="/auth/google?trigger=signup" class="w-full social-btn">
-            <i class="fa-brands fa-google mr-2" style="color: #DB4437"></i>
-            <span>Google</span>
-          </a>
+
+        <!-- Remember & Forgot -->
+        <div class="flex items-center justify-between text-sm text-white/80">
+          <label class="flex items-center">
+            <input type="checkbox" class="mr-2"> Remember me
+          </label>
+          <a href="/forgot-password" class="hover:text-white">Forgot password?</a>
         </div>
-        
-        <div class="mt-8 text-center">
-          <p class="text-gray-600">Don't have an account? 
-            <a href="/signup" class="text-black font-medium hover:underline">Sign Up</a>
-          </p>
-        </div>
-      </div>
+
+        <!-- Error Message -->
+        <div id="generalError" class="hidden text-red-400 text-sm text-center"></div>
+
+        <!-- Login Button -->
+        <button 
+          type="submit"
+          class="w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-opacity-90 transition-all"
+        >
+          Sign In
+        </button>
+
+        <!-- Google Login -->
+        <a href="/auth/google" 
+           class="w-full flex items-center justify-center gap-2 py-3 mt-3 rounded-xl border border-white/30 text-white hover:bg-white/10 transition-all">
+          <i class="fab fa-google"></i>
+          <span>Continue with Google</span>
+        </a>
+
+        <!-- Sign Up Link -->
+        <p class="text-center text-white/70 mt-6">
+          Don't have an account? 
+          <a href="/signup" class="text-white hover:underline">Sign up</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div id="loading-spinner" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+    <div class="bg-white/10 backdrop-blur p-4 rounded-lg flex items-center gap-3">
+      <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+      <span class="text-white">Signing in...</span>
     </div>
   </div>
 
   <script>
-    // Check if the background image loads, if not, add fallback class
-    window.addEventListener('load', function() {
-      const bgContainer = document.getElementById('bgContainer');
-      const img = new Image();
-      img.src = 'https://images.unsplash.com/photo-1558981852-426c6c22a060?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80';
+    document.getElementById('login-form').addEventListener('submit', async function(event) {
+      event.preventDefault();
       
-      img.onerror = function() {
-        bgContainer.classList.add('fallback');
-      };
-    });
-  
-    document.getElementById('login-form').addEventListener('submit', async function (event) {
-      event.preventDefault(); // Prevent default form submission
-
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-
-      // Show loading spinner
-      document.getElementById('loading-spinner').classList.remove('hidden');
-      document.getElementById('generalError').classList.add('hidden'); // Hide any previous errors
+      const email = document.querySelector('input[type="email"]').value;
+      const password = document.querySelector('input[type="password"]').value;
+      const loadingSpinner = document.getElementById('loading-spinner');
+      const errorDiv = document.getElementById('generalError');
 
       try {
-        // Send POST request to the backend
+        errorDiv.classList.add('hidden');
+        loadingSpinner.classList.remove('hidden');
+
         const response = await fetch('/login', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
 
         const data = await response.json();
 
-        // Hide loading spinner
-        document.getElementById('loading-spinner').classList.add('hidden');
-
         if (data.success) {
-          // If login is successful, redirect to the home page
           window.location.href = data.redirectUrl || '/home';
         } else {
-          // Show error message
-          document.getElementById('generalError').textContent = data.message;
-          document.getElementById('generalError').classList.remove('hidden');
+          errorDiv.textContent = data.message;
+          errorDiv.classList.remove('hidden');
         }
       } catch (error) {
-        // Hide loading spinner if an error occurs
-        document.getElementById('loading-spinner').classList.add('hidden');
-
-        console.error('Login error:', error);
-        document.getElementById('generalError').textContent = 'An unexpected error occurred. Please try again.';
-        document.getElementById('generalError').classList.remove('hidden');
+        errorDiv.textContent = 'An unexpected error occurred';
+        errorDiv.classList.remove('hidden');
+      } finally {
+        loadingSpinner.classList.add('hidden');
       }
     });
   </script>
