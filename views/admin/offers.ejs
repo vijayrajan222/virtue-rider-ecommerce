@@ -186,6 +186,9 @@
                 const option = new Option(item.name, item._id);
                 itemsSelect.add(option);
             });
+
+            // Enable multiple selection only for products
+            itemsSelect.multiple = (type === 'product');
         }
 
         function openAddModal() {
@@ -216,7 +219,7 @@
                 updateItemsList();
                 const itemIds = offer.type === 'product' ? 
                     (offer.productIds || []).map(p => p._id || p) : 
-                    [offer.categoryId?._id || offer.categoryId];
+                    (offer.categoryId || []).map(c => c._id || c);
                     
                 const itemsSelect = document.getElementById('itemIds');
                 Array.from(itemsSelect.options).forEach(option => {

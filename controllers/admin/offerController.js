@@ -34,7 +34,6 @@ export const getOffers = async (req, res) => {
 
 // Create offer
 export const createOffer = async (req, res, next) => {
-
     try {
         const {
             name,
@@ -46,7 +45,7 @@ export const createOffer = async (req, res, next) => {
             startDate,
             endDate
         } = req.body;
-console.log(req.body)
+
         // Validate dates
         const start = new Date(startDate);
         const end = new Date(endDate);
@@ -78,11 +77,31 @@ console.log(req.body)
             isActive: true
         };
 
-        // Set productIds or categoryId based on type
+        // Handle product and category offers differently
         if (type === 'product') {
+            // For product offers, directly use itemIds array
             offerData.productIds = itemIds;
+            offerData.categoryId = []; // Empty array for product type
         } else {
-            offerData.categoryId = itemIds[0];
+            // For category offers, ensure itemIds is an array
+            offerData.categoryId = Array.isArray(itemIds) ? itemIds : [itemIds];
+            offerData.productIds = []; // Empty array for category type
+
+            // Check for overlapping category offers
+            const overlappingOffer = await Offer.findOne({
+                type: 'category',
+                categoryId: { $in: offerData.categoryId },
+                startDate: { $lt: end },
+                endDate: { $gt: start },
+                isActive: true
+            });
+
+            if (overlappingOffer) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'An active offer already exists for one or more selected categories during this period'
+                });
+            }
         }
 
         const offer = await Offer.create(offerData);
@@ -125,12 +144,32 @@ export const updateOffer = async (req, res, next) => {
             endDate: end
         };
 
+        // Handle product and category offers differently
         if (type === 'product') {
+            // For product offers, directly use itemIds array
             updateData.productIds = itemIds;
-            updateData.categoryId = null;
+            updateData.categoryId = []; // Clear category IDs
         } else {
-            updateData.categoryId = itemIds[0];
-            updateData.productIds = [];
+            // For category offers, ensure itemIds is an array
+            updateData.categoryId = Array.isArray(itemIds) ? itemIds : [itemIds];
+            updateData.productIds = []; // Clear product IDs
+
+            // Check for overlapping offers
+            const overlappingOffer = await Offer.findOne({
+                _id: { $ne: offerId },
+                type: 'category',
+                categoryId: { $in: updateData.categoryId },
+                startDate: { $lt: end },
+                endDate: { $gt: start },
+                isActive: true
+            });
+
+            if (overlappingOffer) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'An active offer already exists for one or more selected categories during this period'
+                });
+            }
         }
 
         const offer = await Offer.findByIdAndUpdate(
@@ -149,6 +188,53 @@ export const updateOffer = async (req, res, next) => {
         res.json({
             success: true,
             message: 'Offer updated successfully',
+            offer
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Toggle offer status
+export const toggleOfferStatus = async (req, res, next) => {
+    try {
+        const { offerId } = req.params;
+        const { isActive } = req.body;
+
+        const offer = await Offer.findById(offerId);
+        
+        if (!offer) {
+            return res.status(404).json({
+                success: false,
+                message: 'Offer not found'
+            });
+        }
+
+        // If activating a category offer, check for conflicts
+        if (isActive && offer.type === 'category') {
+            const overlappingOffer = await Offer.findOne({
+                _id: { $ne: offerId },
+                type: 'category',
+                categoryId: { $in: offer.categoryId },
+                startDate: { $lt: offer.endDate },
+                endDate: { $gt: offer.startDate },
+                isActive: true
+            });
+
+            if (overlappingOffer) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cannot activate offer due to overlap with existing active offers'
+                });
+            }
+        }
+
+        offer.isActive = isActive;
+        await offer.save();
+
+        res.json({
+            success: true,
+            message: `Offer ${isActive ? 'activated' : 'deactivated'} successfully`,
             offer
         });
     } catch (error) {

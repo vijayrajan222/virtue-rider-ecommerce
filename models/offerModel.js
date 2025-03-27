@@ -39,10 +39,10 @@ const offerSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product'
     }],
-    categoryId: {
+    categoryId: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category'
-    },
+    }],
     startDate: {
         type: Date,
         required: true
