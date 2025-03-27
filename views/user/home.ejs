@@ -12,15 +12,27 @@
     <!-- Hero Banner -->
     <section class="relative h-[500px] mb-8">
         <div class="absolute inset-0">
-            <img src="https://images.unsplash.com/photo-1558981806-ec527fa84c39?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" 
+            <img src="/images/home.jpg" 
                  alt="Motorcycle Gear" 
-                 class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-black bg-opacity-40"></div>
+                 class="w-full h-full object-cover object-center">
+            <div class="absolute inset-0 bg-gradient-to-r from-black/70 to-black/30"></div>
         </div>
         <div class="relative h-full flex items-center">
-            <div class="container mx-auto px-4">
-                <h1 class="text-4xl md:text-5xl text-white font-bold mb-4">SMOKING HOT<br>DEALS ON GEAR</h1>
-                <button class="bg-white text-black px-8 py-3 rounded hover:bg-gray-100">Shop Now</button>
+            <div class="container mx-auto px-6">
+                <div class="max-w-xl">
+                    <h1 class="text-5xl md:text-6xl text-white font-bold mb-4 leading-tight">
+                        Ride Safe,<br>
+                        Ride in Style
+                    </h1>
+                    <p class="text-lg text-white/80 mb-8 max-w-md">
+                        Premium motorcycle helmets for the modern rider. Safety meets sophistication.
+                    </p>
+                    <button class="bg-white text-black px-8 py-3.5 rounded-lg text-lg font-semibold 
+                                  hover:bg-gray-100 transform hover:-translate-y-0.5 transition-all 
+                                  duration-300 shadow-lg hover:shadow-xl">
+                        Explore Collection
+                    </button>
+                </div>
             </div>
         </div>
     </section>
@@ -28,17 +40,21 @@
     
 <!-- Featured Products -->
 <section id="featured" class="py-12 bg-gray-50">
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-6">
         <!-- Section Header -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8">
             <div class="mb-4 sm:mb-0">
                 <div class="flex items-center gap-2 mb-2">
-                    <span class="w-8 h-[2px] bg-gray-900"></span>
+                    <span class="w-12 h-[2px] bg-black"></span>
                     <span class="text-gray-500 text-sm tracking-wider uppercase">Featured</span>
                 </div>
-                <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">Latest Arrivals</h2>
+                <h2 class="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent 
+                          bg-gradient-to-r from-gray-900 to-gray-600">
+                    Latest Arrivals
+                </h2>
             </div>
-            <a href="/shop" class="group inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+            <a href="/shop" class="group inline-flex items-center text-gray-600 hover:text-black 
+                                 transition-colors font-medium">
                 View Collection
                 <span class="ml-2 transform transition-transform duration-300 group-hover:translate-x-1">→</span>
             </a>
@@ -48,17 +64,20 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             <% if (products && products.length > 0) { %>
                 <% products.slice(0, 5).forEach(product => { %>
-                    <div class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
+                    <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg 
+                              transition-all duration-300 relative group">
                         <!-- Product Image -->
                         <a href="/product/<%= product._id %>" class="block">
-                            <div class="relative aspect-[4/5] overflow-hidden">
+                            <div class="relative aspect-[4/5] overflow-hidden bg-gray-100">
                                 <img src="<%= product.images[0] %>" 
                                      alt="<%= product.name %>"
-                                     class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                                     class="w-full h-full object-cover group-hover:scale-105 
+                                            transition-transform duration-500"
                                      loading="lazy">
                                 
                                 <% if (product.offer) { %>
-                                    <div class="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                    <div class="absolute top-3 right-3 bg-red-500 text-white px-3 
+                                                py-1.5 rounded-full text-xs font-semibold shadow-md">
                                         <%= product.offer.discountAmount %><%= product.offer.discountType === 'percentage' ? '%' : '₹' %> OFF
                                     </div>
                                 <% } %>
@@ -66,7 +85,7 @@
                         </a>
 
                         <!-- Product Info - Condensed -->
-                        <div class="p-3">
+                        <div class="p-4">
                             <!-- Brand & Rating -->
                             <div class="flex justify-between items-center mb-1">
                                 <span class="text-xs text-gray-600 font-medium"><%= product.brand %></span>
