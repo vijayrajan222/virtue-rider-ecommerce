@@ -13,6 +13,7 @@ import { getUsers, toggleUserStatus } from '../controllers/admin/userController.
 import adminMiddleware from '../middleware/adminMiddleware.js';
 import { getOrders,handleReturnRequest,updateItemStatus } from '../controllers/admin/orderController.js';
 import reportController from '../controllers/admin/reportController.js';
+import { generateAllReferralCodes } from '../controllers/user/profileController.js';
 
 const router = express.Router();
 
@@ -64,12 +65,12 @@ router.get('/active-coupons', getActiveCoupons);
 
 router.get('/coupons/active', getActiveCoupons);
 
-
-
 // In your admin routes file
 // Sales Report Routes
 router.get('/sales-report', adminMiddleware.checkSession, reportController.getSalesReport);
 router.get('/sales-report/download-excel', adminMiddleware.checkSession, reportController.downloadExcel);
 router.get('/sales-report/download-pdf', adminMiddleware.checkSession, reportController.downloadPDF);
+
+router.post('/generate-referral-codes', adminMiddleware.checkSession, generateAllReferralCodes);
 
 export default router;

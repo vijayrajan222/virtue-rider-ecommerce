@@ -32,18 +32,18 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <!-- First Name -->
                     <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700" for="firstName">First Name</label>
+                        <label class="block text-sm font-medium text-gray-700" for="firstname">First Name</label>
                         <div class="relative group">
                             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <i class="fas fa-user text-gray-400 group-hover:text-gray-500 transition-colors"></i>
                             </div>
                             <input
                                 class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                                id="firstName"
+                                id="firstname"
+                                name="firstname"
                                 type="text"
                                 placeholder="Enter your first name"
-                                name="firstName"
-                                value="<%= user.firstName %>"
+                                value="<%= user.firstname %>"
                                 aria-label="First Name"
                             />
                         </div>
@@ -51,18 +51,18 @@
 
                     <!-- Last Name -->
                     <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700" for="lastName">Last Name</label>
+                        <label class="block text-sm font-medium text-gray-700" for="lastname">Last Name</label>
                         <div class="relative group">
                             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <i class="fas fa-user text-gray-400 group-hover:text-gray-500 transition-colors"></i>
                             </div>
                             <input
                                 class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                                id="lastName"
+                                id="lastname"
+                                name="lastname"
                                 type="text"
                                 placeholder="Enter your last name"
-                                name="lastName"
-                                value="<%= user.lastName %>"
+                                value="<%= user.lastname %>"
                                 aria-label="Last Name"
                             />
                         </div>
@@ -91,6 +91,35 @@
                             Email address cannot be changed
                         </p>
                     </div>
+
+                    <!-- Referral Code -->
+                    <div class="space-y-2 md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700" for="referralCode">Your Referral Code</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fas fa-gift text-gray-400"></i>
+                            </div>
+                            <input
+                                class="w-full pl-11 pr-20 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700"
+                                id="referralCode"
+                                type="text"
+                                value="<%= user.referralCode %>"
+                                readonly
+                                aria-label="Referral Code"
+                            />
+                            <button 
+                                type="button"
+                                onclick="copyReferralCode()"
+                                class="absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors text-sm"
+                            >
+                                Copy
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 flex items-center gap-2">
+                            <i class="fas fa-info-circle"></i>
+                            Share this code with friends to earn rewards
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Submit Button -->
@@ -104,6 +133,45 @@
                     </button>
                 </div>
             </form>
+        </section>
+
+        <!-- Referral Statistics -->
+        <section class="mt-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Referral Statistics</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Referral Stats -->
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Your Impact</h3>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Total Referrals</p>
+                            <p class="text-2xl font-bold text-gray-900"><%= referralStats.totalReferred %></p>
+                        </div>
+                        <div class="h-12 w-12 bg-orange-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-users text-orange-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Referred By -->
+                <% if (user.referredBy) { %>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-medium text-gray-700 mb-3">Referred By</h3>
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-gray-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">
+                                    <%= user.referredBy.firstname %> <%= user.referredBy.lastname %>
+                                </p>
+                                <p class="text-sm text-gray-500"><%= user.referredBy.email %></p>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
         </section>
     </main>
 
@@ -154,8 +222,8 @@
     <script>
         // Keep track of original values
         const originalValues = {
-            firstName: document.getElementById("firstName").value,
-            lastName: document.getElementById("lastName").value
+            firstname: '<%= user.firstname %>',
+            lastname: '<%= user.lastname %>'
         };
 
         function showAlert(type, message = '') {
@@ -221,33 +289,33 @@
             return null;
         }
 
-        function hasChanges(firstName, lastName) {
-            const capitalizedFirstName = capitalizeFirstLetter(firstName.trim());
-            const capitalizedLastName = capitalizeFirstLetter(lastName.trim());
+        function hasChanges(firstname, lastname) {
+            const capitalizedFirstName = capitalizeFirstLetter(firstname.trim());
+            const capitalizedLastName = capitalizeFirstLetter(lastname.trim());
             
-            return capitalizedFirstName !== originalValues.firstName || 
-                   capitalizedLastName !== originalValues.lastName;
+            return capitalizedFirstName !== originalValues.firstname || 
+                   capitalizedLastName !== originalValues.lastname;
         }
 
         document.getElementById("profileForm").addEventListener("submit", async (e) => {
             e.preventDefault();
 
-            const firstName = document.getElementById("firstName").value;
-            const lastName = document.getElementById("lastName").value;
+            const firstname = document.getElementById("firstname").value;
+            const lastname = document.getElementById("lastname").value;
             const email = document.getElementById("email").value;
 
             // Check if there are any changes
-            if (!hasChanges(firstName, lastName)) {
+            if (!hasChanges(firstname, lastname)) {
                 showAlert('error', 'No changes detected');
                 return;
             }
 
             // Frontend validation
-            const firstNameError = validateName(firstName, true);
-            const lastNameError = validateName(lastName, false);
+            const firstnameError = validateName(firstname, true);
+            const lastnameError = validateName(lastname, false);
 
-            if (firstNameError || lastNameError) {
-                showAlert('error', firstNameError || lastNameError);
+            if (firstnameError || lastnameError) {
+                showAlert('error', firstnameError || lastnameError);
                 return;
             }
 
@@ -255,8 +323,8 @@
                 showAlert('loading');
 
                 // Capitalize first letters before sending
-                const capitalizedFirstName = capitalizeFirstLetter(firstName.trim());
-                const capitalizedLastName = capitalizeFirstLetter(lastName.trim());
+                const capitalizedFirstName = capitalizeFirstLetter(firstname.trim());
+                const capitalizedLastName = capitalizeFirstLetter(lastname.trim());
 
                 const response = await fetch('/profile/update', {
                     method: 'POST',
@@ -264,8 +332,8 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        firstName: capitalizedFirstName,
-                        lastName: capitalizedLastName,
+                        firstname: capitalizedFirstName,
+                        lastname: capitalizedLastName,
                         email
                     }),
                 });
@@ -275,10 +343,10 @@
                     setTimeout(() => {
                         showAlert('success');
                         // Update input values and original values
-                        document.getElementById("firstName").value = capitalizedFirstName;
-                        document.getElementById("lastName").value = capitalizedLastName;
-                        originalValues.firstName = capitalizedFirstName;
-                        originalValues.lastName = capitalizedLastName;
+                        document.getElementById("firstname").value = capitalizedFirstName;
+                        document.getElementById("lastname").value = capitalizedLastName;
+                        originalValues.firstname = capitalizedFirstName;
+                        originalValues.lastname = capitalizedLastName;
                     }, 300);
                 } else {
                     const data = await response.json();
@@ -297,13 +365,13 @@
         });
 
         // Optional: Real-time validation and update button state
-        const inputs = ['firstName', 'lastName'];
+        const inputs = ['firstname', 'lastname'];
         const submitButton = document.querySelector('button[type="submit"]');
         
         inputs.forEach(inputId => {
             const input = document.getElementById(inputId);
             input.addEventListener('input', function() {
-                const isFirstName = inputId === 'firstName';
+                const isFirstName = inputId === 'firstname';
                 const error = validateName(this.value, isFirstName);
                 
                 // Update input styles based on validation
@@ -316,10 +384,10 @@
                 }
 
                 // Update button state based on changes
-                const firstName = document.getElementById("firstName").value;
-                const lastName = document.getElementById("lastName").value;
+                const firstname = document.getElementById("firstname").value;
+                const lastname = document.getElementById("lastname").value;
                 
-                if (hasChanges(firstName, lastName)) {
+                if (hasChanges(firstname, lastname)) {
                     submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
                     submitButton.removeAttribute('disabled');
                 } else {
@@ -328,6 +396,24 @@
                 }
             });
         });
+
+        function copyReferralCode() {
+            const referralCode = document.getElementById('referralCode');
+            navigator.clipboard.writeText(referralCode.value).then(() => {
+                // Show a temporary "Copied!" message
+                const button = referralCode.nextElementSibling;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('bg-green-600');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('bg-green-600');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
     </script>
 </body>
 </html>
