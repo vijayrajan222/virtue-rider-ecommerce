@@ -12,36 +12,22 @@ const razorpay = new Razorpay({
 });
 
 const calculateRefundAmount = (order, item) => {
-    // Get all delivered/cancelled items in the order
-    const processedItems = order.products.filter(p => 
-        p.status === 'delivered' || p.status === 'cancelled'
+    // Calculate item's base price
+    const itemTotal = item.price * item.quantity;
+
+    // Calculate total price of all items in order
+    const orderItemsTotal = order.products.reduce((sum, p) => 
+        sum + (p.price * p.quantity), 0
     );
 
-    // If this is the only item in the order or the last item being cancelled
-    const isLastItem = processedItems.length === order.products.length - 1;
-    
-    let refundAmount = 0;
+    // Calculate item's weight (proportion) in the total order
+    const itemWeight = itemTotal / orderItemsTotal;
 
-    if (isLastItem) {
-        // Refund total amount if this is the last/only item
-        refundAmount = order.totalAmount;
-    } else {
-        // Calculate refund for individual item
-        const itemSubtotal = item.price * item.quantity;
-        const gstAmount = itemSubtotal * 0.18; // 18% GST
-        
-        // Calculate proportional coupon discount if applicable
-        let itemCouponDiscount = 0;
-        if (order.coupon && order.coupon.discount > 0) {
-            const orderSubtotal = order.products.reduce((sum, p) => sum + (p.price * p.quantity), 0);
-            const itemProportion = itemSubtotal / orderSubtotal;
-            itemCouponDiscount = order.coupon.discount * itemProportion;
-        }
+    // Calculate refund amount based on weight
+    let refundAmount = order.totalAmount * itemWeight;
 
-        refundAmount = itemSubtotal + gstAmount - itemCouponDiscount;
-    }
-
-    return Math.round(refundAmount * 100) / 100; // Round to 2 decimal places
+    // Round to 2 decimal places
+    return Math.round(refundAmount * 100) / 100;
 };
 
 const userOrderController = {
@@ -414,8 +400,9 @@ const userOrderController = {
                 }
             }
 
-            // Update item status
+            // Update item status and store refund details
             item.status = 'cancelled';
+            item.refundAmount = refundAmount;
             item.statusHistory.push({
                 status: 'cancelled',
                 date: new Date(),
@@ -426,17 +413,11 @@ const userOrderController = {
             if (order.paymentStatus === 'completed' || 
                 (order.paymentMethod === 'cod' && item.status === 'delivered')) {
                 try {
-                    console.log('Processing refund:', {
-                        userId,
-                        amount: refundAmount,
-                        orderId
-                    });
-
                     const refundResult = await walletController.processRefund(
                         userId,
                         refundAmount,
                         orderId,
-                        `Refund for cancelled order #${order._id.toString().slice(-6)}`
+                        `Refund for cancelled item in order #${order._id.toString().slice(-6)}`
                     );
 
                     if (!refundResult.success) {
