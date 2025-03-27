@@ -6,7 +6,7 @@ import Offer from '../../models/offerModel.js';
 export const getShop = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = 9; // Products per page
+        const limit = 16; // Show 4x4 grid on larger screens
         const skip = (page - 1) * limit;
 
         const categories = await Category.find();
