@@ -18,37 +18,58 @@
         transition: all 0.3s ease;
       }
       .product-card:hover {
-        transform: translateY(-2px);
+        transform: translateY(-4px);
       }
       .product-image {
         transition: transform 0.5s ease;
       }
       .product-card:hover .product-image {
-        transform: scale(1.05);
+        transform: scale(1.08);
+      }
+      /* Add smooth transitions */
+      button, select, input {
+        transition: all 0.2s ease;
+      }
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #555;
       }
     </style>
   </head>
 
-  <body class="bg-white">
+  <body class="bg-gray-50">
     <%- include("../partials/nav") %>
 
-    <!-- Hero Section -->
-    <section class="relative h-[450px]">
+    <!-- Hero Section - Updated design -->
+    <section class="relative h-[500px]">
       <div class="absolute inset-0">
         <img src="/images/Helmet.jpg" alt="Shop Banner" 
-             class="w-full h-full object-cover object-center">
-        <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent"></div>
+             class="w-full h-full object-cover object-center brightness-75">
+        <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
       </div>
       <div class="relative h-full flex items-center">
         <div class="container mx-auto px-8">
           <div class="max-w-xl">
-            <h1 class="text-5xl md:text-6xl text-white font-bold mb-4">Our Collection</h1>
-            <p class="text-xl text-white/90 mb-8 max-w-md font-light leading-relaxed">
-              Discover premium motorcycle helmets designed for the modern rider.
+            <h1 class="text-6xl md:text-7xl text-white font-bold mb-6 leading-tight">
+              Premium Collection
+            </h1>
+            <p class="text-xl text-white/90 mb-10 max-w-md font-light leading-relaxed">
+              Discover our exclusive range of premium motorcycle helmets designed for the modern rider.
             </p>
-            <button class="bg-white text-black px-8 py-3.5 rounded-lg text-lg font-medium 
-                          hover:bg-opacity-90 transition-all duration-300 shadow-lg">
-              Explore All
+            <button class="bg-white text-black px-10 py-4 rounded-lg text-lg font-medium 
+                         hover:bg-opacity-90 transition-all duration-300 shadow-xl hover:shadow-2xl
+                         transform hover:scale-105">
+              Explore Collection
             </button>
           </div>
         </div>
@@ -56,20 +77,22 @@
     </section>
 
     <!-- Main Content -->
-    <div class="bg-gray-50">
-      <div class="container mx-auto px-8 max-w-[1600px]">
+    <div class="bg-gray-50 min-h-screen">
+      <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1600px]">
         <div class="flex flex-col lg:flex-row gap-8 py-12">
 
           <!-- Left Sidebar - Filters -->
           <div class="lg:w-[300px] shrink-0">
-            <div class="sticky top-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+            <div class="sticky top-6 bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+              <h3 class="text-xl font-semibold text-gray-900 mb-6">Filters</h3>
               
               <!-- Filter Options -->
-              <div class="space-y-4">
+              <div class="space-y-6">
                 <div>
-                  <label class="block text-gray-700 font-medium mb-2">Sort By</label>
-                  <select id="sortFilter" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-gray-900">
+                  <label class="block text-gray-700 font-medium mb-3">Sort By</label>
+                  <select id="sortFilter" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm
+                                               focus:ring-2 focus:ring-gray-900 focus:border-gray-900
+                                               bg-gray-50 hover:bg-gray-100 transition-colors">
                     <option value="default">Default</option>                                                                               
                     <option value="newArrivals">New Arrivals</option>
                     <option value="priceLowToHigh">Price: Low to High</option>
@@ -82,23 +105,27 @@
                 </div>
 
                 <div>
-                  <label for="color" class="block text-gray-700 font-medium mb-2">Colour</label>
-                  <select id="color" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-2 focus:border-gray-900">
+                  <label for="color" class="block text-gray-700 font-medium mb-3">Colour</label>
+                  <select id="color" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm
+                                               focus:outline-none focus:border-2 focus:border-gray-900
+                                               bg-gray-50 hover:bg-gray-100 transition-colors">
                     <option value="">All</option>
                   </select>
                 </div>
 
                 <div>
-                  <label class="block text-gray-700 font-medium mb-2">Price Range</label>
+                  <label class="block text-gray-700 font-medium mb-3">Price Range</label>
                   <div class="flex gap-2">
-                    <input type="number" id="minPrice" placeholder="Min" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-2 focus:border-gray-900">
-                    <input type="number" id="maxPrice" placeholder="Max" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-2 focus:border-gray-900">
+                    <input type="number" id="minPrice" placeholder="Min" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-2 focus:border-gray-900 bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <input type="number" id="maxPrice" placeholder="Max" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-2 focus:border-gray-900 bg-gray-50 hover:bg-gray-100 transition-colors">
                   </div>
                 </div>
 
-                <div class="mb-4">
+                <div class="mb-6">
                   <label for="category" class="block text-gray-700 font-medium">Category</label>
-                  <select id="category" class="w-full px-3 py-2 border rounded-lg">
+                  <select id="category" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm
+                                               focus:outline-none focus:border-2 focus:border-gray-900
+                                               bg-gray-50 hover:bg-gray-100 transition-colors">
                     <script>
                       console.log("Categories in EJS:", <%- JSON.stringify(categories) %>);
                     </script>
@@ -115,9 +142,10 @@
 
                 <div class="border-t border-gray-100 my-6"></div>
                 <button id="resetButton" 
-                        class="w-full px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 
-                               transition-all duration-300 text-sm font-medium">
-                  Reset Filters
+                        class="w-full px-4 py-3.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 
+                               transition-all duration-300 text-sm font-medium hover:shadow-lg
+                               transform hover:scale-[1.02]">
+                  Reset All Filters
                 </button>
               </div>
             </div>
@@ -129,19 +157,20 @@
             <div class="mb-8">
               <div class="flex items-center">
                 <input type="text" id="searchInput" 
-                      class="flex-1 h-13 px-6 border border-gray-200 rounded-l-lg text-base 
-                             placeholder:text-gray-400 focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
-                      placeholder="Search products...">
+                       class="flex-1 h-14 px-6 border border-gray-200 rounded-l-xl text-base 
+                              placeholder:text-gray-400 focus:ring-2 focus:ring-gray-900 focus:border-gray-900
+                              bg-white shadow-sm"
+                       placeholder="Search for products...">
                 <button id="searchButton" 
-                      class="h-13 px-10 bg-gray-900 text-white rounded-r-lg hover:bg-gray-800 
-                             transition-all duration-300 font-medium">
+                        class="h-14 px-10 bg-gray-900 text-white rounded-r-xl hover:bg-gray-800 
+                               transition-all duration-300 font-medium hover:shadow-lg">
                   Search
                 </button>
               </div>
             </div>
 
             <!-- Product Grid -->
-            <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               <% if (products && products.length > 0) { %>
                 <% products.forEach(product => { %>
                   <div class="product-card bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg">
@@ -206,15 +235,20 @@
             </div>
 
             <!-- Pagination -->
-            <div class="mt-12 flex justify-center items-center gap-6">
+            <div class="mt-16 flex justify-center items-center gap-8">
               <button id="prevPage" 
-                     class="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:hover:bg-gray-900">
+                      class="px-8 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 
+                             transition-all duration-300 disabled:opacity-50 disabled:hover:bg-gray-900
+                             hover:shadow-lg transform hover:scale-[1.02]">
                 Previous
               </button>
-              <span class="text-gray-700">
-                Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+              <span class="text-gray-700 font-medium">
+                Page <span id="currentPage" class="font-bold">1</span> of <span id="totalPages" class="font-bold">1</span>
               </span>
-              <button id="nextPage" class="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:hover:bg-gray-900">
+              <button id="nextPage" 
+                      class="px-8 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 
+                             transition-all duration-300 disabled:opacity-50 disabled:hover:bg-gray-900
+                             hover:shadow-lg transform hover:scale-[1.02]">
                 Next
               </button>
             </div>
