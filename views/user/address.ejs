@@ -12,81 +12,170 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
+    <style>
+      .main-wrapper {
+        background-image: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 100%), url('/images/6331988.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        min-height: 100vh;
+      }
+
+      .glass-card {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .input-style {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+      }
+
+      .input-style:focus {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+
+      .input-style::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      .sidebar-link {
+        transition: all 0.3s ease;
+      }
+
+      .sidebar-link.active {
+        background: rgba(255, 255, 255, 0.2);
+        border-right: 3px solid white;
+      }
+
+      .sidebar-link:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.1);
+      }
+    </style>
   </head>
   <body class="bg-gray-100">
     <!-- nav -->
     <%- include("../partials/nav") %>
-    <div class="h-10"></div>
-    <!-- Main Content -->
-    <main class="container mx-auto flex flex-col md:flex-row py-6 md:py-10 px-4 md:px-6 gap-6">
-      <!-- Sidebar -->
-      <%- include("../partials/profileSidebar") %>
-      <!-- Address Information -->
-      <section class="w-full md:w-3/4 bg-white p-4 md:p-6 rounded-lg shadow-md">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <h2 class="text-xl md:text-2xl font-bold text-gray-800">My Addresses</h2>
-          <button 
-            onclick="openAddAddressModal()"
-            class="w-full sm:w-auto bg-black text-white px-4 py-2 rounded-full hover:bg-gray-800 transition-colors flex items-center justify-center space-x-2"
-          >
-            <i class="fas fa-plus"></i>
-            <span>Add New Address</span>
-          </button>
-        </div>
-        <!-- Address Cards -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 addresses-container">
-          <% addresses.forEach(address => { %>
-            <div class="border rounded-lg p-4 relative hover:shadow-md transition-shadow bg-gray-50 hover:bg-white" data-address-id="<%= address._id %>">
-              <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
-                <div class="space-y-2 flex-grow">
-                  <h4 class="font-semibold text-lg"><%= address.fullName %></h4>
-                  <p class="text-gray-600 flex items-center gap-2">
-                    <i class="fas fa-phone text-sm"></i>
-                    <%= address.mobileNumber %>
-                  </p>
-                  <p class="text-gray-600 flex items-start gap-2">
-                    <i class="fas fa-map-marker-alt text-sm mt-1"></i>
-                    <span>
-                      <%= address.addressLine1 %>,
-                      <% if (address.addressLine2) { %><%= address.addressLine2 %>,<% } %>
-                      <%= address.city %>,
-                      <%= address.state %> - <%= address.pincode %>
-                    </span>
-                  </p>
+    <div class="main-wrapper pt-20">
+      <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row gap-6 py-8">
+          <!-- Sidebar -->
+          <div class="md:w-1/4">
+            <div class="glass-card rounded-xl p-6 sticky top-24">
+              <!-- Profile Summary -->
+              <div class="text-center mb-6">
+                <div class="w-24 h-24 mx-auto bg-white/10 rounded-full flex items-center justify-center border-2 border-white/30 mb-4">
+                  <i class="fas fa-user text-3xl text-white/90"></i>
                 </div>
-                <div class="flex gap-3 sm:self-start">
-                  <button 
-                    onclick="editAddress('<%= address._id %>', <%= JSON.stringify(address) %>)"
-                    class="text-blue-500 hover:text-blue-700 p-2 hover:bg-blue-50 rounded-full transition-colors"
-                    title="Edit Address"
-                  >
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  <button 
-                    onclick="deleteAddress('<%= address._id %>')"
-                    class="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-full transition-colors"
-                    title="Delete Address"
-                  >
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </div>
+                <h2 class="text-xl font-bold text-white"><%= user.firstname %> <%= user.lastname %></h2>
+                <p class="text-white/70 text-sm">Member since <%= new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) %></p>
+              </div>
+
+              <!-- Navigation Links -->
+              <nav class="space-y-2">
+                <a href="/profile" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                  <i class="fas fa-user-circle"></i>
+                  <span>Personal Info</span>
+                </a>
+                <a href="/orders" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                  <i class="fas fa-shopping-bag"></i>
+                  <span>My Orders</span>
+                </a>
+                <a href="/address" class="sidebar-link active flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                  <i class="fas fa-map-marker-alt"></i>
+                  <span>Addresses</span>
+                </a>
+                <a href="/wallet" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                  <i class="fas fa-wallet"></i>
+                  <span>Wallet</span>
+                </a>
+                <a href="/coupons" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                  <i class="fas fa-ticket-alt"></i>
+                  <span>My Coupons</span>
+                </a>
+                <a href="/wishlist" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                  <i class="fas fa-heart"></i>
+                  <span>Wishlist</span>
+                </a>
+                <hr class="border-white/20 my-3">
+                <a href="/logout" class="sidebar-link flex items-center gap-3 text-white/90 px-4 py-2.5 rounded-lg hover:bg-red-500/20">
+                  <i class="fas fa-sign-out-alt"></i>
+                  <span>Logout</span>
+                </a>
+              </nav>
+            </div>
+          </div>
+
+          <!-- Main Content -->
+          <div class="md:w-3/4">
+            <div class="glass-card rounded-xl p-8">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                <h2 class="text-2xl font-bold text-white">My Addresses</h2>
+                <button onclick="openAddAddressModal()"
+                        class="w-full sm:w-auto bg-white text-black px-6 py-2.5 rounded-lg hover:bg-opacity-90 
+                               transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                  <i class="fas fa-plus"></i>
+                  <span>Add New Address</span>
+                </button>
+              </div>
+
+              <!-- Address Cards -->
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <% addresses.forEach(address => { %>
+                  <div class="glass-card rounded-xl p-6 hover:bg-white/25 transition-all" 
+                       data-address-id="<%= address._id %>">
+                    <div class="flex flex-col gap-4">
+                      <div class="flex justify-between items-start">
+                        <h4 class="font-semibold text-lg text-white"><%= address.fullName %></h4>
+                        <div class="flex gap-2">
+                          <button onclick="editAddress('<%= address._id %>', <%= JSON.stringify(address) %>)"
+                                  class="text-white hover:text-blue-200 p-2 hover:bg-white/20 rounded-lg transition-colors">
+                            <i class="fas fa-edit"></i>
+                          </button>
+                          <button onclick="deleteAddress('<%= address._id %>')"
+                                  class="text-white hover:text-red-200 p-2 hover:bg-white/20 rounded-lg transition-colors">
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="space-y-3">
+                        <p class="text-white/80 flex items-center gap-2">
+                          <i class="fas fa-phone text-sm"></i>
+                          <%= address.mobileNumber %>
+                        </p>
+                        <p class="text-white/80 flex items-start gap-2">
+                          <i class="fas fa-map-marker-alt text-sm mt-1"></i>
+                          <span>
+                            <%= address.addressLine1 %>,
+                            <% if (address.addressLine2) { %><%= address.addressLine2 %>,<% } %>
+                            <%= address.city %>,
+                            <%= address.state %> - <%= address.pincode %>
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                <% }); %>
+
+                <!-- Empty State -->
+                <% if (addresses.length === 0) { %>
+                  <div class="col-span-2 text-center py-12">
+                    <div class="text-white/40 mb-4">
+                      <i class="fas fa-map-marker-alt text-4xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-white mb-2">No addresses found</h3>
+                    <p class="text-white/60">Add a new address to get started</p>
+                  </div>
+                <% } %>
               </div>
             </div>
-          <% }); %>
-          
-          <!-- Empty State -->
-          <% if (addresses.length === 0) { %>
-            <div class="text-center py-12 col-span-2">
-              <div class="text-gray-400 mb-4">
-                <i class="fas fa-map-marker-alt text-4xl"></i>
-              </div>
-              <h3 class="text-lg font-medium text-gray-900 mb-2">No addresses found</h3>
-              <p class="text-gray-600">Add a new address to get started</p>
-            </div>
-          <% } %>
+          </div>
         </div>
-      </section>
-    </main>
+      </div>
+    </div>
 
     <!-- Address Modal -->
     <div id="addressModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">

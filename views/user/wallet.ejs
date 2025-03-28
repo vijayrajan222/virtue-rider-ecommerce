@@ -6,120 +6,213 @@
     <title>Virtue Rider - My Wallet</title>
     <link rel="stylesheet" href="/tailwindcss/output.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+    <style>
+        .main-wrapper {
+            background-image: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 100%), url('/images/6331994.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .input-style {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .input-style:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .input-style::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .sidebar-link {
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-right: 3px solid white;
+        }
+
+        .sidebar-link:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
+<body>
     <%- include("../partials/nav") %>
-    <div class="h-10"></div>
 
-    <!-- Main Content -->
-    <main class="container mx-auto flex flex-col md:flex-row py-6 md:py-10 px-4 md:px-6 gap-6">
-        <!-- Profile Sidebar -->
-        <%- include("../partials/profileSidebar") %>
+    <div class="main-wrapper pt-20">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row gap-6 py-8">
+                <!-- Sidebar -->
+                <div class="md:w-1/4">
+                    <div class="glass-card rounded-xl p-6 sticky top-24">
+                        <!-- Profile Summary -->
+                        <div class="text-center mb-6">
+                            <div class="w-24 h-24 mx-auto bg-white/10 rounded-full flex items-center justify-center border-2 border-white/30 mb-4">
+                                <i class="fas fa-user text-3xl text-white/90"></i>
+                            </div>
+                            <h2 class="text-xl font-bold text-white"><%= user.firstname %> <%= user.lastname %></h2>
+                            <p class="text-white/70 text-sm">Member since <%= new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) %></p>
+                        </div>
 
-        <!-- Main Content -->
-        <section class="w-full md:w-3/4 bg-white p-4 md:p-6 rounded-lg shadow-md">
-            <!-- Mobile Header -->
-            <div class="md:hidden mb-8">
-                <h1 class="text-2xl font-bold text-gray-900">My Wallet</h1>
-                <p class="mt-1 text-sm text-gray-500">Manage your wallet balance</p>
-            </div>
-
-            <!-- Desktop Header -->
-            <div class="hidden md:block mb-8">
-                <h1 class="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                    My Wallet
-                </h1>
-                <p class="mt-2 text-gray-600">View your balance and transaction history</p>
-            </div>
-
-            <!-- Wallet Balance Card -->
-            <div class="bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-2xl p-6 mb-8">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                        <h2 class="text-lg font-medium text-gray-200">Available Balance</h2>
-                        <p class="text-3xl md:text-4xl font-bold mt-2" id="walletBalance">₹<%= wallet.balance.toFixed(2) %></p>
+                        <!-- Navigation Links -->
+                        <nav class="space-y-2">
+                            <a href="/profile" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-user-circle"></i>
+                                <span>Personal Info</span>
+                            </a>
+                            <a href="/orders" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-shopping-bag"></i>
+                                <span>My Orders</span>
+                            </a>
+                            <a href="/address" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>Addresses</span>
+                            </a>
+                            <a href="/wallet" class="sidebar-link active flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-wallet"></i>
+                                <span>Wallet</span>
+                            </a>
+                            <a href="/coupons" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-ticket-alt"></i>
+                                <span>My Coupons</span>
+                            </a>
+                            <a href="/wishlist" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-heart"></i>
+                                <span>Wishlist</span>
+                            </a>
+                            <hr class="border-white/20 my-3">
+                            <a href="/logout" class="sidebar-link flex items-center gap-3 text-white/90 px-4 py-2.5 rounded-lg hover:bg-red-500/20">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Logout</span>
+                            </a>
+                        </nav>
                     </div>
-                   
                 </div>
-            </div>
 
-            <!-- Add Funds Modal -->
-            <div id="addFundsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-                <div class="flex items-center justify-center min-h-screen p-4">
-                    <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
-                        <div class="p-6">
-                            <h3 class="text-xl font-bold text-gray-900 mb-4">Add Funds to Wallet</h3>
-                            <div class="space-y-4">
+                <!-- Main Content -->
+                <div class="md:w-3/4">
+                    <div class="glass-card rounded-xl p-8">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+                            <div>
+                                <h2 class="text-2xl font-bold text-white">My Wallet</h2>
+                                <p class="text-white/70 mt-1">Manage your wallet balance and transactions</p>
+                            </div>
+                            <button onclick="showAddFundsModal()"
+                                    class="mt-4 sm:mt-0 w-full sm:w-auto bg-white text-black px-6 py-2.5 rounded-lg 
+                                           hover:bg-opacity-90 transition-colors flex items-center justify-center gap-2">
+                                <i class="fas fa-plus"></i>
+                                <span>Add Funds</span>
+                            </button>
+                        </div>
+
+                        <!-- Wallet Balance Card -->
+                        <div class="glass-card rounded-xl p-6 mb-8 bg-white/10">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Amount (₹)</label>
-                                    <input type="number" id="fundAmount" min="100" max="50000" 
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500"
-                                        placeholder="Enter amount">
+                                    <h2 class="text-lg font-medium text-white/80">Available Balance</h2>
+                                    <p class="text-3xl md:text-4xl font-bold text-white mt-2" id="walletBalance">
+                                        ₹<%= wallet.balance.toFixed(2) %>
+                                    </p>
                                 </div>
-                                <p class="text-sm text-gray-500">Min: ₹100, Max: ₹50,000</p>
                             </div>
-                            <div class="mt-6 flex justify-end gap-3">
-                                <button onclick="closeAddFundsModal()" 
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">
-                                    Cancel
-                                </button>
-                                <button onclick="addFunds()" 
-                                    class="px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-md">
-                                    Add Funds
-                                </button>
-                            </div>
+                        </div>
+
+                        <!-- Transaction History -->
+                        <div class="mt-8">
+                            <h3 class="text-xl font-bold text-white mb-6">Transaction History</h3>
+                            
+                            <% if (transactions.length === 0) { %>
+                                <div class="text-center py-12 glass-card rounded-xl">
+                                    <div class="text-white/40 mb-4">
+                                        <i class="fas fa-receipt text-4xl"></i>
+                                    </div>
+                                    <h3 class="text-lg font-medium text-white mb-2">No transactions yet</h3>
+                                    <p class="text-white/60">Your transaction history will appear here</p>
+                                </div>
+                            <% } else { %>
+                                <div class="space-y-4">
+                                    <% transactions.forEach(transaction => { %>
+                                        <div class="glass-card rounded-xl p-4 hover:bg-white/25 transition-all">
+                                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                                <div class="flex items-start gap-4">
+                                                    <div class="rounded-full p-3 <%= transaction.type === 'credit' ? 'bg-green-500/20' : 'bg-red-500/20' %>">
+                                                        <i class="fas <%= transaction.type === 'credit' ? 'fa-arrow-down text-green-400' : 'fa-arrow-up text-red-400' %>"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-medium text-white"><%= transaction.description %></p>
+                                                        <p class="text-sm text-white/60">
+                                                            <%= new Date(transaction.date).toLocaleDateString('en-US', {
+                                                                year: 'numeric',
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            }) %>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <p class="font-bold <%= transaction.type === 'credit' ? 'text-green-400' : 'text-red-400' %>">
+                                                    <%= transaction.type === 'credit' ? '+' : '-' %>₹<%= transaction.amount.toFixed(2) %>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    <% }); %>
+                                </div>
+                            <% } %>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Transaction History -->
-            <div class="mt-8">
-                <h3 class="text-xl font-bold text-gray-800 mb-6">Transaction History</h3>
-                
-                <% if (transactions.length === 0) { %>
-                    <div class="text-center py-12 bg-gray-50 rounded-xl">
-                        <div class="text-gray-400 mb-4">
-                            <i class="fas fa-receipt text-4xl"></i>
-                        </div>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">No transactions yet</h3>
-                        <p class="text-gray-600">Your transaction history will appear here</p>
+    <!-- Add Funds Modal -->
+    <div id="addFundsModal" class="fixed inset-0 bg-black/50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="glass-card rounded-xl w-full max-w-md p-6">
+                <div class="flex justify-between items-center mb-6 pb-3 border-b border-white/20">
+                    <h3 class="text-xl font-bold text-white">Add Funds to Wallet</h3>
+                    <button onclick="closeAddFundsModal()" 
+                            class="text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition-all">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-white/80 mb-2">Amount (₹)</label>
+                        <input type="number" id="fundAmount" min="100" max="50000" 
+                               class="input-style w-full px-4 py-3 rounded-xl"
+                               placeholder="Enter amount">
                     </div>
-                <% } else { %>
-                    <div class="max-h-[500px] overflow-y-auto space-y-4 pr-2 
-                        scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                        <% transactions.forEach(transaction => { %>
-                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 
-                                border rounded-xl hover:shadow-md transition-all duration-300 bg-gray-50 hover:bg-white gap-3">
-                                <div class="flex items-start gap-4">
-                                    <div class="rounded-full p-3 <%= transaction.type === 'credit' ? 'bg-green-100' : 'bg-red-100' %>">
-                                        <i class="fas <%= transaction.type === 'credit' ? 'fa-arrow-down text-green-600' : 'fa-arrow-up text-red-600' %>"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-medium text-gray-900"><%= transaction.description %></p>
-                                        <p class="text-sm text-gray-500">
-                                            <%= new Date(transaction.date).toLocaleDateString('en-US', {
-                                                year: 'numeric',
-                                                month: 'short',
-                                                day: 'numeric',
-                                                hour: '2-digit',
-                                                minute: '2-digit'
-                                            }) %>
-                                        </p>
-                                    </div>
-                                </div>
-                                <p class="font-bold <%= transaction.type === 'credit' ? 'text-green-600' : 'text-red-600' %>">
-                                    <%= transaction.type === 'credit' ? '+' : '-' %>₹<%= transaction.amount.toFixed(2) %>
-                                </p>
-                            </div>
-                        <% }); %>
-                    </div>
-                <% } %>
+                    <p class="text-sm text-white/60">Min: ₹100, Max: ₹50,000</p>
+                </div>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button onclick="closeAddFundsModal()" 
+                            class="px-4 py-2 text-sm font-medium text-white/90 hover:bg-white/10 rounded-lg transition-all">
+                        Cancel
+                    </button>
+                    <button onclick="addFunds()" 
+                            class="px-4 py-2 text-sm font-medium text-black bg-white hover:bg-opacity-90 rounded-lg transition-all">
+                        Add Funds
+                    </button>
+                </div>
             </div>
-        </section>
-    </main>
-
-    <%- include("../partials/footer") %>
+        </div>
+    </div>
 
     <script>
         function showAddFundsModal() {

@@ -3,179 +3,233 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Virtue Rider - Personal Information</title>
+    <title>Virtue Rider - Profile</title>
     <link rel="stylesheet" href="tailwindcss/output.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+    <style>
+        .main-wrapper {
+            background-image: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 100%), url('/images/6331994.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .input-style {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .input-style:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .input-style::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .sidebar-link {
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-right: 3px solid white;
+        }
+
+        .sidebar-link:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <!-- nav -->
+<body>
     <%- include("../partials/nav") %>
-    <div class="h-10"></div>
 
-    <!-- Main Content -->
-    <main class="container mx-auto flex flex-col md:flex-row py-6 md:py-10 px-4 md:px-6 gap-6">
-        <!-- Sidebar -->
-        <%- include("../partials/profileSidebar") %>
-
-        <!-- Personal Information Form -->
-        <section class="w-full md:w-3/4 bg-white p-4 md:p-6 rounded-lg shadow-md">
-            <div class="md:hidden mb-8">
-                <h1 class="text-2xl font-bold text-gray-900">Personal Information</h1>
-                <p class="mt-1 text-sm text-gray-500">Update your personal details</p>
-            </div>
-            <div class="hidden md:block mb-8">
-                <h1 class="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Personal Information</h1>
-                <p class="mt-2 text-gray-600">Manage and update your profile details</p>
-            </div>
-
-            <form id="profileForm" class="space-y-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- First Name -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700" for="firstname">First Name</label>
-                        <div class="relative group">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <i class="fas fa-user text-gray-400 group-hover:text-gray-500 transition-colors"></i>
+    <div class="main-wrapper pt-20">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row gap-6 py-8">
+                <!-- Sidebar -->
+                <div class="md:w-1/4">
+                    <div class="glass-card rounded-xl p-6 sticky top-24">
+                        <!-- Profile Summary -->
+                        <div class="text-center mb-6">
+                            <div class="w-24 h-24 mx-auto bg-white/10 rounded-full flex items-center justify-center border-2 border-white/30 mb-4">
+                                <i class="fas fa-user text-3xl text-white/90"></i>
                             </div>
-                            <input
-                                class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                                id="firstname"
-                                name="firstname"
-                                type="text"
-                                placeholder="Enter your first name"
-                                value="<%= user.firstname %>"
-                                aria-label="First Name"
-                            />
+                            <h2 class="text-xl font-bold text-white"><%= user.firstname %> <%= user.lastname %></h2>
+                            <p class="text-white/70 text-sm">Member since <%= new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) %></p>
                         </div>
-                    </div>
 
-                    <!-- Last Name -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700" for="lastname">Last Name</label>
-                        <div class="relative group">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <i class="fas fa-user text-gray-400 group-hover:text-gray-500 transition-colors"></i>
-                            </div>
-                            <input
-                                class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-300 bg-gray-50 hover:bg-white"
-                                id="lastname"
-                                name="lastname"
-                                type="text"
-                                placeholder="Enter your last name"
-                                value="<%= user.lastname %>"
-                                aria-label="Last Name"
-                            />
-                        </div>
-                    </div>
-
-                    <!-- Email Address -->
-                    <div class="space-y-2 md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700" for="email">Email Address</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <i class="fas fa-envelope text-gray-400"></i>
-                            </div>
-                            <input
-                                class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed"
-                                id="email"
-                                type="email"
-                                name="email"
-                                value="<%= user.email %>"
-                                readonly
-                                disabled
-                                aria-label="Email Address"
-                            />
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2 flex items-center gap-2">
-                            <i class="fas fa-info-circle"></i>
-                            Email address cannot be changed
-                        </p>
-                    </div>
-
-                    <!-- Referral Code -->
-                    <div class="space-y-2 md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700" for="referralCode">Your Referral Code</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <i class="fas fa-gift text-gray-400"></i>
-                            </div>
-                            <input
-                                class="w-full pl-11 pr-20 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700"
-                                id="referralCode"
-                                type="text"
-                                value="<%= user.referralCode %>"
-                                readonly
-                                aria-label="Referral Code"
-                            />
-                            <button 
-                                type="button"
-                                onclick="copyReferralCode()"
-                                class="absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors text-sm"
-                            >
-                                Copy
-                            </button>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2 flex items-center gap-2">
-                            <i class="fas fa-info-circle"></i>
-                            Share this code with friends to earn rewards
-                        </p>
+                        <!-- Navigation Links -->
+                        <nav class="space-y-2">
+                            <a href="/profile" class="sidebar-link active flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-user-circle"></i>
+                                <span>Personal Info</span>
+                            </a>
+                            <a href="/orders" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-shopping-bag"></i>
+                                <span>My Orders</span>
+                            </a>
+                            <a href="/address" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>Addresses</span>
+                            </a>
+                            <a href="/wallet" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-wallet"></i>
+                                <span>Wallet</span>
+                            </a>
+                            <a href="/coupons" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-ticket-alt"></i>
+                                <span>My Coupons</span>
+                            </a>
+                            <a href="/wishlist" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-heart"></i>
+                                <span>Wishlist</span>
+                            </a>
+                            <hr class="border-white/20 my-3">
+                            <a href="/logout" class="sidebar-link flex items-center gap-3 text-white/90 px-4 py-2.5 rounded-lg hover:bg-red-500/20">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Logout</span>
+                            </a>
+                        </nav>
                     </div>
                 </div>
 
-                <!-- Submit Button -->
-                <div class="flex justify-center sm:justify-end pt-4">
-                    <button
-                        class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-xl hover:from-gray-800 hover:to-gray-700 focus:ring-2 focus:ring-offset-2 focus:ring-black transition-all duration-300 flex items-center justify-center sm:justify-start gap-3 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                        type="submit"
-                    >
-                        <span>Update Profile</span>
-                        <i class="fas fa-arrow-right text-sm"></i>
-                    </button>
-                </div>
-            </form>
-        </section>
-
-        <!-- Referral Statistics -->
-        <section class="mt-8 bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Referral Statistics</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Referral Stats -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-medium text-gray-700 mb-3">Your Impact</h3>
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-500">Total Referrals</p>
-                            <p class="text-2xl font-bold text-gray-900"><%= referralStats.totalReferred %></p>
-                        </div>
-                        <div class="h-12 w-12 bg-orange-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-users text-orange-600 text-xl"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Referred By -->
-                <% if (user.referredBy) { %>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h3 class="text-lg font-medium text-gray-700 mb-3">Referred By</h3>
-                        <div class="flex items-center gap-3">
-                            <div class="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                                <i class="fas fa-user text-gray-600"></i>
+                <!-- Main Content -->
+                <div class="md:w-3/4">
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        <!-- Orders -->
+                        <div class="glass-card rounded-xl p-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-shopping-bag text-white/90"></i>
+                                </div>
+                                <div>
+                                    <p class="text-white/70">Total Orders</p>
+                                    <p class="text-2xl font-bold text-white">24</p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="font-medium text-gray-900">
-                                    <%= user.referredBy.firstname %> <%= user.referredBy.lastname %>
-                                </p>
-                                <p class="text-sm text-gray-500"><%= user.referredBy.email %></p>
+                        </div>
+
+                        <!-- Wishlist -->
+                        <div class="glass-card rounded-xl p-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-heart text-white/90"></i>
+                                </div>
+                                <div>
+                                    <p class="text-white/70">Wishlist</p>
+                                    <p class="text-2xl font-bold text-white">12</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Points -->
+                        <div class="glass-card rounded-xl p-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-gift text-white/90"></i>
+                                </div>
+                                <div>
+                                    <p class="text-white/70">Points</p>
+                                    <p class="text-2xl font-bold text-white"><%= referralStats.totalReferred * 100 %></p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                <% } %>
+
+                    <!-- Profile Form -->
+                    <div class="glass-card rounded-xl p-8">
+                        <h2 class="text-2xl font-bold text-white mb-8">Personal Information</h2>
+                        
+                        <form id="profileForm" class="space-y-6">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <!-- First Name -->
+                                <div>
+                                    <label class="block text-sm font-medium text-white/80 mb-2">First Name</label>
+                                    <div class="relative">
+                                        <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-white/70"></i>
+                                        <input type="text"
+                                               id="firstname"
+                                               name="firstname"
+                                               value="<%= user.firstname %>"
+                                               class="input-style w-full pl-10 pr-4 py-3 rounded-xl outline-none"
+                                               placeholder="Enter your first name">
+                                    </div>
+                                </div>
+
+                                <!-- Last Name -->
+                                <div>
+                                    <label class="block text-sm font-medium text-white/80 mb-2">Last Name</label>
+                                    <div class="relative">
+                                        <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-white/70"></i>
+                                        <input type="text"
+                                               id="lastname"
+                                               name="lastname"
+                                               value="<%= user.lastname %>"
+                                               class="input-style w-full pl-10 pr-4 py-3 rounded-xl outline-none"
+                                               placeholder="Enter your last name">
+                                    </div>
+                                </div>
+
+                                <!-- Email -->
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-medium text-white/80 mb-2">Email Address</label>
+                                    <div class="relative">
+                                        <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-white/70"></i>
+                                        <input type="email"
+                                               value="<%= user.email %>"
+                                               class="input-style w-full pl-10 pr-4 py-3 rounded-xl outline-none opacity-70"
+                                               disabled>
+                                    </div>
+                                    <p class="mt-2 text-sm text-white/60">Email cannot be changed</p>
+                                </div>
+
+                                <!-- Referral Code -->
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-medium text-white/80 mb-2">Referral Code</label>
+                                    <div class="relative">
+                                        <i class="fas fa-gift absolute left-3 top-1/2 -translate-y-1/2 text-white/70"></i>
+                                        <input type="text"
+                                               id="referralCode"
+                                               value="<%= user.referralCode %>"
+                                               class="input-style w-full pl-10 pr-24 py-3 rounded-xl outline-none"
+                                               readonly>
+                                        <button type="button"
+                                                onclick="copyReferralCode()"
+                                                class="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-white text-black text-sm rounded-lg hover:bg-opacity-90 transition-colors">
+                                            Copy
+                                        </button>
+                                    </div>
+                                    <p class="mt-2 text-sm text-white/60">Share this code with friends to earn rewards</p>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="flex justify-end pt-8">
+                                <button type="submit"
+                                        class="px-8 py-3 bg-white text-black rounded-lg hover:bg-opacity-90 
+                                               transition-colors flex items-center gap-2 text-sm font-medium">
+                                    <span>Update Profile</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
-        </section>
-    </main>
+        </div>
+    </div>
 
-    <!-- Footer -->
     <%- include("../partials/footer") %>
 
     <!-- Modal Backdrop -->
