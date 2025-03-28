@@ -251,7 +251,7 @@ const userCheckoutController = {
 
     placeOrder: async (req, res) => {
         try {
-            const { addressId, paymentMethod, couponCode, finalAmount , subtotal } = req.body;
+            const { addressId, paymentMethod, couponCode, finalAmount, subtotal } = req.body;
             console.log("subtotal",subtotal)
             console.log("finalAmount",finalAmount)
             // console.log('Coupon code', couponCode)
@@ -427,17 +427,18 @@ const userCheckoutController = {
                 { $set: { items: [], totalAmount: 0 } }
             );
 
-            return res.status(200).json({
+            return res.json({
                 success: true,
                 message: 'Order placed successfully',
-                orderId: order.orderCode
+                orderId: order.orderCode,
+                redirectUrl: '/orders'
             });
 
         } catch (error) {
             console.error('Place order error:', error);
             return res.status(500).json({
                 success: false,
-                message: error.message || 'Error placing order'
+                message: 'Failed to place order'
             });
         }
     },
@@ -878,14 +879,15 @@ const userCheckoutController = {
             res.json({
                 success: true,
                 message: 'Order placed successfully',
-                orderId: order.orderCode
+                orderId: order.orderCode,
+                redirectUrl: '/orders'
             });
             
         } catch (error) {
             console.error('Wallet payment error:', error);
             res.status(500).json({
                 success: false,
-                message: error.message || 'Failed to process payment'
+                message: 'Failed to process wallet payment'
             });
         }
     }

@@ -7,207 +7,190 @@
     <title>My Wishlist - Virtue Rider</title>
     <link rel="stylesheet" href="/tailwindcss/output.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+    <style>
+        .main-wrapper {
+            background-image: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 100%), url('/images/aa.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .sidebar-link {
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-right: 3px solid white;
+        }
+
+        .sidebar-link:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
 </head>
 
-<body class="bg-gray-100">
+<body>
     <%- include("../partials/nav") %>
 
-    <div class="container mx-auto px-2 md:px-4 py-4 md:py-8 mt-20 md:mt-28">
-        <!-- Mobile Header -->
-        <div class="md:hidden sticky top-14 bg-white z-20 px-3 py-3 -mx-2 border-b border-gray-100">
-            <h1 class="text-lg font-bold text-gray-800">
-                Wishlist (<span id="wishlist-count"><%= wishlist.length %></span>)
-            </h1>
-        </div>
-
-        <!-- Desktop Header -->
-        <h1 class="hidden md:block text-2xl font-bold text-gray-800 mb-6">
-            My Wishlist (<span id="wishlist-count"><%= wishlist.length %></span> items)
-        </h1>
-
-        <% if (wishlist.length === 0) { %>
-            <div class="bg-white rounded-2xl shadow-lg p-8 text-center">
-                <div class="text-gray-500 mb-4">
-                    <i class="fas fa-heart text-4xl"></i>
-                </div>
-                <h2 class="text-xl font-semibold text-gray-800 mb-2">Your wishlist is empty</h2>
-                <p class="text-gray-600 mb-6">Start adding items you love to your wishlist</p>
-                <a href="/shop" class="inline-block bg-black text-white px-6 py-3 rounded-xl hover:bg-gray-800 transition-colors">
-                    Continue Shopping
-                </a>
-            </div>
-        <% } else { %>
-            <div id="wishlist-grid" 
-     class="md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-4 space-y-2 md:space-y-0">
-    <% wishlist.forEach((item, index) => { %>
-        <% if (item.productId) { %> <!-- Ensure product exists -->
-            <div class="bg-white overflow-hidden relative flex flex-col h-full <%= index >= 4 ? 'hidden' : '' %>" 
-                 id="wishlist-item-<%= item.productId._id %>"
-                 data-index="<%= index %>">
-                
-                <!-- Mobile Layout -->
-                <div class="flex md:hidden p-3">
-                    <!-- Product Image -->
-                    <div class="w-[100px] h-[120px] flex-shrink-0 relative overflow-hidden rounded">
-                        <img src="<%= item.productId.images && item.productId.images.length > 0 ? item.productId.images[0] : '/default-image.jpg' %>" 
-                             alt="<%= item.productId.name %>"
-                             class="w-full h-full object-cover">
-                        <% if (!item.productId.isActive) { %>
-                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                <span class="text-white text-xs px-2 py-0.5 bg-black/75 rounded-full">
-                                    Unavailable
-                                </span>
+    <div class="main-wrapper pt-20">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row gap-6 py-8">
+                <!-- Sidebar -->
+                <div class="md:w-1/4">
+                    <div class="glass-card rounded-xl p-6 sticky top-24">
+                        <!-- Profile Summary -->
+                        <div class="text-center mb-6">
+                            <div class="w-24 h-24 mx-auto bg-white/10 rounded-full flex items-center justify-center border-2 border-white/30 mb-4">
+                                <i class="fas fa-user text-3xl text-white/90"></i>
                             </div>
+                            <h2 class="text-xl font-bold text-white"><%= user.firstname %> <%= user.lastname %></h2>
+                            <p class="text-white/70 text-sm">Member since <%= new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) %></p>
+                        </div>
+
+                        <!-- Navigation Links -->
+                        <nav class="space-y-2">
+                            <a href="/profile" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-user-circle"></i>
+                                <span>Personal Info</span>
+                            </a>
+                            <a href="/orders" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-shopping-bag"></i>
+                                <span>My Orders</span>
+                            </a>
+                            <a href="/address" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>Addresses</span>
+                            </a>
+                            <a href="/wallet" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-wallet"></i>
+                                <span>Wallet</span>
+                            </a>
+                            <a href="/coupons" class="sidebar-link flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-ticket-alt"></i>
+                                <span>My Coupons</span>
+                            </a>
+                            <a href="/wishlist" class="sidebar-link active flex items-center gap-3 text-white px-4 py-2.5 rounded-lg">
+                                <i class="fas fa-heart"></i>
+                                <span>Wishlist</span>
+                            </a>
+                            <hr class="border-white/20 my-3">
+                            <a href="/logout" class="sidebar-link flex items-center gap-3 text-white/90 px-4 py-2.5 rounded-lg hover:bg-red-500/20">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Logout</span>
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="md:w-3/4">
+                    <div class="glass-card rounded-xl p-8">
+                        <div class="flex justify-between items-center mb-8">
+                            <div>
+                                <h2 class="text-2xl font-bold text-white">My Wishlist</h2>
+                                <p class="text-white/70 mt-1">(<span id="wishlist-count"><%= wishlist.length %></span> items)</p>
+                            </div>
+                        </div>
+
+                        <% if (wishlist.length === 0) { %>
+                            <div class="text-center py-12">
+                                <div class="text-white/40 mb-4">
+                                    <i class="fas fa-heart text-4xl"></i>
+                                </div>
+                                <h3 class="text-lg font-medium text-white mb-2">Your wishlist is empty</h3>
+                                <p class="text-white/60 mb-6">Start adding items you love to your wishlist</p>
+                                <a href="/shop" class="inline-block bg-white text-black px-6 py-3 rounded-lg hover:bg-opacity-90 transition-colors">
+                                    Continue Shopping
+                                </a>
+                            </div>
+                        <% } else { %>
+                            <div id="wishlist-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <% wishlist.forEach((item, index) => { %>
+                                    <% if (item.productId) { %>
+                                        <div class="glass-card rounded-xl overflow-hidden relative flex flex-col <%= index >= 4 ? 'hidden' : '' %>"
+                                             id="wishlist-item-<%= item.productId._id %>"
+                                             data-index="<%= index %>">
+                                            
+                                            <div class="relative aspect-[4/5] overflow-hidden">
+                                                <img src="<%= item.productId.images[0] || '/default-image.jpg' %>"
+                                                     alt="<%= item.productId.name %>"
+                                                     class="w-full h-full object-cover">
+                                                <% if (!item.productId.isActive) { %>
+                                                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                                        <span class="text-white text-xs px-2 py-0.5 bg-black/75 rounded-full">
+                                                            Unavailable
+                                                        </span>
+                                                    </div>
+                                                <% } %>
+                                            </div>
+
+                                            <div class="p-4">
+                                                <h3 class="text-white font-medium mb-2 line-clamp-2">
+                                                    <%= item.productId.name %>
+                                                </h3>
+                                                
+                                                <!-- Price Section -->
+                                                <div class="flex items-baseline gap-2 mb-4">
+                                                    <% if (item.productId.offer) { %>
+                                                        <span class="text-lg font-bold text-white">₹<%= item.productId.offer.discountedPrice.toFixed(2) %></span>
+                                                        <span class="text-sm text-white/60 line-through">₹<%= item.productId.price %></span>
+                                                        <span class="text-xs font-medium text-green-400">
+                                                            <%= item.productId.offer.discountAmount %><%= item.productId.offer.discountType === 'percentage' ? '%' : '₹' %> off
+                                                        </span>
+                                                    <% } else { %>
+                                                        <span class="text-lg font-bold text-white">₹<%= item.productId.price %></span>
+                                                    <% } %>
+                                                </div>
+
+                                                <!-- Action Buttons -->
+                                                <div class="flex gap-2">
+                                                    <% if (!item.productId.categoryId || !item.productId.isActive) { %>
+                                                        <button disabled class="flex-1 bg-white/20 text-white/60 px-4 py-2 rounded-lg cursor-not-allowed">
+                                                            Unavailable
+                                                        </button>
+                                                    <% } else if (item.productId.variants && item.productId.variants.length > 0 && item.productId.variants.some(v => v.stock > 0)) { %>
+                                                        <button onclick="addToCart('<%= item.productId._id %>', '<%= item.productId.variants[0]._id %>')"
+                                                                class="flex-1 bg-white text-black px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors">
+                                                            Add to Cart
+                                                        </button>
+                                                    <% } else { %>
+                                                        <button disabled class="flex-1 bg-white/20 text-white/60 px-4 py-2 rounded-lg cursor-not-allowed">
+                                                            Out of Stock
+                                                        </button>
+                                                    <% } %>
+                                                    <button onclick="removeFromWishlist('<%= item.productId._id %>')"
+                                                            class="p-2 text-white hover:text-red-400 transition-colors">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <% } %>
+                                <% }); %>
+                            </div>
+
+                            <!-- Load More Button -->
+                            <% if (wishlist.length > 4) { %>
+                                <div class="text-center mt-6">
+                                    <button id="load-more" 
+                                            class="bg-white text-black px-6 py-2.5 rounded-lg hover:bg-opacity-90 transition-colors">
+                                        Show More Items
+                                    </button>
+                                </div>
+                            <% } %>
                         <% } %>
                     </div>
-
-                    <!-- Mobile Content -->
-                    <div class="pl-3 flex flex-col justify-between flex-grow">
-                        <div>
-                            <h3 class="text-sm text-gray-800 mb-1 line-clamp-2">
-                                <%= item.productId.name %>
-                            </h3>
-                            <p class="text-base font-semibold text-gray-900">₹<%= item.productId.price  %></p>
-                        </div>
-
-                        <!-- Mobile Actions -->
-                        <div class="flex gap-2 mt-2">
-                            <% if (!item.productId.categoryId || !item.productId.isActive) { %>
-                                <button disabled 
-                                        class="flex-1 bg-gray-300 text-gray-600 px-3 py-1.5 rounded text-xs">
-                                    Unavailable
-                                </button>
-                            <% } else if (item.productId.variants && item.productId.variants.length > 0 && item.productId.variants.some(v => v.stock > 0)) { %>
-                                <button onclick="addToCart('<%= item.productId._id %>', '<%= item.productId.variants[0]._id %>')"
-                                        class="flex-1 bg-black text-white px-3 py-1.5 rounded text-xs">
-                                    Add to Cart
-                                </button>
-                            <% } else { %>
-                                <button disabled 
-                                        class="flex-1 bg-gray-300 text-gray-600 px-3 py-1.5 rounded text-xs">
-                                    Out of Stock
-                                </button>
-                            <% } %>
-                            <button onclick="removeFromWishlist('<%= item.productId._id %>')"
-                                    class="p-2 text-red-500 hover:text-red-600">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Desktop Layout -->
-                <div class="hidden md:block">
-                    <% if (item.productId.categoryId && item.productId.isActive) { %>
-                        <a href="/product/<%= item.productId._id %>" class="block flex-grow">
-                    <% } else { %>
-                        <div class="relative cursor-not-allowed">
-                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
-                                <span class="text-white text-xs px-2 py-0.5 bg-black/75 rounded-full">
-                                    Unavailable
-                                </span>
-                            </div>
-                            <div class="opacity-50">
-                    <% } %>
-                        <div class="relative aspect-[4/5] overflow-hidden">
-                            <img 
-                                src="<%= item.productId.images && item.productId.images.length > 0 ? item.productId.images[0] : '/default-image.jpg' %>" 
-                                alt="<%= item.productId.name %>"
-                                class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                            >
-                            <% if (!item.productId.isActive) { %>
-                                <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                                    <span class="text-white text-xs font-medium px-2 py-0.5 rounded-full bg-black bg-opacity-75">
-                                        Unavailable
-                                    </span>
-                                </div>
-                            <% } %>
-                        </div>
-                        
-                        <div class="p-2">
-                            <!-- Inside the product card, update the price section -->
-                            <div class="p-4">
-                                <h3 class="text-gray-800 text-sm font-medium truncate">
-                                    <%= item.productId.name %>
-                                </h3>
-                            
-                                <!-- Price and Offer -->
-                                <div class="flex items-baseline gap-2 mt-1">
-                                    <% if (item.productId.offer) { %>
-                                        <span class="text-base font-bold text-gray-900">₹<%= item.productId.offer.discountedPrice.toFixed(2) %></span>
-                                        <span class="text-sm text-gray-500 line-through">₹<%= item.productId.price %></span>
-                                        <span class="text-xs font-medium text-green-600">
-                                            <%= item.productId.offer.discountAmount %><%= item.productId.offer.discountType === 'percentage' ? '%' : '₹' %> off
-                                        </span>
-                                    <% } else { %>
-                                        <span class="text-base font-bold text-gray-900">₹<%= item.productId.price %></span>
-                                    <% } %>
-                                </div>
-                            
-                                <!-- Add offer badge if exists -->
-                                <% if (item.productId.offer) { %>
-                                    <div class="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                                        <%= item.productId.offer.name %>
-                                    </div>
-                                <% } %>
-                            </div>
-                        </div>
-                    <% if (item.productId.categoryId && item.productId.isActive) { %>
-                        </a>
-                    <% } else { %>
-                        </div>
-                    <% } %>
-                    
-                    <div class="p-2 bg-white border-t mt-auto">
-                        <div class="flex items-center gap-1">
-                            <% if (!item.productId.categoryId || !item.productId.isActive) { %>
-                                <button 
-                                    class="bg-gray-300 text-gray-600 px-3 py-1.5 rounded text-xs font-medium cursor-not-allowed flex-1"
-                                    disabled
-                                >
-                                    Unavailable
-                                </button>
-                            <% } else if (item.productId.variants && item.productId.variants.length > 0 && item.productId.variants.some(v => v.stock > 0)) { %>
-                                <button 
-                                    onclick="addToCart('<%= item.productId._id %>', '<%= item.productId.variants[0]._id %>')"
-                                    class="bg-black text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-gray-800 transition-colors flex-1"
-                                >
-                                    Add to Cart
-                                </button>
-                            <% } else { %>
-                                <button 
-                                    class="bg-gray-300 text-gray-600 px-3 py-1.5 rounded text-xs font-medium cursor-not-allowed flex-1"
-                                    disabled
-                                >
-                                    Out of Stock
-                                </button>
-                            <% } %>
-                        </div>
-                    </div>
-
-                    <button 
-                        onclick="removeFromWishlist('<%= item.productId._id %>')"
-                        class="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-sm hover:bg-red-50 transition-colors"
-                    >
-                        <i class="fas fa-heart text-red-500 text-sm"></i>
-                    </button>
                 </div>
             </div>
-        <% } %> <!-- Ensure product exists -->
-    <% }); %>
-</div>
-
-
-            <!-- Load More Button -->
-            <% if (wishlist.length > 4) { %>
-                <div class="text-center mt-6">
-                    <button id="load-more" 
-                            class="bg-white text-gray-800 px-6 py-2 rounded-lg shadow-sm hover:bg-gray-50 transition-colors border border-gray-200">
-                        Show More Items 
-                    </button>
-                </div>
-            <% } %>
-        <% } %>
+        </div>
     </div>
 
     <%- include('../partials/footer') %>
