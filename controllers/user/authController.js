@@ -470,3 +470,78 @@ export const changePassword = async (req, res) => {
         });
     }
 };
+
+export const verifyReferralCode = async (req, res) => {
+    try {
+        const { referralCode, email } = req.body;
+        
+        if (!referralCode || !email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required fields'
+            });
+        }
+
+        console.log('Verifying referral code:', { referralCode, email });
+
+        // Find the user who owns this referral code
+        const referrer = await User.findOne({ referralCode: referralCode });
+        if (!referrer) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid referral code'
+            });
+        }
+
+        // Find the current user
+        const currentUser = await User.findOne({ email: email });
+        if (!currentUser) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please complete signup first'
+            });
+        }
+
+        // Prevent self-referral
+        if (currentUser.email === referrer.email) {
+            return res.status(400).json({
+                success: false,
+                message: 'You cannot use your own referral code'
+            });
+        }
+
+        // Check if already used
+        if (currentUser.usedReferralCode) {
+            return res.status(400).json({
+                success: false,
+                message: 'You have already used a referral code'
+            });
+        }
+
+        // Update both users
+        await User.findByIdAndUpdate(currentUser._id, {
+            $set: {
+                usedReferralCode: referralCode,
+                wallet: (currentUser.wallet || 0) + 50
+            }
+        });
+
+        await User.findByIdAndUpdate(referrer._id, {
+            $set: {
+                wallet: (referrer.wallet || 0) + 50
+            }
+        });
+
+        res.json({
+            success: true,
+            message: 'Referral code applied successfully! ₹50 has been added to your wallet.'
+        });
+
+    } catch (error) {
+        console.error('Referral verification error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error verifying referral code'
+        });
+    }
+};

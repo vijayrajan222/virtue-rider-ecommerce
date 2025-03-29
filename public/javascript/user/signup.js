@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const passwordToggles = document.querySelectorAll('.fa-eye');
     const loadingSpinner = document.getElementById('loading-spinner');
     const otpModal = document.getElementById('otpModal');
+    const referralModal = document.getElementById('referralModal');
     const generalError = document.getElementById('generalError');
     const resendOtpButton = document.getElementById('resendOtp');
     const resendTimer = document.getElementById('resendTimer');
@@ -129,25 +130,35 @@ document.addEventListener('DOMContentLoaded', function () {
     // Form submission
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
-        clearErrors();
+        
+        // Clear previous errors
+        const generalError = document.getElementById('generalError');
+        generalError.classList.add('hidden');
+        generalError.textContent = '';
 
-        const firstName = document.getElementById('firstName')?.value.trim();
-        const lastName = document.getElementById('lastName')?.value.trim();
-        const email = document.getElementById('email')?.value.trim();
-        const password = document.getElementById('password')?.value;
-        const confirmPassword = document.getElementById('confirmPassword')?.value;
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
 
+        // Basic validation
         if (!firstName || !lastName || !email || !password || !confirmPassword) {
-            showError('generalError', 'All fields are required');
+            generalError.textContent = 'All fields are required';
+            generalError.classList.remove('hidden');
             return;
         }
 
+        // Password match validation
         if (password !== confirmPassword) {
-            showError('generalError', 'Passwords do not match');
+            generalError.textContent = 'Passwords do not match';
+            generalError.classList.remove('hidden');
             return;
         }
 
         try {
+            // Show loading spinner
+            const loadingSpinner = document.getElementById('loading-spinner');
             if (loadingSpinner) loadingSpinner.classList.remove('hidden');
 
             const response = await fetch('/signup', {
@@ -164,23 +175,33 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             const data = await response.json();
+            
+            // Hide loading spinner
             if (loadingSpinner) loadingSpinner.classList.add('hidden');
 
             if (data.success) {
+                // Store email for OTP verification
                 userEmail = email;
+                localStorage.setItem('userEmail', userEmail);
+                
+                // Hide form and show OTP modal
                 form.classList.add('hidden');
+                const otpModal = document.getElementById('otpModal');
                 if (otpModal) {
                     otpModal.classList.remove('hidden');
                     setupOTPInputs();
                     startResendTimer();
                 }
             } else {
-                showError('generalError', data.message || 'Something went wrong!');
+                // Show error message
+                generalError.textContent = data.message || 'Something went wrong!';
+                generalError.classList.remove('hidden');
             }
         } catch (error) {
             console.error('Signup error:', error);
             if (loadingSpinner) loadingSpinner.classList.add('hidden');
-            showError('generalError', 'Something went wrong!');
+            generalError.textContent = 'Something went wrong! Please try again.';
+            generalError.classList.remove('hidden');
         }
     });
 
@@ -276,16 +297,22 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Verify OTP handler
+    // OTP Verification Handler
     const verifyOtpButton = document.getElementById('verifyOtp');
     if (verifyOtpButton) {
         verifyOtpButton.addEventListener('click', async function(e) {
             e.preventDefault();
+            console.log('Verifying OTP...'); // Debug log
+
             const otpInputs = document.querySelectorAll('.otp-input');
             const otp = Array.from(otpInputs).map(input => input.value).join('');
             
             if (otp.length !== 6) {
-                showMessage('otpError', 'Please enter a valid 6-digit OTP');
+                const otpError = document.getElementById('otpError');
+                if (otpError) {
+                    otpError.textContent = 'Please enter a valid 6-digit OTP';
+                    otpError.classList.remove('hidden');
+                }
                 return;
             }
 
@@ -302,16 +329,109 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
 
                 const data = await response.json();
+                console.log('OTP verification response:', data); // Debug log
 
                 if (data.success) {
-                    window.location.href = data.redirectUrl;
+                    // Store email for referral process
+                    localStorage.setItem('userEmail', userEmail);
+                    
+                    // Hide OTP modal
+                    if (otpModal) {
+                        otpModal.classList.add('hidden');
+                    }
+
+                    // Show referral modal
+                    if (referralModal) {
+                        console.log('Showing referral modal'); // Debug log
+                        referralModal.classList.remove('hidden');
+                    } else {
+                        console.error('Referral modal not found'); // Debug log
+                    }
                 } else {
-                    showMessage('otpError', data.message || 'Failed to verify OTP');
+                    const otpError = document.getElementById('otpError');
+                    if (otpError) {
+                        otpError.textContent = data.message || 'Invalid OTP';
+                        otpError.classList.remove('hidden');
+                    }
                 }
             } catch (error) {
                 console.error('OTP verification error:', error);
-                showMessage('otpError', 'Failed to verify OTP');
+                const otpError = document.getElementById('otpError');
+                if (otpError) {
+                    otpError.textContent = 'Something went wrong! Please try again.';
+                    otpError.classList.remove('hidden');
+                }
             }
+        });
+    }
+
+    // Referral Code Handlers
+    const applyReferralButton = document.getElementById('applyReferral');
+    const skipReferralButton = document.getElementById('skipReferral');
+
+    if (applyReferralButton) {
+        applyReferralButton.addEventListener('click', async function(e) {
+            e.preventDefault();
+            console.log('Apply referral clicked'); // Debug log
+
+            const referralCode = document.getElementById('referralCodeInput')?.value.trim().toUpperCase();
+            const referralError = document.getElementById('referralError');
+            const email = localStorage.getItem('userEmail');
+
+            if (!email) {
+                if (referralError) {
+                    referralError.textContent = 'Session expired. Please sign up again.';
+                    referralError.classList.remove('hidden');
+                }
+                return;
+            }
+
+            if (!referralCode) {
+                if (referralError) {
+                    referralError.textContent = 'Please enter a referral code';
+                    referralError.classList.remove('hidden');
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch('/verify-referral', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        referralCode,
+                        email 
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(data.message);
+                    window.location.href = '/login';
+                } else {
+                    if (referralError) {
+                        referralError.textContent = data.message || 'Invalid referral code';
+                        referralError.classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Referral error:', error);
+                if (referralError) {
+                    referralError.textContent = 'Something went wrong! Please try again.';
+                    referralError.classList.remove('hidden');
+                }
+            }
+        });
+    }
+
+    if (skipReferralButton) {
+        skipReferralButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Skip referral clicked'); // Debug log
+            window.location.href = '/login';
         });
     }
 

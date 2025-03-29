@@ -20,7 +20,8 @@ import {
     logout,
     getGoogleCallback,
     getChangePasswordPage,
-    changePassword
+    changePassword,
+    verifyReferralCode
 } from '../controllers/user/authController.js';
 
 import { getShop } from '../controllers/user/shopController.js';  
@@ -161,6 +162,7 @@ userRouter.post('/orders/:orderId/retry-payment',
     userOrderController.retryPayment
 );
 
+userRouter.post('/verify-referral', verifyReferralCode); 
 export default userRouter;
 
 
