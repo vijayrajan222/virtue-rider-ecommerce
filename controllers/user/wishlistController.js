@@ -1,11 +1,18 @@
 import Wishlist from '../../models/wishlistModel.js';
 import Product from '../../models/productModel.js';
 import Offer from '../../models/offerModel.js';
+import User from '../../models/userModel.js';
 
 export const getWishlist = async (req, res) => {
     try {
         const userId = req.session?.user;
         if (!userId) return res.redirect('/login');
+
+        // Fetch user details
+        const user = await User.findById(userId).select('firstname lastname createdAt');
+        if (!user) {
+            return res.redirect('/login');
+        }
 
         const wishlist = await Wishlist.findOne({ userId }).populate({
             path: 'items.productId',
@@ -78,7 +85,11 @@ export const getWishlist = async (req, res) => {
 
         res.render("user/wishlist", {
             wishlist: processedWishlistItems,
-            user: req.session.user
+            user: {
+                firstname: user.firstname,
+                lastname: user.lastname,
+                createdAt: user.createdAt
+            }
         });
 
     } catch (error) {

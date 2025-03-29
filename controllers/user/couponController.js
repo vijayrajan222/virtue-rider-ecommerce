@@ -1,9 +1,17 @@
 import Coupon from '../../models/couponModel.js';
+import User from '../../models/userModel.js';
 
 const userCouponController = {
     getCoupons: async (req, res) => {
         try {
             const userId = req.session.user;
+            if (!userId) return res.redirect('/login');
+
+            // Fetch user details
+            const user = await User.findById(userId).select('firstname lastname createdAt');
+            if (!user) {
+                return res.redirect('/login');
+            }
             
             // Fetch active coupons with proper conditions
             const coupons = await Coupon.find({
@@ -28,7 +36,11 @@ const userCouponController = {
 
             res.render('user/coupons', {
                 coupons: availableCoupons,
-                user: req.session.user,
+                user: {
+                    firstname: user.firstname,
+                    lastname: user.lastname,
+                    createdAt: user.createdAt  // This will be used for "Member since"
+                },
                 error: null
             });
 
@@ -36,7 +48,7 @@ const userCouponController = {
             console.error('Error fetching coupons:', error);
             res.render('user/coupons', {
                 coupons: [],
-                user: req.session.user,
+                user: null,
                 error: 'Failed to load coupons'
             });
         }
@@ -46,6 +58,13 @@ const userCouponController = {
         try {
             const { code } = req.body;
             const userId = req.session.user;
+
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'User not authenticated'
+                });
+            }
 
             const coupon = await Coupon.findOne({
                 code: code.toUpperCase(),
