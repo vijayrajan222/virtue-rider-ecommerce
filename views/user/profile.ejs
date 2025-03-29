@@ -106,42 +106,39 @@
                 <!-- Main Content -->
                 <div class="md:w-3/4">
                     <!-- Stats Grid -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                        <!-- Orders -->
-                        <div class="glass-card rounded-xl p-6">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
-                                    <i class="fas fa-shopping-bag text-white/90"></i>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <!-- Total Orders -->
+                        <div class="glass-card rounded-xl p-6 transform hover:scale-105 transition-all duration-300">
+                            <div class="flex items-center gap-5">
+                                <div class="w-14 h-14 bg-gradient-to-br from-white/20 to-white/5 rounded-xl flex items-center justify-center shadow-lg">
+                                    <i class="fas fa-shopping-bag text-2xl text-white/90"></i>
                                 </div>
-                                <div>
-                                    <p class="text-white/70">Total Orders</p>
-                                    <p class="text-2xl font-bold text-white">24</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Wishlist -->
-                        <div class="glass-card rounded-xl p-6">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
-                                    <i class="fas fa-heart text-white/90"></i>
-                                </div>
-                                <div>
-                                    <p class="text-white/70">Wishlist</p>
-                                    <p class="text-2xl font-bold text-white">12</p>
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-medium text-white/70 mb-1">Total Orders</h3>
+                                    <div class="flex items-end gap-2">
+                                        <p class="text-3xl font-bold text-white">24</p>
+                                        <span class="text-sm text-green-400 mb-1">
+                                            <i class="fas fa-arrow-up text-xs mr-1"></i>+12%
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Points -->
-                        <div class="glass-card rounded-xl p-6">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
-                                    <i class="fas fa-gift text-white/90"></i>
+                        <!-- Total Savings -->
+                        <div class="glass-card rounded-xl p-6 transform hover:scale-105 transition-all duration-300">
+                            <div class="flex items-center gap-5">
+                                <div class="w-14 h-14 bg-gradient-to-br from-white/20 to-white/5 rounded-xl flex items-center justify-center shadow-lg">
+                                    <i class="fas fa-piggy-bank text-2xl text-white/90"></i>
                                 </div>
-                                <div>
-                                    <p class="text-white/70">Points</p>
-                                    <p class="text-2xl font-bold text-white"><%= referralStats.totalReferred * 100 %></p>
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-medium text-white/70 mb-1">Total Savings</h3>
+                                    <div class="flex items-end gap-2">
+                                        <p class="text-3xl font-bold text-white">₹2,450</p>
+                                        <span class="text-sm text-green-400 mb-1">
+                                            <i class="fas fa-badge-percent text-xs mr-1"></i>Saved
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
