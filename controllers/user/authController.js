@@ -2,6 +2,7 @@ import User from "../../models/userModel.js";
 import bcrypt from 'bcryptjs';
 import { generateOTP, sendOTPEmail } from '../../utils/sendOTP.js'
 import passport from 'passport';
+import Wallet from "../../models/walletModel.js";
 
 
 
@@ -484,7 +485,7 @@ export const verifyReferralCode = async (req, res) => {
 
         console.log('Verifying referral code:', { referralCode, email });
 
-        // Find the user who owns this referral code
+        // Find the user who owns this referral code (referrer)
         const referrer = await User.findOne({ referralCode: referralCode });
         if (!referrer) {
             return res.status(400).json({
@@ -493,7 +494,7 @@ export const verifyReferralCode = async (req, res) => {
             });
         }
 
-        // Find the current user
+        // Find the current user (referee)
         const currentUser = await User.findOne({ email: email });
         if (!currentUser) {
             return res.status(400).json({
@@ -518,23 +519,52 @@ export const verifyReferralCode = async (req, res) => {
             });
         }
 
-        // Update both users
+        // Get or create wallet for current user (referee)
+        let refereeWallet = await Wallet.findOne({ userId: currentUser._id });
+        if (!refereeWallet) {
+            refereeWallet = new Wallet({
+                userId: currentUser._id,
+                balance: 0
+            });
+        }
+
+        // Get or create wallet for referrer
+        let referrerWallet = await Wallet.findOne({ userId: referrer._id });
+        if (!referrerWallet) {
+            referrerWallet = new Wallet({
+                userId: referrer._id,
+                balance: 0
+            });
+        }
+
+        // Update referee wallet (add ₹50)
+        refereeWallet.balance += 50;
+        refereeWallet.transactions.push({
+            amount: 50,
+            type: 'credit',
+            description: 'Referral bonus for using code'
+        });
+        await refereeWallet.save();
+
+        // Update referrer wallet (add ₹100)
+        referrerWallet.balance += 100;
+        referrerWallet.transactions.push({
+            amount: 100,
+            type: 'credit',
+            description: 'Referral bonus for code usage'
+        });
+        await referrerWallet.save();
+
+        // Update current user to mark referral code as used
         await User.findByIdAndUpdate(currentUser._id, {
             $set: {
-                usedReferralCode: referralCode,
-                wallet: (currentUser.wallet || 0) + 50
-            }
-        });
-
-        await User.findByIdAndUpdate(referrer._id, {
-            $set: {
-                wallet: (referrer.wallet || 0) + 50
+                usedReferralCode: referralCode
             }
         });
 
         res.json({
             success: true,
-            message: 'Referral code applied successfully! ₹50 has been added to your wallet.'
+            message: '₹50 has been added to your wallet! Thank you for using a referral code.'
         });
 
     } catch (error) {
