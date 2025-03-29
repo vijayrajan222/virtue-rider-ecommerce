@@ -13,7 +13,7 @@
     <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
     <style>
       .main-wrapper {
-        background-image: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.7) 100%), url('/images/wallet.jpg');
+        background-image: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 100%), url('/images/vere.jpg');
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
@@ -21,43 +21,40 @@
       }
 
       .glass-card {
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
       }
 
       .text-primary {
-        color: rgba(255, 255, 255, 1);
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        color: rgba(255, 255, 255, 0.95);
       }
 
       .text-secondary {
-        color: rgba(255, 255, 255, 0.9);
+        color: rgba(255, 255, 255, 0.7);
       }
 
       .text-muted {
-        color: rgba(255, 255, 255, 0.7);
+        color: rgba(255, 255, 255, 0.5);
       }
 
       .payment-option {
         transition: all 0.2s ease;
         background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
       }
 
       .payment-option:hover {
         background: rgba(255, 255, 255, 0.25);
-        transform: scale(1.01);
       }
 
       .payment-option input:checked + div {
         background: rgba(255, 255, 255, 0.3);
-        border: 2px solid rgba(255, 255, 255, 0.8);
-        box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.5);
       }
 
       .cart-item {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       }
 
       .cart-item:last-child {
@@ -65,25 +62,23 @@
       }
 
       .highlight {
-        color: #86efac;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        color: #4ade80;
       }
 
       .error {
-        color: #fca5a5;
+        color: #ef4444;
       }
 
       .btn-primary {
-        background: rgba(255, 255, 255, 0.95);
-        color: #000;
-        font-weight: 500;
-        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(255, 255, 255, 0.3);
       }
 
       .btn-primary:hover {
-        background: rgba(255, 255, 255, 1);
+        background: rgba(255, 255, 255, 0.25);
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       }
 
       .btn-secondary {
@@ -104,10 +99,27 @@
       }
 
       .section-title {
-        color: #fff;
-        font-size: 1.875rem;
-        font-weight: 700;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        color: rgba(255, 255, 255, 0.95);
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
       }
     </style>
   </head>
@@ -145,18 +157,18 @@
                       address._id %>" class="mt-1" <%= index === 0 ? 'checked' :
                       '' %> >
                       <div class="space-y-1">
-                        <p class="font-medium"><%= address.fullName %></p>
-                        <p class="text-sm text-gray-600">
+                        <p class="font-medium text-white"><%= address.fullName %></p>
+                        <p class="text-sm text-white">
                           <%= address.addressLine1 %>
                         </p>
-                        <p class="text-sm text-gray-600">
+                        <p class="text-sm text-white">
                           <%= address.addressLine2 %>
                         </p>
-                        <p class="text-sm text-gray-600">
+                        <p class="text-sm text-white">
                           <%= address.city %>, <%= address.state %> <%=
                           address.pincode %>
                         </p>
-                        <p class="text-sm text-gray-600">
+                        <p class="text-sm text-white">
                           Phone: <%= address.mobileNumber %>
                         </p>
                       </div>
@@ -199,8 +211,8 @@
                       id="codPayment"
                     />
                     <div class="flex flex-col">
-                      <span class="flex items-center gap-2">
-                        <i class="fas fa-money-bill"></i> Cash on Delivery
+                      <span class="flex items-center gap-2 ">
+                        <i class="fas fa-money-bill text-white"></i> Cash on Delivery
                         <span
                           id="codAvailability"
                           class="text-xs px-2 py-1 rounded hidden"
@@ -225,7 +237,7 @@
                     />
                     <div class="flex flex-col">
                       <span class="flex items-center gap-2">
-                        <i class="fas fa-wallet text-gray-600"></i> Wallet
+                        <i class="fas fa-wallet text-white"></i> Wallet
                         <span class="text-sm font-medium ml-1" id="walletBalance">
                           Balance: ₹<%= wallet ? wallet.balance.toFixed(2) : '0.00' %>
                         </span>
@@ -252,7 +264,7 @@
                     />
                     <div class="flex flex-col">
                       <span class="flex items-center gap-2">
-                        <i class="fas fa-credit-card"></i> Online Payment
+                        <i class="fas fa-credit-card text-white"></i> Online Payment
                       </span>
                       <span class="text-sm text-gray-500">
                         Pay securely with Razorpay
@@ -272,14 +284,14 @@
               <!-- Items Summary -->
               <div class="space-y-4 max-h-[40vh] overflow-y-auto mb-6 pr-2">
                 <% cartItems.forEach(item => { %>
-                <div class="flex gap-4 p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                <div class="flex gap-4 p-2 hover:bg-red-300 rounded-lg transition-colors">
                   <img
                     src="<%= item.product.imageUrl %>"
                     alt="<%= item.product.name %>"
                     class="w-20 h-20 object-cover rounded-lg"
                   />
                   <div class="flex-1 min-w-0">
-                    <h4 class="font-medium truncate">
+                    <h4 class="font-medium truncate text-white">
                       <%= item.product.name %>
                     </h4>
                     <p class="text-sm text-gray-500">
@@ -287,7 +299,7 @@
                     </p>
                     <div class="flex items-baseline gap-2 flex-wrap">
                       <% if (item.offer) { %>
-                        <span class="text-base font-medium text-gray-900">
+                        <span class="text-base font-medium text-white">
                           ₹<%= item.discountedPrice.toFixed(2) %>
                         </span>
                         <span class="text-sm text-gray-500 line-through">
@@ -299,12 +311,12 @@
                               `₹${item.offer.discountAmount} off` %>
                         </span>
                       <% } else { %>
-                        <span class="text-base font-medium text-gray-900">
+                        <span class="text-base font-medium text-red">
                           ₹<%= item.price.toFixed(2) %>
                         </span>
                       <% } %>
                     </div>
-                    <div class="text-sm text-gray-500 mt-1">
+                    <div class="text-sm text-white mt-1">
                       Subtotal: ₹<%= (item.quantity * (item.discountedPrice || item.price)).toFixed(2) %>
                     </div>
                   </div>
@@ -346,19 +358,19 @@
               <!-- Price Breakdown -->
               <div class="space-y-3">
                   <!-- Subtotal -->
-                  <div class="flex justify-between">
+                  <div class="flex justify-between text-white">
                       <span>Subtotal:</span>
                       <span>₹<span id="subtotal"><%= total.toFixed(2) %></span></span>
                   </div>
 
                   <!-- GST (18%) -->
-                  <div class="flex justify-between text-gray-600">
+                  <div class="flex justify-between text-white">
                       <span>GST (18%):</span>
                       <span>₹<span id="gstAmount"><%= (total * 0.18).toFixed(2) %></span></span>
                   </div>
 
                   <!-- Shipping Charges -->
-                  <div class="flex justify-between text-gray-600">
+                  <div class="flex justify-between text-white">
                       <span>Shipping Charges:</span>
                       <span>₹<span id="shippingCharges">
                           <%= total >= 1000 ? '0.00' : '40.00' %>
@@ -375,7 +387,7 @@
                   <div class="border-t border-gray-200 my-2"></div>
 
                   <!-- Total -->
-                  <div class="flex justify-between font-bold text-lg">
+                  <div class="flex justify-between font-bold text-white">
                       <span>Total Amount:</span>
                       <span>₹<span id="finalTotal">
                           <%= (

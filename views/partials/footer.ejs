@@ -1,47 +1,91 @@
-<footer class="bg-gray-100 py-12">
-    <div class="container mx-auto px-4">
+<footer class="relative py-12">
+    <!-- Background Image with Overlay -->
+    <div class="absolute inset-0 z-0">
+        <img src="/images/FooterBG.jpg" alt="Footer Background" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/40 to-black/30"></div>
+    </div>
+
+    <!-- Content -->
+    <div class="container mx-auto px-4 relative z-10">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
             <!-- Company Info -->
-            <div>
-                <h3 class="text-xl font-semibold mb-4 text-gray-800">Virtue Rider</h3>
-                <p class="text-gray-600">Premium motorcycle helmets for the modern rider.</p>
+            <div class="backdrop-blur-sm p-4 rounded-lg">
+                <h3 class="text-2xl font-bold mb-4 text-white/90">Virtue Rider</h3>
+                <p class="text-white/80">Premium motorcycle helmets for the modern rider.</p>
             </div>
 
             <!-- Quick Links -->
-            <div>
-                <h3 class="text-xl font-semibold mb-4 text-gray-800">Quick Links</h3>
+            <div class="backdrop-blur-sm p-4 rounded-lg">
+                <h3 class="text-xl font-semibold mb-4 text-white/90">Quick Links</h3>
                 <ul class="space-y-2">
-                    <li><a href="/shop" class="text-gray-600 hover:text-black">Shop</a></li>
-                    <li><a href="/about" class="text-gray-600 hover:text-black">About Us</a></li>
-                    <li><a href="/contact" class="text-gray-600 hover:text-black">Contact</a></li>
-                    <li><a href="/terms" class="text-gray-600 hover:text-black">Terms & Conditions</a></li>
+                    <li>
+                        <a href="/shop" class="text-white/80 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
+                            Shop
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/about" class="text-white/80 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
+                            About Us
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/contact" class="text-white/80 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
+                            Contact
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/terms" class="text-white/80 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
+                            Terms & Conditions
+                        </a>
+                    </li>
                 </ul>
             </div>
 
             <!-- Categories -->
-            <div>
-                <h3 class="text-xl font-semibold mb-4 text-gray-800">Categories</h3>
+            <div class="backdrop-blur-sm p-4 rounded-lg">
+                <h3 class="text-xl font-semibold mb-4 text-white/90">Categories</h3>
                 <ul class="space-y-2">
-                    <li><a href="/shop/sport-helmets" class="text-gray-600 hover:text-black">Sport Helmets</a></li>
-                    <li><a href="/shop/retro-helmets" class="text-gray-600 hover:text-black">Retro Helmets</a></li>
-                    <li><a href="/shop/adventure-helmets" class="text-gray-600 hover:text-black">Adventure Helmets</a></li>
+                    <li>
+                        <a href="/shop/sport-helmets" class="text-white/80 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
+                            Sport Helmets
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/shop/retro-helmets" class="text-white/80 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
+                            Retro Helmets
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/shop/adventure-helmets" class="text-white/80 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
+                            Adventure Helmets
+                        </a>
+                    </li>
                 </ul>
             </div>
 
             <!-- Contact Info -->
-            <div>
-                <h3 class="text-xl font-semibold mb-4 text-gray-800">Contact Us</h3>
-                <ul class="space-y-2 text-gray-600">
-                    <li>Email: info@virtuerider.com</li>
-                    <li>Phone: +91 1234567890</li>
-                    <li>Address: 123 Rider Street, Bangalore, India</li>
+            <div class="backdrop-blur-sm p-4 rounded-lg">
+                <h3 class="text-xl font-semibold mb-4 text-white/90">Contact Us</h3>
+                <ul class="space-y-3 text-white/80">
+                    <li class="flex items-center gap-3 hover:translate-x-1 transition-all duration-200">
+                        <i class="fas fa-envelope text-white/60"></i>
+                        info@virtuerider.com
+                    </li>
+                    <li class="flex items-center gap-3 hover:translate-x-1 transition-all duration-200">
+                        <i class="fas fa-phone text-white/60"></i>
+                        +91 1234567890
+                    </li>
+                    <li class="flex items-center gap-3 hover:translate-x-1 transition-all duration-200">
+                        <i class="fas fa-map-marker-alt text-white/60"></i>
+                        123 Rider Street, Bangalore, India
+                    </li>
                 </ul>
             </div>
         </div>
 
         <!-- Bottom Bar -->
-        <div class="border-t border-gray-200 mt-8 pt-8 text-center text-gray-600">
-            <p>&copy; <%= new Date().getFullYear() %> Virtue Rider. All rights reserved.</p>
+        <div class="border-t border-white/5 mt-8 pt-8 text-center backdrop-blur-sm">
+            <p class="text-white/70">&copy; <%= new Date().getFullYear() %> Virtue Rider. All rights reserved.</p>
         </div>
     </div>
 </footer>
