@@ -432,12 +432,39 @@
 
 
             async function handleSubmit(event) {
-
-                console.log('add new product')
-
                 event.preventDefault();
 
                 try {
+                    // Validate required fields
+                    const requiredFields = {
+                        'productName': 'Product Name',
+                        'brand': 'Brand',
+                        'color': 'Color',
+                        'price': 'Price',
+                        'categoryId': 'Category',
+                        'description': 'Description'
+                    };
+
+                    for (const [fieldId, fieldName] of Object.entries(requiredFields)) {
+                        const value = document.getElementById(fieldId).value.trim();
+                        if (!value) {
+                            throw new Error(`${fieldName} cannot be empty`);
+                        }
+                    }
+
+                    // Validate variants
+                    const variantDivs = document.querySelectorAll('#variantsContainer > div');
+                    if (variantDivs.length === 0) {
+                        throw new Error('At least one size variant is required');
+                    }
+
+                    // Validate price is positive
+                    const price = parseFloat(document.getElementById('price').value);
+                    if (price <= 0) {
+                        throw new Error('Price must be greater than 0');
+                    }
+
+                    // Continue with existing form submission code
                     const formData = new FormData();
 
                     // Add basic product info
@@ -495,19 +522,60 @@
                     console.error('Error:', error);
                     Swal.fire({
                         icon: 'error',
-                        title: 'Error!',
-                        text: error.message || 'Something went wrong',
+                        title: 'Validation Error',
+                        text: error.message,
                         confirmButtonColor: '#FF6B00'
                     });
+                    return false;
                 }
             }
 
             async function handleEditSubmit(event) {
                 event.preventDefault();
 
-                const productId = document.getElementById('productId').value
-
                 try {
+                    // Validate required fields
+                    const requiredFields = {
+                        'productName': 'Product Name',
+                        'brand': 'Brand',
+                        'color': 'Color',
+                        'price': 'Price',
+                        'categoryId': 'Category',
+                        'description': 'Description'
+                    };
+
+                    for (const [fieldId, fieldName] of Object.entries(requiredFields)) {
+                        const value = document.getElementById(fieldId).value.trim();
+                        if (!value) {
+                            throw new Error(`${fieldName} cannot be empty`);
+                        }
+                    }
+
+                    // Validate variants
+                    const variantDivs = document.querySelectorAll('#variantsContainer > div');
+                    if (variantDivs.length === 0) {
+                        throw new Error('At least one size variant is required');
+                    }
+
+                    variantDivs.forEach((variantDiv, index) => {
+                        const stock = parseInt(variantDiv.querySelector('input[type="number"]').value);
+                        if (isNaN(stock) || stock < 0) {
+                            throw new Error(`Invalid stock value for variant ${index + 1}`);
+                        }
+                    });
+
+                    // Validate price is positive
+                    const price = parseFloat(document.getElementById('price').value);
+                    if (price <= 0) {
+                        throw new Error('Price must be greater than 0');
+                    }
+
+                    const productId = document.getElementById('productId').value;
+                    if (!productId) {
+                        throw new Error('Product ID is missing');
+                    }
+
+                    // Continue with existing form submission code
                     const formData = new FormData();
 
                     // Add basic product info
@@ -565,17 +633,31 @@
                     console.error('Error:', error);
                     Swal.fire({
                         icon: 'error',
-                        title: 'Error!',
-                        text: error.message || 'Something went wrong',
+                        title: 'Validation Error',
+                        text: error.message,
                         confirmButtonColor: '#FF6B00'
                     });
+                    return false;
                 }
             }
 
+            // Add input event listeners for real-time validation
+            function addInputValidation() {
+                const inputs = document.querySelectorAll('input[type="text"], input[type="number"], textarea, select');
+                inputs.forEach(input => {
+                    input.addEventListener('input', function() {
+                        const value = this.value.trim();
+                        if (!value) {
+                            this.classList.add('border-red-500');
+                        } else {
+                            this.classList.remove('border-red-500');
+                        }
+                    });
+                });
+            }
 
-            // Modal functions
+            // Update modal open functions to initialize validation
             function openAddModal() {
-
                 console.log('add model ')
 
                 document.getElementById('productForm').reset();
@@ -585,17 +667,16 @@
                 document.getElementById('productModal').classList.add('flex');
                 document.getElementById('productForm').onsubmit = handleSubmit;
                 initializeImageUploads();
+                addInputValidation();
             }
 
             function openEditModal(id) {
-
-
-
                 initializeImageUploads();
                 document.getElementById('productForm').onsubmit = handleEditSubmit;
                 document.getElementById('productId').value = id
 
                 loadProducts(id)
+                addInputValidation();
             }
 
 

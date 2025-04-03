@@ -6,7 +6,7 @@ import Category from '../../models/categoryModel.js';
 export const getDashboard = async (req, res) => {
     try {
         // Get query parameters
-        const { period = 'weekly', startDate, endDate, chartType = 'line' } = req.query;
+        const { period = 'weekly', chartType = 'line' } = req.query;
         
         // Get filter parameters
         const startDateObj = req.query.startDate ? new Date(req.query.startDate) : new Date(new Date().getFullYear(), 0, 1);
