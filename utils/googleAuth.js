@@ -6,7 +6,7 @@ passport.use(new GoogleStrategy({
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: "http://virtuerider.shop/auth/google/callback"
   },
-  async (token, tokenSecret, profile, done) => {
+  async (token6 , tokenSecret, profile, done) => {
     try {
       // Just pass the profile information to the callback
       const userProfile = {
