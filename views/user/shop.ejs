@@ -15,17 +15,68 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
       .product-card {
-        transition: all 0.3s ease;
+        position: relative;
+        perspective: 1000px;
+        transform-style: preserve-3d;
+        cursor: pointer;
       }
-      .product-card:hover {
-        transform: translateY(-4px);
+
+      .product-image-container {
+        position: relative;
+        border-radius: 1rem;
+        overflow: hidden;
+        background: white;
+        transform-style: preserve-3d;
+        transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
       }
+
+      .product-card:hover .product-image-container {
+        transform: translateZ(20px) rotateX(10deg) rotateY(10deg);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1), 0 15px 40px rgba(0,0,0,0.05);
+      }
+
       .product-image {
-        transition: transform 0.5s ease;
+        position: relative;
+        aspect-ratio: 1;
+        width: 100%;
+        object-fit: cover;
+        transform-style: preserve-3d;
+        transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
       }
+
       .product-card:hover .product-image {
-        transform: scale(1.08);
+        transform: translateZ(10px) scale(1.05);
       }
+
+      .shine-effect {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(125deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 60%, rgba(255,255,255,0) 100%);
+        opacity: 0;
+        transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        pointer-events: none;
+        mix-blend-mode: soft-light;
+      }
+
+      .product-card:hover .shine-effect {
+        opacity: 1;
+        transform: translateZ(30px);
+      }
+
+      .product-info {
+        position: relative;
+        background: white;
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        transform: translateZ(10px);
+        transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+      }
+
+      .product-card:hover .product-info {
+        transform: translateZ(40px);
+      }
+
       /* Add smooth transitions */
       button, select, input {
         transition: all 0.2s ease;
@@ -175,11 +226,13 @@
                 <% products.forEach(product => { %>
                   <div class="product-card bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg">
                     <a href="/product/<%= product._id %>">
-                      <div class="relative aspect-[4/3] overflow-hidden bg-gray-100">
+                      <div class="product-image-container">
                         <img src="<%= product.images[0] %>" 
                              alt="<%= product.name %>"
                              class="product-image w-full h-full object-cover"
                              loading="lazy">
+                        
+                        <div class="shine-effect"></div>
                         
                         <% if (product.offer) { %>
                           <div class="absolute top-3 right-3 bg-red-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-md">
@@ -190,7 +243,7 @@
                     </a>
 
                     <!-- Product Info -->
-                    <div class="p-6 space-y-4">
+                    <div class="product-info">
                       <h2 class="text-gray-800 text-base font-medium line-clamp-2 min-h-[2.5rem]">
                         <%= product.name %>
                       </h2>
@@ -310,7 +363,7 @@
                   return `
                       <div class="product-card bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg">
                           <a href="/product/${product._id}" class="block">
-                              <div class="relative aspect-[3/4] overflow-hidden bg-gray-100">
+                              <div class="product-image-container">
                                   ${product.images && product.images.length > 0 ? `
                                       <img 
                                           src="${product.images[0]}" 
@@ -320,6 +373,8 @@
                                       >
                                   ` : ''}
                                   
+                                  <div class="shine-effect"></div>
+                                  
                                   ${!hasStock ? `
                                       <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
                                           <span class="text-white px-3 py-1.5 rounded-full text-sm font-medium">
@@ -327,28 +382,33 @@
                                           </span>
                                       </div>
                                   ` : ''}
+
+                                  ${product.offer ? `
+                                      <div class="absolute top-3 right-3 bg-red-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-md">
+                                          ${product.offer.discountAmount}${product.offer.discountType === 'percentage' ? '%' : '₹'} OFF
+                                      </div>
+                                  ` : ''}
                               </div>
                           </a>
 
-                          <div class="p-4 space-y-2">
-                              <h2 class="text-gray-800 text-sm font-medium truncate">
+                          <div class="product-info">
+                              <h2 class="text-gray-800 text-base font-medium line-clamp-2 min-h-[2.5rem]">
                                   ${product.name}
                               </h2>
-                              <div class="flex items-baseline gap-2 mt-1">
+
+                              <div class="flex items-baseline gap-2">
                                   ${product.offer ? `
-                                      <span class="text-base font-bold text-gray-900">₹${product.offer.discountedPrice.toFixed(2)}</span>
+                                      <span class="text-xl font-bold text-gray-900">₹${product.offer.discountedPrice.toFixed(2)}</span>
                                       <span class="text-sm text-gray-500 line-through">₹${product.price}</span>
-                                      <span class="text-xs font-medium text-green-600">
-                                          ${product.offer.discountAmount}${product.offer.discountType === 'percentage' ? '%' : '₹'} off
-                                      </span>
                                   ` : `
-                                      <span class="text-base font-bold text-gray-900">₹${product.price}</span>
+                                      <span class="text-xl font-bold text-gray-900">₹${product.price}</span>
                                   `}
                               </div>
                               
                               ${hasStock && product.variants && product.variants.length > 0 ? `
-                                  <div class="mt-3">
-                                      <select id="variant-${product._id}" class="w-full mb-2 px-2 py-1 border rounded text-sm">
+                                  <div class="mt-4 space-y-3">
+                                      <select id="variant-${product._id}" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm 
+                                                                                   focus:ring-2 focus:ring-gray-900 focus:border-gray-900">
                                           ${product.variants.map(variant => `
                                               <option value="${variant._id}" ${variant.stock === 0 ? 'disabled' : ''}>
                                                   ${variant.size} (${variant.stock} available)
@@ -357,8 +417,7 @@
                                       </select>
                                       <button 
                                           onclick="addToCart('${product._id}')"
-                                          class="w-full py-2 bg-zinc-800 text-white text-sm rounded hover:bg-zinc-700 transition-colors"
-                                      >
+                                          class="w-full py-3 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all duration-300">
                                           Add to Cart
                                       </button>
                                   </div>
@@ -408,7 +467,9 @@
                   updatePagination(data.pagination);
                   productGrid.innerHTML = renderProducts(data.products);
                   
-                  // Update URL with current filters
+                  // Reinitialize 3D effects after new products are loaded
+                  initialize3DEffects();
+                  
                   const url = new URL(window.location);
                   queryParams.forEach((value, key) => {
                       if (value) {
@@ -507,6 +568,40 @@
           if (urlParams.has('color')) colorFilter.value = urlParams.get('color');
           if (urlParams.has('minPrice')) minPriceFilter.value = urlParams.get('minPrice');
           if (urlParams.has('maxPrice')) maxPriceFilter.value = urlParams.get('maxPrice');
+
+          // Add this function to initialize 3D effects
+          function initialize3DEffects() {
+              const cards = document.querySelectorAll('.product-card');
+              
+              cards.forEach(card => {
+                  card.addEventListener('mousemove', function(e) {
+                      const rect = card.getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const y = e.clientY - rect.top;
+                      
+                      const centerX = rect.width / 2;
+                      const centerY = rect.height / 2;
+                      
+                      const rotateX = (y - centerY) / 20;
+                      const rotateY = (centerX - x) / 20;
+                      
+                      const imageContainer = card.querySelector('.product-image-container');
+                      if (imageContainer) {
+                          imageContainer.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(20px)`;
+                      }
+                  });
+
+                  card.addEventListener('mouseleave', function() {
+                      const imageContainer = card.querySelector('.product-image-container');
+                      if (imageContainer) {
+                          imageContainer.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0)';
+                      }
+                  });
+              });
+          }
+
+          // Initialize effects on page load
+          initialize3DEffects();
       });
     </script>
     <script>
