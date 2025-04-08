@@ -142,7 +142,6 @@ const userCheckoutController = {
     validateCoupon: async (req, res) => {
         try {
             const { couponCode } = req.body;
-            console.log("couponCode", couponCode);
             const userId = req.session.user;
 
             // Find the coupon
@@ -155,6 +154,34 @@ const userCheckoutController = {
                 return res.json({
                     success: false,
                     message: 'Invalid or expired coupon'
+                });
+            }
+
+            // Check if coupon is active
+            if (!coupon.isActive) {
+                return res.json({
+                    success: false,
+                    message: 'This coupon is no longer active'
+                });
+            }
+
+            // Check if coupon has reached its total usage limit
+            if (coupon.usedCouponCount >= coupon.totalCoupon) {
+                return res.json({
+                    success: false,
+                    message: 'This coupon has reached its maximum usage limit'
+                });
+            }
+
+            // Check user's usage count for this coupon
+            const userUsageCount = coupon.usedBy.filter(usage => 
+                usage.userId.toString() === userId.toString()
+            ).length;
+
+            if (userUsageCount >= coupon.userUsageLimit) {
+                return res.json({
+                    success: false,
+                    message: 'You have reached the maximum usage limit for this coupon'
                 });
             }
 
@@ -233,6 +260,20 @@ const userCheckoutController = {
 
             const finalAmount = totalAfterOffers - discount;
 
+            // Add user to usedBy array if not already there
+            const userAlreadyUsed = coupon.usedBy.some(usage => 
+                usage.userId.toString() === userId.toString()
+            );
+
+            if (!userAlreadyUsed) {
+                coupon.usedBy.push({
+                    userId: userId,
+                    usedAt: new Date(),
+                    orderId: null // Will be updated after order creation
+                });
+                await coupon.save();
+            }
+
             res.json({
                 success: true,
                 discount,
@@ -252,19 +293,36 @@ const userCheckoutController = {
     placeOrder: async (req, res) => {
         try {
             const { addressId, paymentMethod, couponCode, finalAmount, subtotal } = req.body;
-            console.log("subtotal",subtotal)
-            console.log("finalAmount",finalAmount)
-            // console.log('Coupon code', couponCode)
             const userId = req.session.user;
-            let couponValue = 0 
-            let couponDiscount = 0 
-            if(couponCode){
-                const coupon = await couponSchema.findOne({code:couponCode})
-                if(coupon){
+            let couponValue = 0;
+            let couponDiscount = 0;
+
+            if (couponCode) {
+                const coupon = await couponSchema.findOne({ code: couponCode });
+                if (coupon) {
+                    // Update coupon usage
                     coupon.usedCouponCount++;
-                    await coupon.save()
-                    couponValue = coupon.discountPercentage
-                    couponDiscount = (subtotal * couponValue) / 100
+                    
+                    // Find the user's usage entry and update it
+                    const userUsageIndex = coupon.usedBy.findIndex(usage => 
+                        usage.userId.toString() === userId.toString() && 
+                        !usage.orderId
+                    );
+                    
+                    if (userUsageIndex !== -1) {
+                        coupon.usedBy[userUsageIndex].orderId = null; // Will be updated after order creation
+                    } else {
+                        coupon.usedBy.push({
+                            userId: userId,
+                            usedAt: new Date(),
+                            orderId: null // Will be updated after order creation
+                        });
+                    }
+                    
+                    await coupon.save();
+
+                    couponValue = coupon.discountPercentage;
+                    couponDiscount = (subtotal * couponValue) / 100;
                 }
             }
 
@@ -385,9 +443,9 @@ const userCheckoutController = {
                         date: new Date()
                     }]
                 })),
-                coupon:{
-                    code:couponCode,
-                    discount:couponDiscount
+                coupon: {
+                    code: couponCode,
+                    discount: couponDiscount
                 },
                 subtotal: cartItems.reduce((sum, item) => sum + item.subtotal, 0),
                 totalAmount: finalAmount,
@@ -405,6 +463,22 @@ const userCheckoutController = {
             });
 
             await order.save();
+
+            // Update coupon usage with order ID
+            if (couponCode) {
+                const coupon = await couponSchema.findOne({ code: couponCode });
+                if (coupon) {
+                    const userUsageIndex = coupon.usedBy.findIndex(usage => 
+                        usage.userId.toString() === userId.toString() && 
+                        !usage.orderId
+                    );
+                    
+                    if (userUsageIndex !== -1) {
+                        coupon.usedBy[userUsageIndex].orderId = order._id;
+                        await coupon.save();
+                    }
+                }
+            }
 
             // Update product stock
             for (const item of cartItems) {
