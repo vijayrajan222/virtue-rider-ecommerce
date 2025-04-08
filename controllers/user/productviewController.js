@@ -52,12 +52,68 @@ export const getProductDetails = async (req, res) => {
             categoryId: product.categoryId,
             isActive: true,
             _id: { $ne: productId }
-        }).limit(5);
+        }).limit(5).populate('categoryId');
+
+        // Fetch all active offers for related products
+        const allActiveOffers = await Offer.find({
+            isActive: true,
+            startDate: { $lte: currentDate },
+            endDate: { $gte: currentDate }
+        });
+
+        // Add offer information to related products
+        const relatedProductsWithOffers = relatedProducts.map(product => {
+            const productObj = product.toObject();
+            
+            // Find product-specific offers
+            const productOffers = allActiveOffers.filter(offer => 
+                offer.type === 'product' && 
+                offer.productIds.some(id => id.toString() === product._id.toString())
+            );
+
+            // Find category offers
+            const categoryOffers = allActiveOffers.filter(offer => 
+                offer.type === 'category' && 
+                product.categoryId && 
+                offer.categoryId.toString() === product.categoryId._id.toString()
+            );
+
+            // Combine all applicable offers
+            const applicableOffers = [...productOffers, ...categoryOffers];
+
+            // Find the best offer
+            if (applicableOffers.length > 0) {
+                const bestOffer = applicableOffers.reduce((best, current) => {
+                    const currentDiscount = current.discountType === 'percentage' 
+                        ? (product.price * current.discountAmount / 100)
+                        : current.discountAmount;
+                    
+                    const bestDiscount = best ? (best.discountType === 'percentage'
+                        ? (product.price * best.discountAmount / 100)
+                        : best.discountAmount) : 0;
+
+                    return currentDiscount > bestDiscount ? current : best;
+                }, null);
+
+                if (bestOffer) {
+                    productObj.offer = {
+                        name: bestOffer.name,
+                        discountType: bestOffer.discountType,
+                        discountAmount: bestOffer.discountAmount,
+                        discountedPrice: bestOffer.discountType === 'percentage'
+                            ? product.price - (product.price * bestOffer.discountAmount / 100)
+                            : product.price - bestOffer.discountAmount
+                    };
+                }
+            }
+
+            return productObj;
+        });
 
         res.render('user/productdetails', {
             title: product.name,
             product,
-            relatedProducts,
+            relatedProducts: relatedProductsWithOffers,
             offer: bestOffer,
             discountedPrice
         });
