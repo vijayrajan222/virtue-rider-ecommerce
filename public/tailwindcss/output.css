@@ -1012,10 +1012,6 @@ video {
   min-height: 100vh;
 }
 
-.min-h-\[calc\(100vh-5rem\)\] {
-  min-height: calc(100vh - 5rem);
-}
-
 .w-0 {
   width: 0px;
 }
@@ -1853,6 +1849,10 @@ video {
   background-color: rgb(255 255 255 / 0.2);
 }
 
+.bg-white\/25 {
+  background-color: rgb(255 255 255 / 0.25);
+}
+
 .bg-white\/30 {
   background-color: rgb(255 255 255 / 0.3);
 }
@@ -1898,10 +1898,6 @@ video {
 .bg-zinc-900 {
   --tw-bg-opacity: 1;
   background-color: rgb(24 24 27 / var(--tw-bg-opacity));
-}
-
-.bg-white\/25 {
-  background-color: rgb(255 255 255 / 0.25);
 }
 
 .bg-opacity-50 {
