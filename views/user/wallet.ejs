@@ -172,6 +172,34 @@
                                         </div>
                                     <% }); %>
                                 </div>
+
+                                <!-- Pagination Controls -->
+                                <% if (pagination.totalPages > 1) { %>
+                                    <div class="mt-8 flex justify-center items-center gap-2">
+                                        <% if (pagination.hasPrevPage) { %>
+                                            <a href="?page=<%= pagination.prevPage %>&limit=<%= pagination.limit %>" 
+                                               class="glass-card px-4 py-2 rounded-lg hover:bg-white/25 transition-all">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </a>
+                                        <% } %>
+                                        
+                                        <div class="flex items-center gap-2">
+                                            <% for(let i = 1; i <= pagination.totalPages; i++) { %>
+                                                <a href="?page=<%= i %>&limit=<%= pagination.limit %>" 
+                                                   class="glass-card px-4 py-2 rounded-lg <%= i === pagination.currentPage ? 'bg-white/25' : 'hover:bg-white/25' %> transition-all">
+                                                    <%= i %>
+                                                </a>
+                                            <% } %>
+                                        </div>
+
+                                        <% if (pagination.hasNextPage) { %>
+                                            <a href="?page=<%= pagination.nextPage %>&limit=<%= pagination.limit %>" 
+                                               class="glass-card px-4 py-2 rounded-lg hover:bg-white/25 transition-all">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        <% } %>
+                                    </div>
+                                <% } %>
                             <% } %>
                         </div>
                     </div>

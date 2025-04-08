@@ -15,8 +15,21 @@ export const walletController = {
                 wallet = await Wallet.create({ userId });
             }
 
+            // Pagination parameters
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 10;
+            const skip = (page - 1) * limit;
+
+            // Get total count of transactions
+            const totalTransactions = wallet.transactions.length;
+
+            // Get paginated transactions
+            const paginatedTransactions = wallet.transactions
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(skip, skip + limit);
+
             // Populate order details for transactions
-            const transactions = await Promise.all(wallet.transactions.map(async (transaction) => {
+            const transactions = await Promise.all(paginatedTransactions.map(async (transaction) => {
                 if (transaction.orderId) {
                     const order = await Order.findById(transaction.orderId);
                     if (order) {
@@ -27,15 +40,19 @@ export const walletController = {
                 return transaction;
             }));
 
-            // Sort transactions by date
-            const sortedTransactions = transactions.sort((a, b) => 
-                new Date(b.date) - new Date(a.date)
-            ).slice(0, 50);
-
             res.render('user/wallet', {
                 wallet,
-                transactions: sortedTransactions,
-                user
+                transactions,
+                user,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(totalTransactions / limit),
+                    hasNextPage: page * limit < totalTransactions,
+                    hasPrevPage: page > 1,
+                    nextPage: page + 1,
+                    prevPage: page - 1,
+                    limit
+                }
             });
 
         } catch (error) {

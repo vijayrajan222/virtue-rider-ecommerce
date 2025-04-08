@@ -353,7 +353,6 @@
 
             const firstname = document.getElementById("firstname").value;
             const lastname = document.getElementById("lastname").value;
-            const email = document.getElementById("email").value;
 
             // Check if there are any changes
             if (!hasChanges(firstname, lastname)) {
@@ -384,10 +383,11 @@
                     },
                     body: JSON.stringify({
                         firstname: capitalizedFirstName,
-                        lastname: capitalizedLastName,
-                        email
+                        lastname: capitalizedLastName
                     }),
                 });
+
+                const data = await response.json();
 
                 if (response.ok) {
                     hideAlert();
@@ -400,7 +400,6 @@
                         originalValues.lastname = capitalizedLastName;
                     }, 300);
                 } else {
-                    const data = await response.json();
                     hideAlert();
                     setTimeout(() => {
                         showAlert('error', data.message || 'Error updating profile');
