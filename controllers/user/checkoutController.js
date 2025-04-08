@@ -567,6 +567,7 @@ const userCheckoutController = {
 
             res.json({
                 success: true,
+                key: process.env.RAZORPAY_KEY_ID,
                 order: razorpayOrder,
                 amount: Number(finalAmount)
             });
