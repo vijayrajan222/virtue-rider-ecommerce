@@ -229,15 +229,18 @@
                                 <div class="space-y-2">
                                     <select id="variant-<%= product._id %>" 
                                             class="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-md
-                                                   focus:outline-none focus:border-gray-400 transition-colors">
+                                                   focus:outline-none focus:border-gray-400 transition-colors"
+                                            onchange="updateAddToCartButton('<%= product._id %>')">
                                         <% product.variants.forEach(variant => { %>
                                             <option value="<%= variant._id %>" 
+                                                    data-stock="<%= variant.stock %>"
                                                     <%= variant.stock === 0 ? 'disabled' : '' %>>
                                                 <%= variant.size %> (<%= variant.stock %>)
                                             </option>
                                         <% }); %>
                                     </select>
-                                    <button onclick="addToCart('<%= product._id %>')"
+                                    <button id="add-to-cart-<%= product._id %>"
+                                            onclick="addToCart('<%= product._id %>')"
                                             class="w-full py-2 bg-gray-900 text-white text-xs font-medium rounded-md
                                                    hover:bg-gray-800 transition-all duration-300 transform hover:scale-[1.02]">
                                         Add to Cart
@@ -311,6 +314,33 @@
 
     <!-- Add Cart Functionality -->
     <script>
+        // Track cart items
+        let cartItems = [];
+
+        // Function to update add to cart button state
+        function updateAddToCartButton(productId) {
+            const variantSelect = document.getElementById(`variant-${productId}`);
+            const addToCartBtn = document.getElementById(`add-to-cart-${productId}`);
+            const selectedVariant = variantSelect.options[variantSelect.selectedIndex];
+            const variantId = variantSelect.value;
+            
+            // Check if this product variant is already in cart
+            const isInCart = cartItems.some(item => 
+                item.productId === productId && 
+                item.variantId === variantId
+            );
+            
+            if (isInCart) {
+                addToCartBtn.disabled = true;
+                addToCartBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                addToCartBtn.textContent = 'Already in Cart';
+            } else {
+                addToCartBtn.disabled = false;
+                addToCartBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                addToCartBtn.textContent = 'Add to Cart';
+            }
+        }
+
         async function addToCart(productId) {
             try {
                 const variantSelect = document.getElementById(`variant-${productId}`);
@@ -318,6 +348,11 @@
                     throw new Error('Please select a size');
                 }
                 const variantId = variantSelect.value;
+                const addToCartBtn = document.getElementById(`add-to-cart-${productId}`);
+
+                // Disable button while processing
+                addToCartBtn.disabled = true;
+                addToCartBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
                 const response = await fetch('/cart/add', {
                     method: 'POST',
@@ -333,6 +368,16 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    // Update cart items
+                    cartItems.push({
+                        productId,
+                        variantId
+                    });
+
+                    // Update button state
+                    updateAddToCartButton(productId);
+
+                    // Success notification
                     Swal.fire({
                         title: 'Success!',
                         text: data.message,
@@ -351,6 +396,7 @@
                         }
                     });
                 } else {
+                    // Error notification
                     Swal.fire({
                         title: 'Error!',
                         text: data.message || 'Failed to add product to cart',
@@ -363,6 +409,7 @@
                 }
             } catch (error) {
                 console.error('Error adding to cart:', error);
+                // Error notification
                 Swal.fire({
                     title: 'Error!',
                     text: 'An error occurred while adding the product to cart',
@@ -372,8 +419,35 @@
                         confirmButton: 'bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700'
                     }
                 });
+            } finally {
+                // Re-enable button
+                const addToCartBtn = document.getElementById(`add-to-cart-${productId}`);
+                if (addToCartBtn) {
+                    updateAddToCartButton(productId);
+                }
             }
         }
+
+        // Initialize button states when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Fetch current cart items
+                const response = await fetch('/cart');
+                if (response.ok) {
+                    const data = await response.json();
+                    cartItems = data.items || [];
+                }
+
+                // Update all add to cart buttons
+                const variantSelects = document.querySelectorAll('select[id^="variant-"]');
+                variantSelects.forEach(select => {
+                    const productId = select.id.replace('variant-', '');
+                    updateAddToCartButton(productId);
+                });
+            } catch (error) {
+                console.error('Error fetching cart:', error);
+            }
+        });
     </script>
 
     <!-- Add this script at the bottom of your file, before closing body tag -->
