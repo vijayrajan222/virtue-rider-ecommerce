@@ -133,47 +133,90 @@ const calculateFinalPrice = (product) => {
 
 export const addToCart = async (req, res) => {
     try {
-        console.log('hereeeee')
-        const { productId, variantId, quantity = 1 } = req.body; 
-        console.log("Variant Id"+variantId)
+        const { productId, variantId } = req.body;
         const userId = req.session.user;
-        const product = await productSchema.findById(productId);
-        if (!product || !product.isActive) {
-            return res.status(404).json({ message: "Product not found or inactive" });
-        }
-console.log("productssssss:",product)
-        const variant = product.variants.find(variant => variant._id.toString() === variantId); 
-          console.log(variant)
-        if (!variant || variant.stock < quantity) {
-            return res.status(400).json({ message: "Not enough stock available" });
+
+        if (!userId) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Please login to add items to cart' 
+            });
         }
 
+        // Find the product and variant
+        const product = await productSchema.findById(productId);
+        if (!product || !product.isActive) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Product not found or inactive' 
+            });
+        }
+
+        const variant = product.variants.find(v => v._id.toString() === variantId);
+        if (!variant) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Variant not found' 
+            });
+        }
+
+        // Check if variant is in stock
+        if (variant.stock <= 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'This variant is out of stock' 
+            });
+        }
+
+        // Find user's cart
         let cart = await cartSchema.findOne({ userId });
         if (!cart) {
             cart = new cartSchema({ userId, items: [] });
         }
 
+        // Check if product variant already exists in cart
         const existingItem = cart.items.find(item => 
-            item.productId.toString() === productId && item.variantId.toString() === variantId
+            item.productId.toString() === productId && 
+            item.variantId.toString() === variantId
         );
 
         if (existingItem) {
-            existingItem.quantity += quantity;
-        } else {
-            const newItem = { 
-                productId, 
-                variantId, 
-                quantity, 
-                price: product.price*quantity
-            };
-            cart.items.push(newItem);
+            return res.status(400).json({ 
+                success: false, 
+                message: 'This product variant is already in your cart' 
+            });
         }
 
+        // Add new item to cart
+        cart.items.push({
+            productId,
+            variantId,
+            quantity: 1,
+            price: product.offer ? product.offer.discountedPrice : product.price
+        });
+
         await cart.save();
-        res.status(200).json({ message: "Product added to cart successfully", cart });
+
+        // Get updated cart with populated product details
+        const updatedCart = await cartSchema.findOne({ userId })
+            .populate({
+                path: 'items.productId',
+                select: 'name images price offer'
+            });
+
+        res.status(200).json({
+            success: true,
+            message: 'Product added to cart successfully',
+            cart: updatedCart
+        });
+
     } catch (error) {
-        console.error("Error adding to cart:", error);
-        res.status(500).json({ message: "Failed to add product to cart" });
+        console.error('Error in addToCart:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to add product to cart',
+            error: error.message 
+        });
     }
 };
 

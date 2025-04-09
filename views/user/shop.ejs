@@ -263,14 +263,18 @@
                         <div class="mt-4 space-y-3">
                           <select id="variant-<%= product._id %>" 
                                   class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm 
-                                         focus:ring-2 focus:ring-gray-900 focus:border-gray-900">
+                                         focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+                                  onchange="updateAddToCartButton('<%= product._id %>')">
                             <% product.variants.forEach(variant => { %>
-                              <option value="<%= variant._id %>" <%= variant.stock === 0 ? 'disabled' : '' %>>
+                              <option value="<%= variant._id %>" 
+                                      data-stock="<%= variant.stock %>"
+                                      <%= variant.stock === 0 ? 'disabled' : '' %>>
                                 <%= variant.size %> (<%= variant.stock %> available)
                               </option>
                             <% }); %>
                           </select>
                           <button 
+                            id="add-to-cart-<%= product._id %>"
                             onclick="addToCart('<%= product._id %>')"
                             class="w-full py-3 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all duration-300">
                             Add to Cart
@@ -605,6 +609,33 @@
       });
     </script>
     <script>
+        // Track cart items
+        let cartItems = [];
+
+        // Function to update add to cart button state
+        function updateAddToCartButton(productId) {
+            const variantSelect = document.getElementById(`variant-${productId}`);
+            const addToCartBtn = document.getElementById(`add-to-cart-${productId}`);
+            const selectedVariant = variantSelect.options[variantSelect.selectedIndex];
+            const variantId = variantSelect.value;
+            
+            // Check if this product variant is already in cart
+            const isInCart = cartItems.some(item => 
+                item.productId === productId && 
+                item.variantId === variantId
+            );
+            
+            if (isInCart) {
+                addToCartBtn.disabled = true;
+                addToCartBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                addToCartBtn.textContent = 'Already in Cart';
+            } else {
+                addToCartBtn.disabled = false;
+                addToCartBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                addToCartBtn.textContent = 'Add to Cart';
+            }
+        }
+
         async function addToCart(productId) {
             try {
                 const variantSelect = document.getElementById(`variant-${productId}`);
@@ -612,6 +643,11 @@
                     throw new Error('Please select a size');
                 }
                 const variantId = variantSelect.value;
+                const addToCartBtn = document.getElementById(`add-to-cart-${productId}`);
+
+                // Disable button while processing
+                addToCartBtn.disabled = true;
+                addToCartBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
                 const response = await fetch('/cart/add', {
                     method: 'POST',
@@ -627,6 +663,15 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    // Update cart items
+                    cartItems.push({
+                        productId,
+                        variantId
+                    });
+
+                    // Update button state
+                    updateAddToCartButton(productId);
+
                     // Success notification
                     Swal.fire({
                         title: 'Success!',
@@ -669,8 +714,35 @@
                         confirmButton: 'bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700'
                     }
                 });
+            } finally {
+                // Re-enable button
+                const addToCartBtn = document.getElementById(`add-to-cart-${productId}`);
+                if (addToCartBtn) {
+                    updateAddToCartButton(productId);
+                }
             }
         }
+
+        // Initialize button states when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Fetch current cart items
+                const response = await fetch('/cart');
+                if (response.ok) {
+                    const data = await response.json();
+                    cartItems = data.items || [];
+                }
+
+                // Update all add to cart buttons
+                const variantSelects = document.querySelectorAll('select[id^="variant-"]');
+                variantSelects.forEach(select => {
+                    const productId = select.id.replace('variant-', '');
+                    updateAddToCartButton(productId);
+                });
+            } catch (error) {
+                console.error('Error fetching cart:', error);
+            }
+        });
     </script>
   </body>
 </html>
