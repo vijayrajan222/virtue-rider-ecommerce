@@ -46,7 +46,8 @@ const generateReferralCodesForExistingUsers = async () => {
 export const getProfilePage = async (req, res) => {
     try {
         let user = await User.findById(req.session.user)
-            .populate('referredBy', 'firstname lastname email');
+            .populate('referredBy', 'firstname lastname email')
+            .select('+password'); // Include password field
 
         // Check if user doesn't have a referral code
         if (!user.referralCode) {

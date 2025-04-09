@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const resendOtpButton = document.getElementById('resendOtp');
     const resendTimer = document.getElementById('resendTimer');
     let userEmail = ''; // Store email for OTP verification
-    let resendTimeout = 15; // 15 seconds timeout
+    let timerInterval = null;
+    let timeLeft = 30; // 30 seconds timer
 
     if (!form) {
         console.error('Signup form not found');
@@ -190,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (otpModal) {
                     otpModal.classList.remove('hidden');
                     setupOTPInputs();
-                    startResendTimer();
+                    startOTPTimer();
                 }
             } else {
                 // Show error message
@@ -244,27 +245,73 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Resend timer
-    function startResendTimer() {
-        if (!resendOtpButton || !resendTimer) return;
+    function startOTPTimer() {
+        // Clear any existing timer
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
 
-        resendOtpButton.disabled = true;
-        resendOtpButton.classList.add('text-gray-400');
-        let timeLeft = resendTimeout;
-        
-        resendTimer.classList.remove('hidden');
-        
-        const timerInterval = setInterval(() => {
-            resendTimer.textContent = `Resend OTP in ${timeLeft} seconds`;
+        // Reset time
+        timeLeft = 30;
+        updateTimerDisplay();
+
+        // Start new timer
+        timerInterval = setInterval(() => {
             timeLeft--;
+            updateTimerDisplay();
 
-            if (timeLeft < 0) {
+            if (timeLeft <= 0) {
                 clearInterval(timerInterval);
-                resendOtpButton.disabled = false;
-                resendOtpButton.classList.remove('text-gray-400');
-                resendTimer.classList.add('hidden');
+                timerInterval = null;
+                enableResendButton();
             }
-        }, 1000);
+        }, 1000); // Run every 1000ms (1 second)
+    }
+
+    function updateTimerDisplay() {
+        const resendTimer = document.getElementById('resendTimer');
+        const resendOtpButton = document.getElementById('resendOtp');
+        
+        if (resendTimer && resendOtpButton) {
+            if (timeLeft > 0) {
+                resendTimer.textContent = `Resend OTP in ${timeLeft} seconds`;
+                resendTimer.classList.remove('hidden');
+                resendOtpButton.disabled = true;
+                resendOtpButton.classList.add('opacity-50');
+            } else {
+                resendTimer.classList.add('hidden');
+                enableResendButton();
+            }
+        }
+    }
+
+    function enableResendButton() {
+        const resendOtpButton = document.getElementById('resendOtp');
+        if (resendOtpButton) {
+            resendOtpButton.disabled = false;
+            resendOtpButton.classList.remove('opacity-50');
+        }
+    }
+
+    // Start timer when OTP modal is shown
+    if (otpModal) {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    if (!otpModal.classList.contains('hidden')) {
+                        startOTPTimer();
+                    } else {
+                        // Clear timer when modal is hidden
+                        if (timerInterval) {
+                            clearInterval(timerInterval);
+                            timerInterval = null;
+                        }
+                    }
+                }
+            });
+        });
+
+        observer.observe(otpModal, { attributes: true });
     }
 
     // Resend OTP handler
@@ -286,7 +333,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 if (data.success) {
                     showMessage('otpError', 'OTP resent successfully', 'text-green-600');
-                    startResendTimer();
+                    startOTPTimer(); // Restart timer after successful resend
                 } else {
                     showMessage('otpError', data.message || 'Failed to resend OTP');
                 }
