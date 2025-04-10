@@ -148,7 +148,6 @@
                     <option value="newArrivals">New Arrivals</option>
                     <option value="priceLowToHigh">Price: Low to High</option>
                     <option value="priceHighToLow">Price: High to Low</option>
-                    <option value="ratingHighToLow">Rating: High to Low</option>
                     <option value="nameAZ">Name: A to Z</option>
                     <option value="nameZA">Name: Z to A</option>
                     <option value="popularity">Most Popular</option>
@@ -216,6 +215,11 @@
                         class="h-14 px-10 bg-gray-900 text-white rounded-r-xl hover:bg-gray-800 
                                transition-all duration-300 font-medium hover:shadow-lg">
                   Search
+                </button>
+                <button id="clearSearchButton" 
+                        class="h-14 px-6 ml-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 
+                               transition-all duration-300 font-medium hover:shadow-lg">
+                  Clear
                 </button>
               </div>
             </div>
@@ -518,6 +522,12 @@
           searchButton.addEventListener('click', applyFilters);
           searchInput.addEventListener('keyup', (e) => {
               if (e.key === 'Enter') applyFilters();
+          });
+          
+          // Add clear search button event listener
+          document.getElementById('clearSearchButton').addEventListener('click', () => {
+              searchInput.value = '';
+              applyFilters();
           });
           
           [sortFilter, colorFilter,categoriesSelect].forEach(filter => {
