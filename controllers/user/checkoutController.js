@@ -300,6 +300,41 @@ const userCheckoutController = {
             if (couponCode) {
                 const coupon = await couponSchema.findOne({ code: couponCode });
                 if (coupon) {
+                    // Additional validation at order placement
+                    if (!coupon.isActive) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'This coupon is no longer active'
+                        });
+                    }
+
+                    if (coupon.usedCouponCount >= coupon.totalCoupon) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'This coupon has reached its maximum usage limit'
+                        });
+                    }
+
+                    // Check user's usage count for this coupon
+                    const userUsageCount = coupon.usedBy.filter(usage => 
+                        usage.userId.toString() === userId.toString()
+                    ).length;
+
+                    if (userUsageCount >= coupon.userUsageLimit) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'You have reached the maximum usage limit for this coupon'
+                        });
+                    }
+
+                    // Check minimum purchase requirement
+                    if (subtotal < coupon.minimumPurchase) {
+                        return res.status(400).json({
+                            success: false,
+                            message: `Minimum purchase of ₹${coupon.minimumPurchase} required for this coupon`
+                        });
+                    }
+
                     // Update coupon usage
                     coupon.usedCouponCount++;
                     

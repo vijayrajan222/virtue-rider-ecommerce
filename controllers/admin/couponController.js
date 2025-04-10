@@ -37,14 +37,53 @@ export const addCoupons = async (req, res, next) => {
             return res.status(400).json({ message: 'Coupon code already exists' });
         }
 
+        // Convert dates to Date objects
+        const startDateTime = new Date(startDate);
+        const expiryDateTime = new Date(expiryDate);
+        const currentDateTime = new Date();
+
+        // Validate dates
+        if (startDateTime < currentDateTime) {
+            return res.status(400).json({ message: 'Start date cannot be in the past' });
+        }
+
+        if (expiryDateTime <= startDateTime) {
+            return res.status(400).json({ message: 'Expiry date must be after start date' });
+        }
+
+        // Validate discount percentage
+        if (discountPercentage < 1 || discountPercentage > 90) {
+            return res.status(400).json({ message: 'Discount percentage must be between 1 and 90' });
+        }
+
+        // Validate minimum purchase
+        if (minimumPurchase < 0) {
+            return res.status(400).json({ message: 'Minimum purchase amount cannot be negative' });
+        }
+
+        // Validate maximum discount
+        if (maximumDiscount < 0) {
+            return res.status(400).json({ message: 'Maximum discount amount cannot be negative' });
+        }
+
+        // Validate total coupons
+        if (totalCoupon < 1) {
+            return res.status(400).json({ message: 'Total coupons must be at least 1' });
+        }
+
+        // Validate user usage limit
+        if (userUsageLimit < 1) {
+            return res.status(400).json({ message: 'User usage limit must be at least 1' });
+        }
+
         const newCoupon = new Coupon({
             code: code.toUpperCase(),
             description,
             discountPercentage,
             minimumPurchase,
             maximumDiscount,
-            startDate,
-            expiryDate,
+            startDate: startDateTime,
+            expiryDate: expiryDateTime,
             totalCoupon,
             userUsageLimit
         });

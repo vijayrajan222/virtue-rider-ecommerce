@@ -1104,10 +1104,6 @@ video {
   max-width: 42rem;
 }
 
-.max-w-4xl {
-  max-width: 56rem;
-}
-
 .max-w-\[1600px\] {
   max-width: 1600px;
 }
@@ -1118,6 +1114,10 @@ video {
 
 .max-w-\[90vw\] {
   max-width: 90vw;
+}
+
+.max-w-\[95\%\] {
+  max-width: 95%;
 }
 
 .max-w-full {
@@ -3256,6 +3256,10 @@ video {
 
   .md\:w-auto {
     width: auto;
+  }
+
+  .md\:max-w-4xl {
+    max-width: 56rem;
   }
 
   .md\:grid-cols-2 {

@@ -187,6 +187,74 @@
             const formData = new FormData(this);
             const data = Object.fromEntries(formData.entries());
 
+            // Client-side validation
+            const startDate = new Date(data.startDate);
+            const expiryDate = new Date(data.expiryDate);
+            const currentDate = new Date();
+
+            if (startDate < currentDate) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Start Date',
+                    text: 'Start date cannot be in the past'
+                });
+                return;
+            }
+
+            if (expiryDate <= startDate) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Expiry Date',
+                    text: 'Expiry date must be after start date'
+                });
+                return;
+            }
+
+            if (data.discountPercentage < 1 || data.discountPercentage > 90) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Discount',
+                    text: 'Discount percentage must be between 1 and 90'
+                });
+                return;
+            }
+
+            if (data.minimumPurchase < 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Minimum Purchase',
+                    text: 'Minimum purchase amount cannot be negative'
+                });
+                return;
+            }
+
+            if (data.maximumDiscount < 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Maximum Discount',
+                    text: 'Maximum discount amount cannot be negative'
+                });
+                return;
+            }
+
+            if (data.totalCoupon < 1) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Total Coupons',
+                    text: 'Total coupons must be at least 1'
+                });
+                return;
+            }
+
+            if (data.userUsageLimit < 1) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Usage Limit',
+                    text: 'User usage limit must be at least 1'
+                });
+                return;
+            }
+
             try {
                 const response = await fetch('/admin/coupons/add', {
                     method: 'POST',
