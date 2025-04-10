@@ -48,9 +48,6 @@ export const getShop = async (req, res) => {
             case 'priceHighToLow':
                 sortQuery = { price: -1 };
                 break;
-            case 'ratingHighToLow':
-                sortQuery = { rating: -1 };
-                break;
             case 'newArrivals':
                 sortQuery = { createdAt: -1 };
                 break;
@@ -59,6 +56,9 @@ export const getShop = async (req, res) => {
                 break;
             case 'nameZA':
                 sortQuery = { name: -1 };
+                break;
+            case 'popularity':
+                sortQuery = { salesCount: -1 };
                 break;
             default:
                 sortQuery = { createdAt: -1 };
@@ -69,7 +69,7 @@ export const getShop = async (req, res) => {
         const totalPages = Math.ceil(totalProducts / limit);
 
         // Then, get the paginated products
-        const products = await Product.find(filter)
+        let products = await Product.find(filter)
             .populate('categoryId')
             .sort(sortQuery)
             .skip(skip)
@@ -83,7 +83,7 @@ export const getShop = async (req, res) => {
             endDate: { $gte: currentDate }
         });
 
-        // Map offers to products
+        // Map offers to products and calculate final prices
         const productsWithOffers = products.map(product => {
             const productObj = product.toObject();
             
@@ -128,14 +128,22 @@ export const getShop = async (req, res) => {
                 }
             }
 
+            // Add finalPrice property for sorting
+            productObj.finalPrice = productObj.offer?.discountedPrice || productObj.price;
             return productObj;
         });
 
-        // Filter out products with invalid categories
-        const filteredProducts = productsWithOffers.filter(product => product.categoryId);
+        // Apply price sorting after calculating final prices
+        if (req.query.sort === 'priceLowToHigh' || req.query.sort === 'priceHighToLow') {
+            productsWithOffers.sort((a, b) => {
+                return req.query.sort === 'priceLowToHigh' 
+                    ? a.finalPrice - b.finalPrice 
+                    : b.finalPrice - a.finalPrice;
+            });
+        }
 
         // Process products
-        const processedProducts = filteredProducts.map(product => ({
+        const processedProducts = productsWithOffers.map(product => ({
             ...product,
             price: product.price,
             variants: product.variants
@@ -147,7 +155,7 @@ export const getShop = async (req, res) => {
             totalPages,
             hasNextPage: page < totalPages,
             hasPrevPage: page > 1,
-            totalProducts // Add total products count
+            totalProducts
         };
 
         if (req.xhr) {
