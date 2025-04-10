@@ -68,14 +68,7 @@ export const getShop = async (req, res) => {
         const totalProducts = await Product.countDocuments(filter);
         const totalPages = Math.ceil(totalProducts / limit);
 
-        // Then, get the paginated products
-        let products = await Product.find(filter)
-            .populate('categoryId')
-            .sort(sortQuery)
-            .skip(skip)
-            .limit(limit);
-
-        // Fetch active offers
+        // Fetch active offers first
         const currentDate = new Date();
         const activeOffers = await Offer.find({
             isActive: true,
@@ -83,20 +76,122 @@ export const getShop = async (req, res) => {
             endDate: { $gte: currentDate }
         });
 
-        // Map offers to products and calculate final prices
+        // Get products with proper sorting
+        let products;
+        if (req.query.sort === 'priceLowToHigh' || req.query.sort === 'priceHighToLow') {
+            // Use aggregation for price sorting to consider offers
+            const aggregationPipeline = [
+                { $match: filter },
+                {
+                    $lookup: {
+                        from: 'offers',
+                        let: { productId: '$_id', categoryId: '$categoryId' },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $eq: ['$isActive', true] },
+                                            { $lte: ['$startDate', currentDate] },
+                                            { $gte: ['$endDate', currentDate] },
+                                            {
+                                                $or: [
+                                                    { $in: ['$$productId', '$productIds'] },
+                                                    { $in: ['$$categoryId', '$categoryId'] }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        ],
+                        as: 'activeOffers'
+                    }
+                },
+                {
+                    $addFields: {
+                        finalPrice: {
+                            $cond: {
+                                if: { $gt: [{ $size: '$activeOffers' }, 0] },
+                                then: {
+                                    $let: {
+                                        vars: {
+                                            bestOffer: {
+                                                $reduce: {
+                                                    input: '$activeOffers',
+                                                    initialValue: { discountAmount: 0, discountType: 'percentage' },
+                                                    in: {
+                                                        $cond: {
+                                                            if: {
+                                                                $gt: [
+                                                                    {
+                                                                        $cond: {
+                                                                            if: { $eq: ['$$this.discountType', 'percentage'] },
+                                                                            then: { $multiply: ['$price', { $divide: ['$$this.discountAmount', 100] }] },
+                                                                            else: '$$this.discountAmount'
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        $cond: {
+                                                                            if: { $eq: ['$$value.discountType', 'percentage'] },
+                                                                            then: { $multiply: ['$price', { $divide: ['$$value.discountAmount', 100] }] },
+                                                                            else: '$$value.discountAmount'
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            },
+                                                            then: '$$this',
+                                                            else: '$$value'
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        in: {
+                                            $cond: {
+                                                if: { $eq: ['$$bestOffer.discountType', 'percentage'] },
+                                                then: { $subtract: ['$price', { $multiply: ['$price', { $divide: ['$$bestOffer.discountAmount', 100] }] }] },
+                                                else: { $subtract: ['$price', '$$bestOffer.discountAmount'] }
+                                            }
+                                        }
+                                    }
+                                },
+                                else: '$price'
+                            }
+                        }
+                    }
+                },
+                { $sort: { finalPrice: req.query.sort === 'priceLowToHigh' ? 1 : -1 } },
+                { $skip: skip },
+                { $limit: limit },
+                { $lookup: { from: 'categories', localField: 'categoryId', foreignField: '_id', as: 'categoryId' } },
+                { $unwind: '$categoryId' }
+            ];
+
+            products = await Product.aggregate(aggregationPipeline);
+        } else {
+            // Regular query for other sort options
+            products = await Product.find(filter)
+                .populate('categoryId')
+                .sort(sortQuery)
+                .skip(skip)
+                .limit(limit);
+        }
+
+        // Map offers to products
         const productsWithOffers = products.map(product => {
-            const productObj = product.toObject();
+            const productObj = product.toObject ? product.toObject() : product;
             
             // Find product-specific offers
             const productOffers = activeOffers.filter(offer => 
                 offer.type === 'product' && 
-                offer.productIds.some(id => id.toString() === product._id.toString())
+                offer.productIds.some(id => id.toString() === productObj._id.toString())
             );
 
             // Find category offers
             const categoryOffers = activeOffers.filter(offer => 
                 offer.type === 'category' && 
-                offer.categoryId.toString() === product.categoryId._id.toString()
+                offer.categoryId.toString() === productObj.categoryId._id.toString()
             );
 
             // Combine all applicable offers
@@ -106,11 +201,11 @@ export const getShop = async (req, res) => {
             if (applicableOffers.length > 0) {
                 const bestOffer = applicableOffers.reduce((best, current) => {
                     const currentDiscount = current.discountType === 'percentage' 
-                        ? (product.price * current.discountAmount / 100)
+                        ? (productObj.price * current.discountAmount / 100)
                         : current.discountAmount;
                     
                     const bestDiscount = best ? (best.discountType === 'percentage'
-                        ? (product.price * best.discountAmount / 100)
+                        ? (productObj.price * best.discountAmount / 100)
                         : best.discountAmount) : 0;
 
                     return currentDiscount > bestDiscount ? current : best;
@@ -122,25 +217,14 @@ export const getShop = async (req, res) => {
                         discountType: bestOffer.discountType,
                         discountAmount: bestOffer.discountAmount,
                         discountedPrice: bestOffer.discountType === 'percentage'
-                            ? product.price - (product.price * bestOffer.discountAmount / 100)
-                            : product.price - bestOffer.discountAmount
+                            ? productObj.price - (productObj.price * bestOffer.discountAmount / 100)
+                            : productObj.price - bestOffer.discountAmount
                     };
                 }
             }
 
-            // Add finalPrice property for sorting
-            productObj.finalPrice = productObj.offer?.discountedPrice || productObj.price;
             return productObj;
         });
-
-        // Apply price sorting after calculating final prices
-        if (req.query.sort === 'priceLowToHigh' || req.query.sort === 'priceHighToLow') {
-            productsWithOffers.sort((a, b) => {
-                return req.query.sort === 'priceLowToHigh' 
-                    ? a.finalPrice - b.finalPrice 
-                    : b.finalPrice - a.finalPrice;
-            });
-        }
 
         // Process products
         const processedProducts = productsWithOffers.map(product => ({
