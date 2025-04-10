@@ -3,6 +3,8 @@ import User from '../../models/userModel.js';
 import Order from '../../models/orderModel.js';
 import Address from '../../models/addressModel.js';
 import Cart from '../../models/cartModel.js';
+import razorpay from '../../utils/razorpay.js';
+import crypto from 'crypto';
 
 export const walletController = {
     getWallet: async (req, res) => {
@@ -244,6 +246,113 @@ export const walletController = {
             res.status(500).json({
                 success: false,
                 message: error.message || 'Failed to process refund'
+            });
+        }
+    },
+
+    createRazorpayOrder: async (req, res) => {
+        try {
+            const { amount } = req.body;
+            const userId = req.session.user;
+
+            if (!amount || amount < 100 || amount > 50000) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Amount must be between ₹100 and ₹50,000'
+                });
+            }
+
+            // Create Razorpay order
+            const razorpayOrder = await razorpay.orders.create({
+                amount: Number(amount * 100), // Convert to paise
+                currency: 'INR',
+                receipt: `wallet_${Date.now()}`
+            });
+
+            // Store order details in session
+            req.session.walletOrder = {
+                amount,
+                orderId: razorpayOrder.id
+            };
+
+            res.json({
+                success: true,
+                key: process.env.RAZORPAY_KEY_ID,
+                order: razorpayOrder,
+                amount: Number(amount)
+            });
+
+        } catch (error) {
+            console.error('Create Razorpay order error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to create payment order'
+            });
+        }
+    },
+
+    verifyWalletPayment: async (req, res) => {
+        try {
+            const { 
+                razorpay_payment_id, 
+                razorpay_order_id, 
+                razorpay_signature 
+            } = req.body;
+
+            const orderDetails = req.session.walletOrder;
+
+            if (!orderDetails || orderDetails.orderId !== razorpay_order_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid order details'
+                });
+            }
+
+            // Verify signature
+            const sign = razorpay_order_id + "|" + razorpay_payment_id;
+            const expectedSign = crypto
+                .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+                .update(sign.toString())
+                .digest("hex");
+
+            if (razorpay_signature !== expectedSign) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid payment signature'
+                });
+            }
+
+            // Add funds to wallet
+            let wallet = await Wallet.findOne({ userId: req.session.user });
+            if (!wallet) {
+                wallet = await Wallet.create({ userId: req.session.user });
+            }
+
+            wallet.transactions.push({
+                type: 'credit',
+                amount: orderDetails.amount,
+                description: 'Added funds to wallet via Razorpay',
+                status: 'completed',
+                date: new Date()
+            });
+
+            wallet.balance += orderDetails.amount;
+            await wallet.save();
+
+            // Clear session
+            delete req.session.walletOrder;
+
+            res.json({
+                success: true,
+                message: 'Funds added successfully',
+                newBalance: wallet.balance
+            });
+
+        } catch (error) {
+            console.error('Verify wallet payment error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to verify payment'
             });
         }
     }

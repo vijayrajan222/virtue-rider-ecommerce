@@ -6,6 +6,8 @@
     <title>Virtue Rider - My Wallet</title>
     <link rel="stylesheet" href="/tailwindcss/output.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .main-wrapper {
             background-image: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 100%), url('/images/6331994.jpg');
@@ -111,12 +113,12 @@
                                 <h2 class="text-2xl font-bold text-white">My Wallet</h2>
                                 <p class="text-white/70 mt-1">Manage your wallet balance and transactions</p>
                             </div>
-                            <!-- <button onclick="showAddFundsModal()"
+                            <button onclick="showAddFundsModal()"
                                     class="mt-4 sm:mt-0 w-full sm:w-auto bg-white text-black px-6 py-2.5 rounded-lg 
                                            hover:bg-opacity-90 transition-colors flex items-center justify-center gap-2">
                                 <i class="fas fa-plus"></i>
                                 <span>Add Funds</span>
-                            </button> -->
+                            </button>
                         </div>
 
                         <!-- Wallet Balance Card -->
@@ -256,12 +258,17 @@
             const amount = parseFloat(document.getElementById('fundAmount').value);
             
             if (!amount || amount < 100 || amount > 50000) {
-                alert('Please enter an amount between ₹100 and ₹50,000');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Amount',
+                    text: 'Please enter an amount between ₹100 and ₹50,000'
+                });
                 return;
             }
 
             try {
-                const response = await fetch('/wallet/add-funds', {
+                // Create Razorpay order
+                const response = await fetch('/wallet/create-razorpay-order', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -271,18 +278,89 @@
 
                 const data = await response.json();
 
-                if (data.success) {
-                    // Update wallet balance
-                    document.getElementById('walletBalance').textContent = `₹${data.newBalance.toFixed(2)}`;
-                    closeAddFundsModal();
-                    // Reload page to show new transaction
-                    window.location.reload();
-                } else {
-                    alert(data.message || 'Failed to add funds');
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to create payment order');
                 }
+
+                // Initialize Razorpay
+                const options = {
+                    key: data.key,
+                    amount: data.amount * 100,
+                    currency: "INR",
+                    name: "Virtue Rider",
+                    description: "Add funds to wallet",
+                    order_id: data.order.id,
+                    handler: async function (response) {
+                        try {
+                            // Verify payment
+                            const verifyResponse = await fetch('/wallet/verify-payment', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+
+                            const verifyData = await verifyResponse.json();
+
+                            if (verifyData.success) {
+                                // Update wallet balance
+                                document.getElementById('walletBalance').textContent = `₹${verifyData.newBalance.toFixed(2)}`;
+                                closeAddFundsModal();
+                                
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Success!',
+                                    text: 'Funds added to your wallet successfully',
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    window.location.reload();
+                                });
+                            } else {
+                                throw new Error(verifyData.message || 'Payment verification failed');
+                            }
+                        } catch (error) {
+                            console.error('Payment verification error:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Payment Failed',
+                                text: error.message || 'Failed to verify payment'
+                            });
+                        }
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Payment Cancelled',
+                                text: 'You have cancelled the payment process'
+                            });
+                        }
+                    },
+                    prefill: {
+                        name: "<%= user.firstname %> <%= user.lastname %>",
+                        email: "<%= user.email %>",
+                        contact: "<%= user.phone %>"
+                    },
+                    theme: {
+                        color: "#000000"
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+
             } catch (error) {
                 console.error('Add funds error:', error);
-                alert('Failed to add funds. Please try again.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Failed to add funds'
+                });
             }
         }
     </script>

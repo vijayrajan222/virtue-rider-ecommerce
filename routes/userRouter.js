@@ -147,6 +147,8 @@ userRouter.post('/checkout/verify-payment',
 
 userRouter.get('/wallet', userMiddlewares.checkSession, walletController.getWallet);
 userRouter.post('/wallet/add-funds', userMiddlewares.checkSession, walletController.addFunds);
+userRouter.post('/wallet/create-razorpay-order', userMiddlewares.checkSession, walletController.createRazorpayOrder);
+userRouter.post('/wallet/verify-payment', userMiddlewares.checkSession, walletController.verifyWalletPayment);
 userRouter.post('/wallet/process-payment', userMiddlewares.checkSession, walletController.processWalletPayment);
 
 userRouter.get('/coupons', userMiddlewares.checkSession, userCouponController.getCoupons);
