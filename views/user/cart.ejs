@@ -262,7 +262,10 @@
         
         let newQuantity;
         if (action === 'increase') {
-            if (currentQuantity >= 3) return;
+            if (currentQuantity >= 3) {
+                showAlert('error', 'Maximum 3 quantities allowed per product');
+                return;
+            }
             newQuantity = currentQuantity + 1;
         } else {
             if (currentQuantity <= 1) return;
@@ -313,7 +316,7 @@
                 const plusBtn = cartItem.querySelector('.quantity-btn:last-child');
                 
                 if (minusBtn) minusBtn.disabled = newQuantity <= 1;
-                if (plusBtn) plusBtn.disabled = newQuantity >= data.stock || newQuantity >= 3;
+                if (plusBtn) plusBtn.disabled = newQuantity >= 3;
 
                 // Success feedback
                 button.classList.add('bg-green-200');

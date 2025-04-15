@@ -232,6 +232,13 @@ export const updateQuantity = async (req, res) => {
             });
         }
 
+        if (quantity > 3) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Maximum 3 quantities allowed per product' 
+            });
+        }
+
         // Find cart and product
         const cart = await cartSchema.findOne({ userId });
         if (!cart) {
