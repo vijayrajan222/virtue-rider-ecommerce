@@ -123,54 +123,18 @@
               </div>
 
               <!-- Address Cards -->
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <% addresses.forEach(address => { %>
-                  <div class="glass-card rounded-xl p-6 hover:bg-white/25 transition-all" 
-                       data-address-id="<%= address._id %>">
-                    <div class="flex flex-col gap-4">
-                      <div class="flex justify-between items-start">
-                        <h4 class="font-semibold text-lg text-white"><%= address.fullName %></h4>
-                        <div class="flex gap-2">
-                          <button onclick="editAddress('<%= address._id %>', <%= JSON.stringify(address) %>)"
-                                  class="text-white hover:text-blue-200 p-2 hover:bg-white/20 rounded-lg transition-colors">
-                            <i class="fas fa-edit"></i>
-                          </button>
-                          <button onclick="deleteAddress('<%= address._id %>')"
-                                  class="text-white hover:text-red-200 p-2 hover:bg-white/20 rounded-lg transition-colors">
-                            <i class="fas fa-trash"></i>
-                          </button>
-                        </div>
-                      </div>
-                      <div class="space-y-3">
-                        <p class="text-white/80 flex items-center gap-2">
-                          <i class="fas fa-phone text-sm"></i>
-                          <%= address.mobileNumber %>
-                        </p>
-                        <p class="text-white/80 flex items-start gap-2">
-                          <i class="fas fa-map-marker-alt text-sm mt-1"></i>
-                          <span>
-                            <%= address.addressLine1 %>,
-                            <% if (address.addressLine2) { %><%= address.addressLine2 %>,<% } %>
-                            <%= address.city %>,
-                            <%= address.state %> - <%= address.pincode %>
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                <% }); %>
+              <%- include("./partials/addressGrid") %>
 
-                <!-- Empty State -->
-                <% if (addresses.length === 0) { %>
-                  <div class="col-span-2 text-center py-12">
-                    <div class="text-white/40 mb-4">
-                      <i class="fas fa-map-marker-alt text-4xl"></i>
-                    </div>
-                    <h3 class="text-lg font-medium text-white mb-2">No addresses found</h3>
-                    <p class="text-white/60">Add a new address to get started</p>
+              <!-- Empty State -->
+              <% if (addresses.length === 0) { %>
+                <div class="col-span-2 text-center py-12">
+                  <div class="text-white/40 mb-4">
+                    <i class="fas fa-map-marker-alt text-4xl"></i>
                   </div>
-                <% } %>
-              </div>
+                  <h3 class="text-lg font-medium text-white mb-2">No addresses found</h3>
+                  <p class="text-white/60">Add a new address to get started</p>
+                </div>
+              <% } %>
             </div>
           </div>
         </div>
@@ -625,24 +589,27 @@
           const data = await response.json();
           
           if (response.ok) {
-            // Refresh the addresses section
-            const addressesContainer = document.querySelector('.addresses-container');
-            const addressResponse = await fetch('/address', {
+            // Fetch updated addresses list
+            const addressesResponse = await fetch('/address', {
               headers: {
                 'X-Requested-With': 'XMLHttpRequest'
               }
             });
             
-            if (!addressResponse.ok) throw new Error('Failed to fetch addresses');
+            if (!addressesResponse.ok) {
+              throw new Error('Failed to fetch updated addresses');
+            }
             
-            const html = await addressResponse.text();
-            const temp = document.createElement('div');
-            temp.innerHTML = html;
+            const addressesHtml = await addressesResponse.text();
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = addressesHtml;
             
-            // Find the new addresses container and update
-            const newAddressesContent = temp.querySelector('.addresses-container');
-            if (newAddressesContent) {
-              addressesContainer.innerHTML = newAddressesContent.innerHTML;
+            // Get the addresses grid from the response
+            const newAddressesGrid = tempDiv.querySelector('.grid');
+            if (newAddressesGrid) {
+              // Update the addresses container
+              const currentAddressesContainer = document.querySelector('.grid');
+              currentAddressesContainer.innerHTML = newAddressesGrid.innerHTML;
             }
 
             // Close modal and show success message
@@ -656,9 +623,47 @@
         }
       });
 
+      // Function to create address card HTML
+      function createAddressCard(address) {
+        return `
+          <div class="glass-card rounded-xl p-6 hover:bg-white/25 transition-all" 
+               data-address-id="${address._id}">
+            <div class="flex flex-col gap-4">
+              <div class="flex justify-between items-start">
+                <h4 class="font-semibold text-lg text-white">${address.fullName}</h4>
+                <div class="flex gap-2">
+                  <button onclick="editAddress('${address._id}', ${JSON.stringify(address)})"
+                          class="text-white hover:text-blue-200 p-2 hover:bg-white/20 rounded-lg transition-colors">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button onclick="deleteAddress('${address._id}')"
+                          class="text-white hover:text-red-200 p-2 hover:bg-white/20 rounded-lg transition-colors">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="space-y-3">
+                <p class="text-white/80 flex items-center gap-2">
+                  <i class="fas fa-phone text-sm"></i>
+                  ${address.mobileNumber}
+                </p>
+                <p class="text-white/80 flex items-start gap-2">
+                  <i class="fas fa-map-marker-alt text-sm mt-1"></i>
+                  <span>
+                    ${address.addressLine1},
+                    ${address.addressLine2 ? address.addressLine2 + ',' : ''}
+                    ${address.city},
+                    ${address.state} - ${address.pincode}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
       // Delete address handler
       async function deleteAddress(addressId) {
-        
         const alertModal = document.getElementById('alertModal');
         const currentContent = alertModal.querySelector('.transform');
         const deleteContent = document.getElementById('deleteConfirmationContent').innerHTML;
@@ -680,27 +685,36 @@
             }
             
             const response = await fetch(`/address/${addressId}`, { 
-              method: 'DELETE'
+              method: 'DELETE',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+              }
             });
             
             if (response.ok) {
-              // Remove the address card
-              const addressCard = document.querySelector(`div[data-address-id="${addressId}"]`);
-              if (addressCard) {
-                addressCard.remove();
+              // Fetch updated addresses list
+              const addressesResponse = await fetch('/address', {
+                headers: {
+                  'X-Requested-With': 'XMLHttpRequest'
+                }
+              });
+              
+              if (!addressesResponse.ok) {
+                throw new Error('Failed to fetch updated addresses');
+              }
+              
+              const addressesHtml = await addressesResponse.text();
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = addressesHtml;
+              
+              // Get the addresses grid from the response
+              const newAddressesGrid = tempDiv.querySelector('.grid');
+              if (newAddressesGrid) {
+                // Update the addresses container
+                const currentAddressesContainer = document.querySelector('.grid');
+                currentAddressesContainer.innerHTML = newAddressesGrid.innerHTML;
               }
 
-              // Check remaining addresses
-              const addressesContainer = document.querySelector('.addresses-container');
-              const remainingAddresses = addressesContainer.querySelectorAll('div[data-address-id]');
-              
-              if (remainingAddresses.length === 0) {
-                const emptyState = document.getElementById('emptyStateContent');
-                if (emptyState) {
-                  addressesContainer.innerHTML = emptyState.innerHTML;
-                }
-              }
-              
               // Show success message
               const successAlert = document.getElementById('successAlert');
               if (successAlert) {

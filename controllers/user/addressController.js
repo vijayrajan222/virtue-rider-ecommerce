@@ -6,9 +6,20 @@ export const getAddress = async (req, res) => {
         const userId = req.session.user; 
         const user = await User.findById(userId); 
         const addresses = await addressSchema.find({ userId: userId }); 
+
+        // Check if it's an AJAX request
+        if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
+            // Return only the addresses grid HTML
+            return res.render('user/partials/addressGrid', { addresses, user });
+        }
+
+        // Regular request - return full page
         res.render('user/address', { addresses, user });
     } catch (error) {
         console.error('Error fetching addresses:', error);
+        if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
+            return res.status(500).json({ error: 'Internal server error' });
+        }
         res.status(500).json({ error: 'Internal server error' });
     }
 };
