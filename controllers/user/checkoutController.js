@@ -297,6 +297,62 @@ const userCheckoutController = {
             let couponValue = 0;
             let couponDiscount = 0;
 
+            // Get cart with populated products
+            const cart = await cartSchema.findOne({ userId })
+                .populate({
+                    path: 'items.productId',
+                    select: 'name images price variants categoryId'
+                });
+
+            if (!cart || cart.items.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cart is empty'
+                });
+            }
+
+            // Check stock availability for all items
+            const stockCheckPromises = cart.items.map(async (item) => {
+                const product = await productSchema.findOne({
+                    _id: item.productId._id,
+                    'variants._id': item.variantId
+                });
+
+                if (!product) {
+                    return {
+                        success: false,
+                        message: `Product ${item.productId.name} not found`
+                    };
+                }
+
+                const variant = product.variants.find(v => v._id.toString() === item.variantId.toString());
+                if (!variant) {
+                    return {
+                        success: false,
+                        message: `Variant not found for product ${item.productId.name}`
+                    };
+                }
+
+                if (variant.stock < item.quantity) {
+                    return {
+                        success: false,
+                        message: `Insufficient stock for ${item.productId.name}. Only ${variant.stock} items available`
+                    };
+                }
+
+                return { success: true };
+            });
+
+            const stockCheckResults = await Promise.all(stockCheckPromises);
+            const stockError = stockCheckResults.find(result => !result.success);
+            
+            if (stockError) {
+                return res.status(400).json({
+                    success: false,
+                    message: stockError.message
+                });
+            }
+
             if (couponCode) {
                 const coupon = await couponSchema.findOne({ code: couponCode });
                 if (coupon) {
@@ -366,20 +422,6 @@ const userCheckoutController = {
                 return res.status(400).json({
                     success: false,
                     message: 'Invalid payment method'
-                });
-            }
-
-            // Get cart with populated products
-            const cart = await cartSchema.findOne({ userId })
-                .populate({
-                    path: 'items.productId',
-                    select: 'name images price variants categoryId'
-                });
-
-            if (!cart || cart.items.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Cart is empty'
                 });
             }
 

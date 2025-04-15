@@ -297,6 +297,11 @@
                     <p class="text-sm text-gray-500">
                       Size: <%= item.variant %> | Qty: <%= item.quantity %>
                     </p>
+                    <p class="text-sm <%= item.stock >= item.quantity ? 'text-green-400' : 'text-red-400' %>">
+                      <%= item.stock >= item.quantity ? 
+                          `In Stock (${item.stock} available)` : 
+                          `Out of Stock (Only ${item.stock} available)` %>
+                    </p>
                     <div class="flex items-baseline gap-2 flex-wrap">
                       <% if (item.offer) { %>
                         <span class="text-base font-medium text-white">
