@@ -534,7 +534,7 @@
     <script>
       let appliedCoupon = null;
       let currentDiscount = 0;
-      const cartTotal = <%= total %>;
+      const cartTotal = parseFloat('<%= total %>');
 
       function openCouponModal() {
           fetchCoupons();
@@ -831,6 +831,7 @@
                               } catch (error) {
                                   console.error('Payment verification error:', error);
                                   await showAlert('error', error.message || 'Payment verification failed');
+                                  window.location.href = '/orders?payment=failed';
                               }
                           },
                           modal: {
@@ -851,14 +852,13 @@
 
                                       const result = await response.json();
                                       if (result.success) {
-                                          await showAlert('info', 'Order placed with pending payment status.');
                                           window.location.href = `/orders?pending=true&orderId=${result.orderId}`;
                                       } else {
-                                          throw new Error(result.message || 'Failed to place order');
+                                          window.location.href = '/orders?payment=failed';
                                       }
                                   } catch (error) {
                                       console.error('Order placement error:', error);
-                                      await showAlert('error', error.message || 'Failed to place order');
+                                      window.location.href = '/orders?payment=failed';
                                   }
                               }
                           },
