@@ -87,9 +87,35 @@ export const updateItemStatus = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Product not found in order or already cancelled' });
         }
 
-        // Calculate refund amount including any offers
-        const refundAmount = productItem.discountedPrice || productItem.price;
-        const totalRefundAmount = refundAmount * productItem.quantity;
+        // If trying to update a cancelled item
+        if (productItem.status === 'cancelled') {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Cannot update status of a cancelled item' 
+            });
+        }
+
+        // Calculate refund amount considering discounts and coupons
+        const calculateRefundAmount = (order, item) => {
+            // Calculate item's base price
+            const itemTotal = item.price * item.quantity;
+
+            // Calculate total price of all items in order
+            const orderItemsTotal = order.products.reduce((sum, p) => 
+                sum + (p.price * p.quantity), 0
+            );
+
+            // Calculate item's weight (proportion) in the total order
+            const itemWeight = itemTotal / orderItemsTotal;
+
+            // Calculate refund amount based on weight and order's final amount
+            let refundAmount = order.totalAmount * itemWeight;
+
+            // Round to 2 decimal places
+            return Math.round(refundAmount * 100) / 100;
+        };
+
+        const totalRefundAmount = calculateRefundAmount(order, productItem);
 
         // Handle cancellation
         if (status === 'cancelled') {
@@ -138,6 +164,51 @@ export const updateItemStatus = async (req, res) => {
                     });
                 }
             }
+
+            // Update item status to cancelled
+            productItem.status = 'cancelled';
+            if (!productItem.statusHistory) {
+                productItem.statusHistory = [];
+            }
+            productItem.statusHistory.push({
+                status: 'cancelled',
+                date: new Date(),
+                comment: 'Item cancelled by admin'
+            });
+
+            // Update order payment status if needed
+            const allCancelled = order.products.every(item => item.status === 'cancelled');
+            if (allCancelled) {
+                order.paymentStatus = 'refunded';
+            }
+
+            // Save the order with the updated status
+            await Order.findByIdAndUpdate(orderId, {
+                $set: {
+                    'products.$[elem].status': 'cancelled',
+                    'products.$[elem].statusHistory': productItem.statusHistory,
+                    ...(allCancelled ? { paymentStatus: 'refunded' } : {})
+                }
+            }, {
+                arrayFilters: [{ 'elem._id': productItem._id }],
+                new: true
+            });
+
+            return res.json({
+                success: true,
+                message: 'Item cancelled and refund processed successfully',
+                newStatus: 'cancelled',
+                paymentStatus: allCancelled ? 'refunded' : order.paymentStatus,
+                refundAmount: totalRefundAmount
+            });
+        }
+
+        // For non-cancellation status updates
+        if (!['pending', 'processing', 'shipped', 'delivered'].includes(status)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid status update' 
+            });
         }
 
         // Update item status
@@ -151,21 +222,21 @@ export const updateItemStatus = async (req, res) => {
             comment: `Status updated to ${status} by admin`
         });
 
-        // Update order payment status if needed
-        if (status === 'cancelled') {
-            const allCancelled = order.products.every(item => item.status === 'cancelled');
-            if (allCancelled) {
-                order.paymentStatus = 'refunded';
+        // Save the order with the updated status
+        await Order.findByIdAndUpdate(orderId, {
+            $set: {
+                'products.$[elem].status': status,
+                'products.$[elem].statusHistory': productItem.statusHistory
             }
-        }
-
-        await order.save();
+        }, {
+            arrayFilters: [{ 'elem._id': productItem._id }],
+            new: true
+        });
 
         res.json({
             success: true,
-            message: `Product ${status} and refund processed successfully`,
-            newStatus: status,
-            paymentStatus: order.paymentStatus
+            message: `Status updated to ${status} successfully`,
+            newStatus: status
         });
 
     } catch (error) {
