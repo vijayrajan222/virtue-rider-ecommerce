@@ -117,6 +117,9 @@ export const updateItemStatus = async (req, res) => {
 
         // Handle return-related statuses
         if (['return_approved', 'return_rejected', 'returned'].includes(status)) {
+            // Calculate refund amount if approved
+            const totalRefundAmount = calculateRefundAmount(order, productItem);
+
             // Update return details
             if (!productItem.returnDetails) {
                 productItem.returnDetails = {};
@@ -137,9 +140,37 @@ export const updateItemStatus = async (req, res) => {
                 comment: `Return request ${status === 'return_approved' ? 'approved' : 'rejected'} by admin`
             });
 
-            // Update payment status if approved
+            // Process refund if approved
             if (status === 'return_approved') {
-                order.paymentStatus = 'refunded';
+                try {
+                    console.log('Processing return refund:', {
+                        userId: order.user,
+                        amount: totalRefundAmount,
+                        orderId: order._id
+                    });
+
+                    const refundResult = await walletController.processRefund(
+                        order.user,
+                        totalRefundAmount,
+                        order._id,
+                        `Refund for returned order #${order.orderCode}`
+                    );
+
+                    console.log('Return refund result:', refundResult);
+
+                    if (!refundResult.success) {
+                        throw new Error(refundResult.error || 'Refund failed');
+                    }
+
+                    // Update payment status to refunded
+                    order.paymentStatus = 'refunded';
+                } catch (refundError) {
+                    console.error('Return refund processing error:', refundError);
+                    return res.status(500).json({ 
+                        success: false, 
+                        message: 'Error processing return refund' 
+                    });
+                }
             }
 
             // Save the order with the updated status
@@ -158,7 +189,8 @@ export const updateItemStatus = async (req, res) => {
             return res.json({
                 success: true,
                 message: `Return request ${status === 'return_approved' ? 'approved' : 'rejected'} successfully`,
-                newStatus: status
+                newStatus: status,
+                ...(status === 'return_approved' ? { refundAmount: totalRefundAmount } : {})
             });
         }
 
