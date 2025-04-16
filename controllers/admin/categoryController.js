@@ -54,7 +54,7 @@ export const createCategory = async (req, res) => {
         }
 
         const existingCategory = await Category.findOne({
-            name: { $regex: new RegExp(`^${name}$`, 'i') }
+            name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
         });
 
         if (existingCategory) {
