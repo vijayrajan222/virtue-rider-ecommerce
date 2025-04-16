@@ -115,10 +115,57 @@ export const updateItemStatus = async (req, res) => {
             return Math.round(refundAmount * 100) / 100;
         };
 
-        const totalRefundAmount = calculateRefundAmount(order, productItem);
+        // Handle return-related statuses
+        if (['return_approved', 'return_rejected', 'returned'].includes(status)) {
+            // Update return details
+            if (!productItem.returnDetails) {
+                productItem.returnDetails = {};
+            }
+            productItem.returnDetails.status = status === 'return_approved' ? 'approved' : 
+                                            status === 'return_rejected' ? 'rejected' : 'completed';
+            
+            // Update status
+            productItem.status = status;
+            
+            // Add to status history
+            if (!productItem.statusHistory) {
+                productItem.statusHistory = [];
+            }
+            productItem.statusHistory.push({
+                status: status,
+                date: new Date(),
+                comment: `Return request ${status === 'return_approved' ? 'approved' : 'rejected'} by admin`
+            });
+
+            // Update payment status if approved
+            if (status === 'return_approved') {
+                order.paymentStatus = 'refunded';
+            }
+
+            // Save the order with the updated status
+            await Order.findByIdAndUpdate(orderId, {
+                $set: {
+                    'products.$[elem].status': status,
+                    'products.$[elem].statusHistory': productItem.statusHistory,
+                    'products.$[elem].returnDetails': productItem.returnDetails,
+                    ...(status === 'return_approved' ? { paymentStatus: 'refunded' } : {})
+                }
+            }, {
+                arrayFilters: [{ 'elem._id': productItem._id }],
+                new: true
+            });
+
+            return res.json({
+                success: true,
+                message: `Return request ${status === 'return_approved' ? 'approved' : 'rejected'} successfully`,
+                newStatus: status
+            });
+        }
 
         // Handle cancellation
         if (status === 'cancelled') {
+            const totalRefundAmount = calculateRefundAmount(order, productItem);
+
             // Update product stock
             const product = await Product.findById(productId);
             if (!product) {
@@ -250,7 +297,8 @@ export const handleReturnRequest = async (req, res) => {
         const { orderId, productId } = req.params;
         const { returnStatus, adminComment } = req.body;
 
-        const order = await Order.findById(orderId);
+        const order = await Order.findById(orderId)
+            .populate('products.product');
 
         if (!order) {
             return res.status(404).json({
@@ -260,7 +308,7 @@ export const handleReturnRequest = async (req, res) => {
         }
 
         const productItem = order.products.find(item =>
-            item.product.toString() === productId
+            item.product._id.toString() === productId
         );
 
         if (!productItem) {
@@ -270,23 +318,56 @@ export const handleReturnRequest = async (req, res) => {
             });
         }
 
+        // Update return details
+        if (!productItem.returnDetails) {
+            productItem.returnDetails = {};
+        }
+        productItem.returnDetails.status = returnStatus;
+        productItem.returnDetails.adminComment = adminComment;
+
+        // Update status based on return status
         if (returnStatus === 'approved') {
-            productItem.status = 'returned';
+            productItem.status = 'return_approved';
+            // Update payment status to refunded
             order.paymentStatus = 'refunded';
+        } else if (returnStatus === 'rejected') {
+            productItem.status = 'return_rejected';
         }
 
-        await order.save();
+        // Add to status history
+        if (!productItem.statusHistory) {
+            productItem.statusHistory = [];
+        }
+        productItem.statusHistory.push({
+            status: productItem.status,
+            date: new Date(),
+            comment: adminComment || `Return request ${returnStatus} by admin`
+        });
+
+        // Save the order with the updated status
+        await Order.findByIdAndUpdate(orderId, {
+            $set: {
+                'products.$[elem].status': productItem.status,
+                'products.$[elem].statusHistory': productItem.statusHistory,
+                'products.$[elem].returnDetails': productItem.returnDetails,
+                ...(returnStatus === 'approved' ? { paymentStatus: 'refunded' } : {})
+            }
+        }, {
+            arrayFilters: [{ 'elem._id': productItem._id }],
+            new: true
+        });
 
         res.json({
             success: true,
-            message: 'Return request handled successfully'
+            message: 'Return request handled successfully',
+            newStatus: productItem.status
         });
 
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({
             success: false,
-            message: 'Server error'
+            message: error.message || 'Server error'
         });
     }
 };
