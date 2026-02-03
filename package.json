@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "nodemon index.js",
     "tailwind": "tailwindcss -i ./public/styles/input.css -o ./public/tailwindcss/output.css --watch",
-    "start": "concurrently \"npm run dev\" \"npm run tailwind\""
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "",
